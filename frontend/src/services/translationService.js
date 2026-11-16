@@ -300,6 +300,58 @@ export function matchSeedDictionary(text, targetLang) {
     return SEED_TRANSLATIONS_DICT['ebx-swmtp-1']?.[targetLang] || SEED_TRANSLATIONS_DICT['ebx-swmtp-1']?.en || null;
   }
 
+  // Common Conversational Greetings (0ms instant omni-directional matching)
+  if (fp === 'hello' || fp === 'hi' || fp === 'hey' || fp === 'नमस्ते' || fp === 'hola' || fp === 'bonjour' || fp === 'hallo') {
+    const greetings = {
+      en: 'Hello!',
+      es: '¡Hola!',
+      fr: 'Bonjour !',
+      de: 'Hallo!',
+      hi: 'नमस्ते!',
+      ar: 'مرحباً!',
+      zh: '你好！',
+      ja: 'こんにちは！',
+      pt: 'Olá!',
+      it: 'Ciao!',
+    };
+    return greetings[targetLang] || greetings.en;
+  }
+
+  if (fp === 'hello sir' || fp === 'hi sir' || fp === 'नमस्ते सर' || fp === 'hola senor') {
+    const sirGreetings = {
+      en: 'Hello Sir!',
+      es: '¡Hola, señor!',
+      fr: 'Bonjour Monsieur !',
+      de: 'Hallo Herr!',
+      hi: 'नमस्ते सर!',
+      ar: 'مرحباً سيدي!',
+      zh: '先生好！',
+      ja: 'こんにちは、サー！',
+      pt: 'Olá, senhor!',
+      it: 'Ciao signore!',
+    };
+    return sirGreetings[targetLang] || sirGreetings.en;
+  }
+
+  // SWMTP Cryptographic Handshake & Delivery ACK message
+  if (fp.includes('hmacsha256 handshake confirmed') || (fp.includes('hmac') && fp.includes('mesh received'))) {
+    const match = trimmed.match(/"([^"]+)"/);
+    const innerMsg = match ? match[1] : '';
+    const hmacAcks = {
+      en: `HMAC-SHA256 handshake confirmed. SWMTP Mesh received: "${innerMsg}". Cryptographic delivery ACK logged.`,
+      es: `Apretón de manos HMAC-SHA256 confirmado. Malla SWMTP recibida: "${innerMsg}". ACK de entrega criptográfica registrado.`,
+      fr: `Poignée de main HMAC-SHA256 confirmée. Maillage SWMTP reçu : "${innerMsg}". Accusé de réception cryptographique consigné.`,
+      de: `HMAC-SHA256-Handshake bestätigt. SWMTP-Mesh empfangen: "${innerMsg}". Kryptografische Zustellungsbestätigung protokolliert.`,
+      hi: `HMAC-SHA256 हैंडशेक सत्यापित। SWMTP मेश प्राप्त हुआ: "${innerMsg}"। क्रिप्टोग्राफ़िक डिलीवरी पावती दर्ज की गई।`,
+      ar: `تم تأكيد مصافحة HMAC-SHA256. تم استلام شبكة SWMTP: "${innerMsg}". تم تسجيل إشعار التسليم التشفيري.`,
+      zh: `HMAC-SHA256 握手已确认。SWMTP 网状网络已接收："${innerMsg}"。加密交付确认已记录。`,
+      ja: `HMAC-SHA256 ハンドシェイク確認済み。SWMTPメッシュ受信：「${innerMsg}」。暗号化配信確認を記録しました。`,
+      pt: `Handshake HMAC-SHA256 confirmado. Malha SWMTP recebida: "${innerMsg}". ACK de entrega criptográfica registrado.`,
+      it: `Handshake HMAC-SHA256 confermato. Mesh SWMTP ricevuta: "${innerMsg}". ACK di consegna crittografica registrato.`,
+    };
+    return hmacAcks[targetLang] || hmacAcks.en;
+  }
+
   return null;
 }
 

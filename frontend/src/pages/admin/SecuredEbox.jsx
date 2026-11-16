@@ -38,7 +38,8 @@ import {
   AlertCircle,
   Languages,
   Globe,
-  ChevronLeft
+  ChevronLeft,
+  Trash2
 } from 'lucide-react';
 import './SecuredEbox.css';
 import { Breadcrumb, Button, Card, Badge } from '../../components/ui';
@@ -441,6 +442,7 @@ export const SecuredEbox = () => {
   // Translation States (Client Johnny's One-Click Auto-Translate Feature with LocalStorage Persistence)
   const [selectedLanguage, setSelectedLanguage] = useState(() => getSavedLanguage());
   const [isTranslating, setIsTranslating] = useState(false);
+  const [translatingMsgId, setTranslatingMsgId] = useState(null);
   const [showLangDropdown, setShowLangDropdown] = useState(false);
   const [translatedMessagesMap, setTranslatedMessagesMap] = useState(() => {
     const savedLang = getSavedLanguage();
@@ -1202,12 +1204,17 @@ export const SecuredEbox = () => {
 
   // Translate a single individual message bubble
   const handleToggleSingleTranslation = async (msgId, originalText) => {
-    // If this message already has an individual override, clear it
+    // If this message already has an individual override, clear it (revert)
     if (individualTranslations[msgId]) {
       setIndividualTranslations((prev) => {
         const next = { ...prev };
         delete next[msgId];
         return next;
+      });
+      addToast({
+        title: 'Original Restored',
+        message: 'Reverted message back to original text.',
+        type: 'info',
       });
       return;
     }
@@ -1218,6 +1225,11 @@ export const SecuredEbox = () => {
         ...prev,
         [msgId]: { text: originalText, isOriginal: true, isTranslated: false },
       }));
+      addToast({
+        title: 'Original Restored',
+        message: 'Showing original English text for this message.',
+        type: 'info',
+      });
       return;
     }
 
@@ -1225,29 +1237,71 @@ export const SecuredEbox = () => {
     const targetLang = selectedLanguage === 'en' ? 'es' : selectedLanguage;
     const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang);
 
-    // 1. Check instant dictionary and signature first
-    let translated = getInstantTranslations([{ id: msgId, text: originalText }], targetLang)[msgId];
+    setTranslatingMsgId(msgId);
+    try {
+      // 1. Check instant dictionary and signature first
+      let translated = getInstantTranslations([{ id: msgId, text: originalText }], targetLang)[msgId];
 
-    if (!translated || translated.trim() === (originalText || '').trim()) {
-      try {
+      if (!translated || translated.trim() === (originalText || '').trim()) {
         translated = await translateText(originalText, targetLang);
-      } catch (err) {
-        console.error('Single translation error:', err);
-        translated = originalText;
       }
-    }
 
-    if (translated && translated.trim() !== (originalText || '').trim()) {
-      setIndividualTranslations((prev) => ({
-        ...prev,
-        [msgId]: {
-          text: translated,
-          targetLang,
-          langObj: targetLangObj,
-          isTranslated: true,
-        },
-      }));
+      if (translated && translated.trim() !== (originalText || '').trim()) {
+        setIndividualTranslations((prev) => ({
+          ...prev,
+          [msgId]: {
+            text: translated,
+            targetLang,
+            langObj: targetLangObj,
+            isTranslated: true,
+          },
+        }));
+        addToast({
+          title: `Translated to ${targetLangObj?.name || 'Spanish'}`,
+          message: `Message translated into ${targetLangObj?.name} ${targetLangObj?.flag}. Click "Original" to revert.`,
+          type: 'success',
+        });
+      } else {
+        addToast({
+          title: 'Translation Complete',
+          message: 'Message is already in the target language.',
+          type: 'info',
+        });
+      }
+    } catch (err) {
+      console.error('Single translation error:', err);
+      addToast({
+        title: 'Translation Error',
+        message: 'Could not connect to translation service.',
+        type: 'warning',
+      });
+    } finally {
+      setTranslatingMsgId(null);
     }
+  };
+
+  // Delete an individual message from the active thread
+  const handleDeleteMessage = (msgId) => {
+    setThreadStore((prev) => {
+      const next = { ...prev };
+      if (next[activeThreadId]) {
+        next[activeThreadId] = next[activeThreadId].filter((m) => m.id !== msgId);
+      }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+    setIndividualTranslations((prev) => {
+      const next = { ...prev };
+      delete next[msgId];
+      return next;
+    });
+    addToast({
+      title: 'Message Removed',
+      message: 'Message deleted from active vault history.',
+      type: 'info',
+    });
   };
 
   // Translate composer draft input before sending
@@ -1430,10 +1484,6 @@ export const SecuredEbox = () => {
             [threadId]: [...(prev[threadId] || []), fileMsg],
           }));
 
-          if (sentPersona === 'johnny') {
-            triggerAutoReply(`[File Attached: ${file.name}] ${currentMsgText}`, threadId, sentPersona);
-          }
-
           await eboxService.sendMessage({
             subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
             message: currentMsgText,
@@ -1490,12 +1540,7 @@ export const SecuredEbox = () => {
         });
       }
 
-      // 3. Trigger team auto-reply if Johnny sends
-      if (sentPersona === 'johnny') {
-        triggerAutoReply(currentMsgText, threadId, sentPersona);
-      }
-
-      // 4. Background persist to MySQL vault
+      // 3. Background persist to MySQL vault
       try {
         const response = await eboxService.sendMessage({
           subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
@@ -2354,6 +2399,7 @@ export const SecuredEbox = () => {
                         {m.text && (
                           <button
                             type="button"
+                            disabled={translatingMsgId === m.id}
                             onClick={(e) => {
                               e.stopPropagation();
                               handleToggleSingleTranslation(m.id, origText);
@@ -2369,7 +2415,7 @@ export const SecuredEbox = () => {
                               borderRadius: '8px',
                               padding: '1px 6px',
                               color: isMine ? '#ffffff' : 'var(--text-secondary)',
-                              cursor: 'pointer',
+                              cursor: translatingMsgId === m.id ? 'wait' : 'pointer',
                               marginLeft: '6px',
                               transition: 'all 150ms ease',
                             }}
@@ -2379,10 +2425,43 @@ export const SecuredEbox = () => {
                                 : `Translate to ${selectedLanguage === 'en' ? 'Spanish' : (SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage)}`
                             }
                           >
-                            <Languages size={10} />
-                            <span>{isThisMessageTranslated ? 'Original' : 'Translate'}</span>
+                            {translatingMsgId === m.id ? (
+                              <RefreshCw size={10} className="animate-spin" />
+                            ) : (
+                              <Languages size={10} />
+                            )}
+                            <span>{translatingMsgId === m.id ? 'Translating...' : (isThisMessageTranslated ? 'Original' : 'Translate')}</span>
                           </button>
                         )}
+
+                        {/* Delete Message Button */}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteMessage(m.id);
+                          }}
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            backgroundColor: 'transparent',
+                            border: 'none',
+                            padding: '1px 4px',
+                            color: isMine ? 'rgba(255,255,255,0.7)' : 'var(--text-tertiary)',
+                            cursor: 'pointer',
+                            marginLeft: '4px',
+                            opacity: 0.75,
+                            transition: 'opacity 150ms ease',
+                          }}
+                          onMouseEnter={(e) => (e.currentTarget.style.opacity = '1')}
+                          onMouseLeave={(e) => (e.currentTarget.style.opacity = '0.75')}
+                          title="Delete message from vault"
+                        >
+                          <Trash2 size={10} />
+                        </button>
                       </div>
 
                       {/* Attachment if present */}
