@@ -952,6 +952,11 @@ export const SecuredEbox = () => {
                 }
               }
 
+              // Skip corrupt or unreadable legacy ciphertext bubbles
+              if ((msgText === '[Encrypted Legacy Vault Message]' || msgText === '[Encrypted Vault Message]') && !attachment && !isImage && !isVideo && !isAudio) {
+                return;
+              }
+
               const formattedMsg = {
                 id: dbMsg.id,
                 senderRole,
@@ -2403,14 +2408,70 @@ export const SecuredEbox = () => {
                         </div>
                       )}
 
-                      {/* Photo Attachment Thumbnail */}
-                      {m.isImage && m.previewUrl && (
-                        <div style={{ marginTop: '8px', borderRadius: '8px', overflow: 'hidden', cursor: 'pointer' }} onClick={() => setPreviewImage(m)}>
+                      {/* High-Resolution Photo Viewer Card */}
+                      {m.isImage && (m.previewUrl || m.attachment?.url) && (
+                        <div
+                          style={{
+                            marginTop: '8px',
+                            borderRadius: '12px',
+                            overflow: 'hidden',
+                            cursor: 'zoom-in',
+                            backgroundColor: 'rgba(0,0,0,0.18)',
+                            border: isMine ? '1px solid rgba(255,255,255,0.35)' : '1px solid var(--border)',
+                            boxShadow: '0 4px 16px rgba(0,0,0,0.16)',
+                            transition: 'all 180ms ease',
+                          }}
+                          onClick={() => setPreviewImage({ previewUrl: m.previewUrl || m.attachment?.url, attachment: m.attachment || { name: 'Photo.png', size: 'High-Res' } })}
+                          title="Click to view full High-Resolution image"
+                        >
                           <img
-                            src={m.previewUrl}
+                            src={m.previewUrl || m.attachment?.url}
                             alt={m.attachment?.name || 'Photo'}
-                            style={{ maxWidth: '240px', maxHeight: '180px', objectFit: 'cover', borderRadius: '8px', display: 'block' }}
+                            style={{
+                              maxWidth: 'min(100%, 380px)',
+                              maxHeight: '340px',
+                              width: 'auto',
+                              height: 'auto',
+                              objectFit: 'contain',
+                              borderRadius: '12px 12px 0 0',
+                              display: 'block',
+                              margin: '0 auto',
+                            }}
                           />
+                          <div
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'space-between',
+                              padding: '6px 12px',
+                              backgroundColor: isMine ? 'rgba(0,0,0,0.22)' : 'var(--surface)',
+                              borderTop: isMine ? '1px solid rgba(255,255,255,0.15)' : '1px solid var(--border)',
+                              fontSize: '11px',
+                              color: isMine ? '#ffffff' : 'var(--text-secondary)',
+                            }}
+                          >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', overflow: 'hidden' }}>
+                              <Image size={13} style={{ flexShrink: 0, color: isMine ? '#ffffff' : '#0284c7' }} />
+                              <span style={{ fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {m.attachment?.name || 'High-Res Photo'}
+                              </span>
+                              {m.attachment?.size && (
+                                <span style={{ opacity: 0.8, fontSize: '10px' }}>({m.attachment.size})</span>
+                              )}
+                            </div>
+                            <span
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                fontSize: '10px',
+                                fontWeight: 700,
+                                color: isMine ? '#ffffff' : '#0284c7',
+                              }}
+                            >
+                              <ExternalLink size={10} /> Full HD
+                            </span>
+                          </div>
                         </div>
                       )}
 
@@ -2529,8 +2590,8 @@ export const SecuredEbox = () => {
                         </button>
                       </div>
 
-                      {/* Attachment if present */}
-                      {m.attachment && (
+                      {/* Attachment if present (non-image files like PDF, DOCX, ZIP, etc.) */}
+                      {m.attachment && !m.isImage && (
                         <div
                           onClick={() => handleOpenAttachment(m.attachment, m)}
                           title="Click to Open & View Decrypted Document"
@@ -2981,22 +3042,80 @@ export const SecuredEbox = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.85)',
-            backdropFilter: 'blur(5px)',
+            backgroundColor: 'rgba(0,0,0,0.88)',
+            backdropFilter: 'blur(8px)',
             zIndex: 9999,
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            padding: '16px',
+            padding: '20px',
           }}
           onClick={() => setPreviewImage(null)}
         >
-          <img
-            src={previewImage.previewUrl}
-            alt={previewImage.attachment?.name || 'Preview'}
-            style={{ maxWidth: '90vw', maxHeight: '80vh', objectFit: 'contain', borderRadius: '12px' }}
-          />
+          <div
+            style={{
+              position: 'relative',
+              maxWidth: '92vw',
+              maxHeight: '86vh',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <img
+              src={previewImage.previewUrl}
+              alt={previewImage.attachment?.name || 'Full HD Image'}
+              style={{
+                maxWidth: '90vw',
+                maxHeight: '78vh',
+                objectFit: 'contain',
+                borderRadius: '12px',
+                boxShadow: '0 20px 50px rgba(0,0,0,0.6)',
+                border: '1px solid rgba(255,255,255,0.15)',
+                display: 'block',
+              }}
+            />
+            {/* Action Bar below image */}
+            <div
+              style={{
+                marginTop: '12px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '14px',
+                padding: '8px 16px',
+                borderRadius: '24px',
+                backgroundColor: 'rgba(255,255,255,0.12)',
+                backdropFilter: 'blur(10px)',
+                border: '1px solid rgba(255,255,255,0.2)',
+                color: '#ffffff',
+                fontSize: '12px',
+                fontWeight: 600,
+              }}
+            >
+              <span style={{ maxWidth: '280px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {previewImage.attachment?.name || 'High-Resolution Image'}
+              </span>
+              <span style={{ opacity: 0.6 }}>|</span>
+              <a
+                href={previewImage.previewUrl}
+                download={previewImage.attachment?.name || 'high-res-image.png'}
+                target="_blank"
+                rel="noreferrer"
+                style={{
+                  color: '#38bdf8',
+                  textDecoration: 'none',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  fontWeight: 700,
+                }}
+              >
+                <Download size={13} /> Download Original HD
+              </a>
+            </div>
+          </div>
           <button
             type="button"
             onClick={() => setPreviewImage(null)}
@@ -3007,16 +3126,18 @@ export const SecuredEbox = () => {
               backgroundColor: 'rgba(255,255,255,0.2)',
               border: 'none',
               borderRadius: '50%',
-              width: '36px',
-              height: '36px',
+              width: '40px',
+              height: '40px',
               color: '#ffffff',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              transition: 'background-color 150ms ease',
             }}
+            title="Close (Esc)"
           >
-            <X size={18} />
+            <X size={20} />
           </button>
         </div>
       )}
