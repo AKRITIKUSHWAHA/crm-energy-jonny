@@ -4,6 +4,7 @@ import { Topbar } from './components/Topbar';
 import { Sidebar } from './components/Sidebar';
 import { CrmMobileAppDrawer } from './components/CrmMobileAppDrawer';
 import { ToastContainer } from '../components/ui/Toast';
+import { CrmAiCopilotDrawer } from '../components/ai/CrmAiCopilotDrawer';
 import { useResponsive } from '../hooks/useResponsive';
 
 export const CrmLayout = () => {
@@ -81,6 +82,9 @@ export const CrmLayout = () => {
         onClose={() => setIsMobileDrawerOpen(false)}
         product="crm"
       />
+
+      {/* Kiaan AI Pilot Assistant Drawer */}
+      <CrmAiCopilotDrawer />
 
       {/* Global Toast Container */}
       <ToastContainer />

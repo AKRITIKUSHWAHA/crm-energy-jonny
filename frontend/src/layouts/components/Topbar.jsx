@@ -476,7 +476,9 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
         {product === 'crm' && (
           <button
             type="button"
-            onClick={() => navigate('/crm/bestie')}
+            onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-crm-ai-copilot'));
+            }}
             className="hidden-mobile"
             style={{
               display: 'inline-flex',

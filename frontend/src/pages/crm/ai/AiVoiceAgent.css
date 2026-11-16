@@ -1,0 +1,829 @@
+/* ==========================================================================
+   AI VOICE AGENT - COMPLETE RESPONSIVE DESIGN SYSTEM
+   Supports: Large Desktop (>1200px), Laptop (960px-1199px), Tablet (640px-959px),
+             Mobile (380px-639px), Extra Small Phone (<380px)
+   ========================================================================== */
+
+.voice-agent-container {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+  max-width: 1300px;
+  margin: 0 auto;
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Header Section
+   -------------------------------------------------------------------------- */
+.voice-agent-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+  margin-top: 0.25rem;
+}
+
+.voice-agent-header-info {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.875rem;
+  min-width: 0;
+  flex: 1 1 320px;
+}
+
+.voice-agent-icon-badge {
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-lg, 12px);
+  background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 14px rgba(14, 165, 233, 0.35);
+  margin-top: 2px;
+}
+
+.voice-agent-title-group {
+  min-width: 0;
+  flex: 1;
+}
+
+.voice-agent-title-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voice-agent-title {
+  font-size: 1.35rem;
+  font-weight: 800;
+  margin: 0;
+  color: var(--text-primary, #0f172a);
+  line-height: 1.25;
+}
+
+.voice-agent-status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  flex-shrink: 0;
+}
+
+.voice-agent-subtitle {
+  margin: 0.25rem 0 0 0;
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.voice-agent-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation Tabs (Modern Segmented Controller)
+   -------------------------------------------------------------------------- */
+.voice-agent-tabs {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--surface-hover, #f1f5f9);
+  padding: 4px;
+  border-radius: 12px;
+  border: 1px solid var(--border, #e2e8f0);
+  width: fit-content;
+  max-width: 100%;
+}
+
+.voice-agent-tab-btn {
+  padding: 8px 18px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: var(--text-secondary, #64748b);
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  transition: all 180ms ease;
+  white-space: nowrap;
+  outline: none;
+  user-select: none;
+}
+
+.voice-agent-tab-btn:hover {
+  color: var(--text-primary, #0f172a);
+}
+
+.voice-agent-tab-btn.active {
+  background: var(--surface, #ffffff);
+  color: #0284c7;
+  font-weight: 700;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+/* --------------------------------------------------------------------------
+   Interactive Voice Studio 2-Column Grid (Desktop Default)
+   -------------------------------------------------------------------------- */
+.voice-agent-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 380px) 1fr;
+  gap: 1.25rem;
+  align-items: start;
+  width: 100%;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Left Column: Glowing Voice Orb Card
+   -------------------------------------------------------------------------- */
+.voice-orb-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.75rem 1.25rem 1.5rem;
+  text-align: center;
+  background: radial-gradient(circle at 50% 25%, rgba(14, 165, 233, 0.08) 0%, rgba(15, 23, 42, 0) 70%), var(--surface, #ffffff);
+  position: relative;
+  overflow: hidden;
+  box-sizing: border-box;
+  width: 100%;
+  border-radius: 16px;
+  border: 1px solid var(--border, #e2e8f0);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  min-width: 0;
+}
+
+.voice-orb-container {
+  margin-top: 1.5rem;
+  margin-bottom: 1.25rem;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 190px;
+  height: 190px;
+  max-width: 100%;
+}
+
+.voice-orb-outer-ring {
+  position: absolute;
+  width: 190px;
+  height: 190px;
+  border-radius: 50%;
+  transition: transform 0.15s ease-out;
+}
+
+.voice-orb-glow {
+  position: absolute;
+  width: 160px;
+  height: 160px;
+  border-radius: 50%;
+  filter: blur(8px);
+}
+
+.voice-orb-button {
+  width: 114px;
+  height: 114px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 2;
+  border: none;
+  outline: none;
+}
+
+.voice-orb-button:active {
+  transform: scale(0.96);
+}
+
+/* --------------------------------------------------------------------------
+   Interim Subtitle Box
+   -------------------------------------------------------------------------- */
+.voice-interim-box {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 14px;
+  border-radius: var(--radius-md, 10px);
+  background-color: var(--surface-hover, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+  margin-bottom: 1rem;
+  font-size: 12.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  word-break: break-word;
+  box-sizing: border-box;
+}
+
+/* --------------------------------------------------------------------------
+   Call Toolbar Controls (Equal Height, Perfectly Aligned)
+   -------------------------------------------------------------------------- */
+.voice-controls-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  width: 100%;
+  max-width: 320px;
+  margin: 0 auto;
+}
+
+.voice-action-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 38px;
+  padding: 0 16px;
+  border-radius: 9999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: all 150ms ease;
+  flex: 1 1 0;
+  min-width: 0;
+  box-sizing: border-box;
+  user-select: none;
+  outline: none;
+}
+
+.voice-action-pill.primary {
+  background: #0f172a;
+  color: #ffffff;
+  border-color: #0f172a;
+}
+
+.voice-action-pill.primary:hover {
+  background: #1e293b;
+  border-color: #1e293b;
+}
+
+.voice-action-pill.danger {
+  background: #ef4444;
+  color: #ffffff;
+  border-color: #ef4444;
+}
+
+.voice-action-pill.danger:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+}
+
+.voice-action-pill.outline {
+  background: var(--surface, #ffffff);
+  border-color: var(--border, #cbd5e1);
+  color: var(--text-primary, #0f172a);
+}
+
+.voice-action-pill.outline:hover {
+  background: var(--surface-hover, #f8fafc);
+  border-color: #94a3b8;
+}
+
+.voice-action-pill.muted {
+  background: rgba(239, 68, 68, 0.08);
+  border-color: rgba(239, 68, 68, 0.35);
+  color: #ef4444;
+}
+
+.voice-action-pill.muted:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   Suggested Prompts
+   -------------------------------------------------------------------------- */
+.voice-prompts-container {
+  width: 100%;
+  margin-top: 1.25rem;
+  text-align: left;
+}
+
+.voice-prompts-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.voice-prompts-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--text-secondary, #64748b);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.voice-prompts-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+}
+
+.voice-prompt-btn {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border-radius: 10px;
+  background-color: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.785rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+  transition: all 0.18s ease;
+  line-height: 1.35;
+  box-sizing: border-box;
+}
+
+.voice-prompt-btn:hover {
+  border-color: #0ea5e9;
+  background-color: rgba(14, 165, 233, 0.04);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.12);
+}
+
+.voice-prompt-btn span {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   Right Column: Transcript Dialogue Stream
+   -------------------------------------------------------------------------- */
+.voice-transcript-card {
+  display: flex;
+  flex-direction: column;
+  height: 600px;
+  min-height: 420px;
+  max-height: calc(100vh - 200px);
+  padding: 0;
+  border-radius: 16px;
+  border: 1px solid var(--border, #e2e8f0);
+  background-color: var(--surface, #ffffff);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  overflow: hidden;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.voice-transcript-header {
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--surface, #ffffff);
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.voice-transcript-feed {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.voice-msg-bubble {
+  max-width: 82%;
+  padding: 0.65rem 0.95rem;
+  font-size: 0.8125rem;
+  line-height: 1.55;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
+.voice-input-footer {
+  padding: 0.75rem 1rem;
+  border-top: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  gap: 0.5rem;
+  background-color: var(--surface, #ffffff);
+  align-items: center;
+}
+
+.voice-input-footer input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* --------------------------------------------------------------------------
+   TAB 2: Voice Settings Enterprise Layout
+   -------------------------------------------------------------------------- */
+.voice-settings-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  width: 100%;
+}
+
+.voice-settings-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.25rem;
+  width: 100%;
+  min-width: 0;
+}
+
+.voice-settings-card {
+  background: var(--surface, #ffffff);
+  border: 1px solid var(--border, #e2e8f0);
+  border-radius: 16px;
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0, 0, 0, 0.05));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.voice-settings-card-header {
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  background: var(--surface, #ffffff);
+}
+
+.voice-settings-card-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.voice-settings-card-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin: 0;
+  color: var(--text-primary, #0f172a);
+}
+
+.voice-settings-card-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary, #64748b);
+  margin: 2px 0 0 0;
+}
+
+.voice-settings-card-body {
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  flex: 1;
+}
+
+.voice-setting-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.voice-setting-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary, #0f172a);
+}
+
+.voice-setting-badge {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #10b981;
+  background: rgba(16, 185, 129, 0.1);
+  padding: 1px 7px;
+  border-radius: 9999px;
+}
+
+.voice-select-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.voice-setting-select {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: 10px;
+  border: 1px solid var(--border, #e2e8f0);
+  background-color: var(--surface, #ffffff);
+  color: var(--text-primary, #0f172a);
+  font-size: 0.825rem;
+  font-weight: 500;
+  outline: none;
+  transition: all 150ms ease;
+  box-sizing: border-box;
+}
+
+.voice-setting-select:focus {
+  border-color: #0ea5e9;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.12);
+}
+
+.voice-setting-hint {
+  font-size: 0.725rem;
+  color: var(--text-secondary, #64748b);
+  line-height: 1.35;
+}
+
+.voice-speed-pill {
+  font-size: 11.5px;
+  font-weight: 700;
+  color: #0284c7;
+  background: rgba(2, 132, 199, 0.08);
+  padding: 2px 8px;
+  border-radius: 9999px;
+}
+
+.voice-speed-slider {
+  width: 100%;
+  accent-color: #0ea5e9;
+  cursor: pointer;
+  margin: 4px 0;
+}
+
+.voice-test-audio-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  background: rgba(14, 165, 233, 0.08);
+  border: 1px solid rgba(14, 165, 233, 0.25);
+  color: #0284c7;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+  width: 100%;
+}
+
+.voice-test-audio-btn:hover {
+  background: #0284c7;
+  color: #ffffff;
+  border-color: #0284c7;
+}
+
+.voice-pipeline-status-box {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--surface-hover, #f8fafc);
+  border: 1px solid var(--border, #e2e8f0);
+}
+
+.voice-save-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 18px;
+  border-radius: 10px;
+  background: #0284c7;
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 150ms ease;
+  flex: 1;
+}
+
+.voice-save-settings-btn:hover {
+  background: #0369a1;
+}
+
+.voice-reset-settings-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 10px;
+  background: transparent;
+  border: 1px solid var(--border, #e2e8f0);
+  color: var(--text-secondary, #64748b);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+
+.voice-reset-settings-btn:hover {
+  background: var(--surface-hover, #f8fafc);
+  color: var(--text-primary, #0f172a);
+}
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS (Desktop, Laptop, Tablet, Mobile, XS Phone)
+   ========================================================================== */
+
+/* Laptop / Medium Screens (max-width: 1100px) */
+@media (max-width: 1100px) {
+  .voice-agent-grid {
+    grid-template-columns: minmax(280px, 340px) 1fr;
+    gap: 1rem;
+  }
+
+  .voice-transcript-card {
+    height: 560px;
+  }
+}
+
+/* Tablet & Smaller Laptops (max-width: 960px) */
+@media (max-width: 960px) {
+  .voice-agent-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+  }
+
+  .voice-agent-header-info {
+    width: 100%;
+    flex: none;
+  }
+
+  .voice-agent-header-actions {
+    width: 100%;
+  }
+
+  .voice-agent-header-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Single Column Stack: eliminates side-by-side squeezing with CRM sidebar */
+  .voice-agent-grid {
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
+  }
+
+  .voice-prompts-list {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .voice-transcript-card {
+    height: 500px;
+    max-height: 540px;
+  }
+
+  /* Voice Settings cards collapse to 1-column on <= 860px */
+  .voice-settings-cards-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}
+
+/* Mobile Devices (max-width: 640px) */
+@media (max-width: 640px) {
+  .voice-agent-container {
+    gap: 0.875rem;
+  }
+
+  .voice-agent-title {
+    font-size: 1.15rem;
+  }
+
+  .voice-agent-icon-badge {
+    width: 38px;
+    height: 38px;
+  }
+
+  .voice-orb-card {
+    padding: 1.25rem 0.875rem;
+  }
+
+  .voice-orb-container {
+    width: 160px;
+    height: 160px;
+    margin-top: 1.25rem;
+    margin-bottom: 1rem;
+  }
+
+  .voice-orb-outer-ring {
+    width: 160px;
+    height: 160px;
+  }
+
+  .voice-orb-glow {
+    width: 135px;
+    height: 135px;
+  }
+
+  .voice-orb-button {
+    width: 96px;
+    height: 96px;
+  }
+
+  .voice-controls-row {
+    max-width: 100%;
+  }
+
+  .voice-action-pill {
+    height: 36px;
+    font-size: 11.5px;
+    padding: 0 12px;
+  }
+
+  .voice-prompts-list {
+    grid-template-columns: 1fr;
+  }
+
+  .voice-transcript-card {
+    height: 450px;
+    max-height: 470px;
+  }
+
+  .voice-transcript-header {
+    padding: 0.65rem 0.875rem;
+  }
+
+  .voice-transcript-feed {
+    padding: 0.875rem;
+    gap: 0.75rem;
+  }
+
+  .voice-msg-bubble {
+    max-width: 90%;
+  }
+
+  .voice-input-footer {
+    padding: 0.5rem 0.75rem;
+  }
+
+  .voice-settings-card-header {
+    padding: 1rem 1.15rem;
+  }
+
+  .voice-settings-card-body {
+    padding: 1rem 1.15rem;
+    gap: 1rem;
+  }
+}
+
+/* Extra Small Phones (max-width: 380px) */
+@media (max-width: 380px) {
+  .voice-agent-tabs {
+    width: 100%;
+    display: flex;
+  }
+
+  .voice-agent-tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 7px 10px;
+    font-size: 0.785rem;
+  }
+
+  .voice-transcript-card {
+    height: 400px;
+  }
+
+  .voice-prompt-btn {
+    font-size: 0.7rem;
+    padding: 0.5rem 0.65rem;
+  }
+}

@@ -36,7 +36,9 @@ import { useToast } from '../../../context/ToastContext';
 import { useCrm } from '../../../context/CrmContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import { useNavigate } from 'react-router-dom';
+import apiClient from '../../../services/apiClient';
 import { generateBestieChat } from '../../../services/geminiService';
+import './BestieAi.css';
 
 // Helper for parsing inline bold, italics, bullets, and linebreaks
 const renderFormattedText = (content) => {
@@ -93,13 +95,13 @@ const DEFAULT_CONVERSATION = [
     id: 'msg-1',
     sender: 'bestie',
     time: '10:00 AM',
-    text: "Hello! I'm **Bestie**, your CRM nErgy AI Autonomous Operating Partner. I'm connected to your enterprise platform to help you analyze deals, qualify leads, manage tasks, and optimize sales and ERP workflows.\n\nHow can I assist your business operations today?",
+    text: "Hello! How can I assist you with your sales, deals, or CRM operations today?",
     actions: [
-      { label: 'Analyze Sales Velocity', query: 'Analyze current sales pipeline velocity and identify high-risk deals closing this month.' },
-      { label: 'Schedule Follow-up Task', query: 'Schedule an executive follow-up task for tomorrow at 10 AM.' },
+      { label: 'Analyze Deals', query: 'Analyze current sales pipeline velocity and identify high-risk deals closing this month.' },
+      { label: 'Pipeline Summary', query: 'Show me a quick summary of open deals in negotiation.' },
+      { label: 'Create Lead', query: 'Create a high-priority enterprise lead for Jordan Reed at Apex Logistics.' },
     ],
     executedActions: [],
-    sources: ['CRM Database', 'ERP Module', 'Sales Pipeline'],
   },
 ];
 
@@ -122,14 +124,17 @@ export const ZunmeAi = () => {
 
   // Voice States
   const [isListening, setIsListening] = useState(false);
-  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(true);
+  const [isVoiceOutputEnabled, setIsVoiceOutputEnabled] = useState(false);
   const [currentlySpeakingId, setCurrentlySpeakingId] = useState(null);
   const recognitionRef = useRef(null);
 
-  // Load conversation from localStorage or default
+  const CHAT_STORAGE_KEY = 'crm_zunme_chat_clean_v2';
+
+  // Load conversation from localStorage or default (clears old cluttered mock data)
   const [conversation, setConversation] = useState(() => {
     try {
-      const saved = localStorage.getItem('crm_bestie_chat_history');
+      localStorage.removeItem('crm_bestie_chat_history');
+      const saved = localStorage.getItem(CHAT_STORAGE_KEY);
       return saved ? JSON.parse(saved) : DEFAULT_CONVERSATION;
     } catch {
       return DEFAULT_CONVERSATION;
@@ -139,20 +144,17 @@ export const ZunmeAi = () => {
   // Save to localStorage on change
   useEffect(() => {
     try {
-      localStorage.setItem('crm_bestie_chat_history', JSON.stringify(conversation));
+      localStorage.setItem(CHAT_STORAGE_KEY, JSON.stringify(conversation));
     } catch (e) {
       console.warn('LocalStorage save failed:', e);
     }
   }, [conversation]);
 
   const quickActionPrompts = [
-    { label: t('Create New Lead'), icon: PlusCircle, query: 'Create a high-priority enterprise lead for Jordan Reed at Apex Logistics, budget $120,000.' },
-    { label: t('Executive Priorities'), icon: Bot, query: 'What are the top 3 priorities for our executive leadership team today?' },
-    { label: t('Analyze Deals'), icon: TrendingUp, query: 'Run AI Win-Probability scoring on all open opportunities in Negotiation stage.' },
-    { label: t('Automate Tasks'), icon: Zap, query: 'Schedule an automated SLA follow-up trigger for enterprise customer inquiries.' },
+    { label: t('Analyze Deals'), icon: TrendingUp, query: 'Analyze current sales pipeline velocity and identify high-risk deals closing this month.' },
+    { label: t('Create Lead'), icon: PlusCircle, query: 'Create a high-priority enterprise lead for Jordan Reed at Apex Logistics, budget $120,000.' },
     { label: t('Open Pipeline'), icon: ArrowRight, query: 'Take me to the sales pipeline deals kanban.' },
-    { label: t('ERP Inventory Audit'), icon: Boxes, query: 'Scan ERP warehouse inventory for parts below minimum threshold reorder point.' },
-    { label: t('HR Screening'), icon: Users, query: 'Review active applicants for Senior Supply Chain Manager and rank top 3 candidates.' },
+    { label: t('Team Priorities'), icon: Bot, query: 'What are the top 3 priorities for our executive leadership team today?' },
   ];
 
   const scrollToBottom = () => {
@@ -354,15 +356,29 @@ export const ZunmeAi = () => {
     setIsTyping(true);
 
     try {
-      const aiResult = await generateBestieChat(conversation, promptText);
-
-      // Execute any autonomous actions detected
+      let aiText = '';
       const executed = [];
-      if (aiResult.actions && aiResult.actions.length > 0) {
-        aiResult.actions.forEach((act) => {
-          executeClientAction(act);
-          executed.push(act);
+
+      try {
+        const resp = await apiClient.post('/ai/chat', {
+          message: promptText,
+          stream: false
         });
+        if (resp.data?.content) {
+          aiText = resp.data.content;
+        } else if (resp.data?.error) {
+          aiText = `⚠️ ${resp.data.error}`;
+        }
+      } catch (proxyErr) {
+        console.warn('[BestieAi] Backend AI call fallback:', proxyErr.message);
+        const aiResult = await generateBestieChat(conversation, promptText);
+        aiText = aiResult.text;
+        if (aiResult.actions && aiResult.actions.length > 0) {
+          aiResult.actions.forEach((act) => {
+            executeClientAction(act);
+            executed.push(act);
+          });
+        }
       }
 
       let actionTags = [
@@ -392,10 +408,9 @@ export const ZunmeAi = () => {
         id: bestieReplyId,
         sender: 'bestie',
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        text: aiResult.text,
+        text: aiText,
         actions: actionTags,
         executedActions: executed,
-        sources: ['Google Gemini Neural Cloud', 'CRM nErgy Knowledge Mesh', 'Internal Telemetry'],
       };
 
       setConversation((prev) => [...prev, bestieReply]);
@@ -403,13 +418,13 @@ export const ZunmeAi = () => {
 
       // Auto-speak response if voice output is enabled
       if (isVoiceOutputEnabled) {
-        speakMessage(bestieReplyId, aiResult.text);
+        speakMessage(bestieReplyId, aiText);
       }
     } catch (err) {
       setIsTyping(false);
       addToast({
-        title: 'Bestie Offline',
-        message: 'Showing local telemetry fallback.',
+        title: 'Zunme AI Offline',
+        message: 'Could not connect to AI service.',
         type: 'error',
       });
     }
@@ -418,52 +433,152 @@ export const ZunmeAi = () => {
   const handleCopy = (id, text) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
-    addToast({ title: 'Copied to Clipboard', message: 'Zunme AI response copied.', type: 'info' });
+    addToast({ title: 'Copied', message: 'Response copied to clipboard.', type: 'info' });
     setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handleClearHistory = () => {
     if (window.speechSynthesis) window.speechSynthesis.cancel();
     setConversation(DEFAULT_CONVERSATION);
+    localStorage.removeItem(CHAT_STORAGE_KEY);
     localStorage.removeItem('crm_bestie_chat_history');
-    addToast({ title: 'Memory Reset', message: 'Bestie conversation history cleared.', type: 'info' });
+    addToast({ title: 'Chat Cleared', message: 'Conversation history reset.', type: 'info' });
   };
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        height: 'calc(100vh - var(--topbar-height) - 3rem)',
-        maxHeight: 'calc(100vh - var(--topbar-height) - 3rem)',
-        gap: '0.875rem',
-        width: '100%',
-        maxWidth: '1280px',
-        margin: '0 auto',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div className="bestie-container">
       {/* Top Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', flexShrink: 0 }}>
-        <div>
-          <Breadcrumb items={[{ label: 'CRM nErgy AI', href: '/crm/dashboard' }, { label: t('AI SuperHouse'), href: '/crm/ai-studio' }, { label: t('Zunme AI Agent') }]} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.625rem', marginTop: '0.25rem', flexWrap: 'wrap' }}>
-            <h1 style={{ fontSize: '1.4rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              {t('Zunme AI — My AI Agent')}
+      <div className="bestie-header">
+        <div className="bestie-header-info">
+          <Breadcrumb items={[{ label: 'CRM nErgy AI', href: '/crm/dashboard' }, { label: t('AI SuperHouse'), href: '/crm/ai-studio' }, { label: t('Zunme AI') }]} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.2rem' }}>
+            <h1 style={{ fontSize: '1.35rem', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+              {t('Zunme AI')}
             </h1>
-            <Badge variant="primary" style={{ backgroundColor: '#0284c7', color: '#ffffff', fontWeight: 700, fontSize: '11px', letterSpacing: '0.04em' }}>
-              {t('Autonomous Operating Partner')}
-            </Badge>
+            <span
+              style={{
+                fontSize: '11px',
+                fontWeight: 600,
+                color: '#0284c7',
+                backgroundColor: 'rgba(2, 132, 199, 0.1)',
+                padding: '2px 8px',
+                borderRadius: '9999px',
+              }}
+            >
+              Assistant
+            </span>
           </div>
-        
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '0.15rem 0 0 0' }}>
+            {t('Your intelligent assistant for leads, deals, and CRM operations.')}
+          </p>
         </div>
 
-        {/* Action controls & Status indicator */}
-     
+        {/* Action controls */}
+        <div className="bestie-header-actions">
+          {/* Voice Auto-Speak Toggle */}
+          <button
+            type="button"
+            onClick={() => {
+              const next = !isVoiceOutputEnabled;
+              setIsVoiceOutputEnabled(next);
+              if (!next && window.speechSynthesis) window.speechSynthesis.cancel();
+            }}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.4rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '9999px',
+              border: '1px solid var(--border)',
+              backgroundColor: isVoiceOutputEnabled ? 'rgba(2, 132, 199, 0.1)' : 'var(--surface)',
+              color: isVoiceOutputEnabled ? '#0284c7' : 'var(--text-secondary)',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 150ms ease',
+            }}
+            title={isVoiceOutputEnabled ? t('Mute voice output') : t('Enable voice output')}
+          >
+            {isVoiceOutputEnabled ? <Volume2 size={13} color="#0284c7" /> : <VolumeX size={13} />}
+            <span>{isVoiceOutputEnabled ? t('Voice On') : t('Voice Muted')}</span>
+          </button>
+
+          {/* Reset Memory Button */}
+          <button
+            type="button"
+            onClick={handleClearHistory}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem',
+              padding: '0.35rem 0.75rem',
+              borderRadius: '9999px',
+              border: '1px solid var(--border)',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-secondary)',
+              fontSize: '11.5px',
+              fontWeight: 600,
+              cursor: 'pointer',
+            }}
+            title={t('Clear Chat History')}
+          >
+            <Trash2 size={13} />
+            <span>{t('Clear')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Quick Action Suggestion Pills */}
-    
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '0.5rem',
+          overflowX: 'auto',
+          paddingBottom: '0.15rem',
+          flexShrink: 0,
+        }}
+      >
+        {quickActionPrompts.map((q, idx) => {
+          const Icon = q.icon;
+          return (
+            <button
+              key={idx}
+              type="button"
+              onClick={() => handleSend(q.query)}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.4rem',
+                padding: '0.35rem 0.75rem',
+                borderRadius: '9999px',
+                fontSize: '11.5px',
+                fontWeight: 500,
+                whiteSpace: 'nowrap',
+                cursor: 'pointer',
+                border: '1px solid var(--border)',
+                backgroundColor: 'var(--surface)',
+                color: 'var(--text-secondary)',
+                transition: 'all 150ms ease',
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.borderColor = '#0284c7';
+                e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.05)';
+                e.currentTarget.style.color = '#0284c7';
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.borderColor = 'var(--border)';
+                e.currentTarget.style.backgroundColor = 'var(--surface)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              <Icon size={13} style={{ color: '#0284c7' }} />
+              <span>{q.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {/* Main Chat Workspace Card */}
       <div
         style={{
@@ -494,7 +609,7 @@ export const ZunmeAi = () => {
               key={msg.id}
               style={{
                 display: 'flex',
-                gap: '0.875rem',
+                gap: '0.75rem',
                 justifyContent: msg.sender === 'user' ? 'flex-end' : 'flex-start',
                 width: '100%',
               }}
@@ -503,8 +618,8 @@ export const ZunmeAi = () => {
               {msg.sender === 'bestie' && (
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '10px',
                     display: 'flex',
                     alignItems: 'center',
@@ -512,48 +627,34 @@ export const ZunmeAi = () => {
                     flexShrink: 0,
                     background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                     color: '#ffffff',
-                    boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
+                    boxShadow: '0 2px 8px rgba(2, 132, 199, 0.25)',
                   }}
                 >
-                  <Sparkles size={18} />
+                  <Sparkles size={16} />
                 </div>
               )}
 
               {/* Message Bubble */}
               <div
-                style={{
-                  maxWidth: '740px',
-                  borderRadius: '16px',
-                  padding: '1.1rem 1.25rem',
-                  fontSize: '13px',
-                  lineHeight: 1.6,
-                  border: msg.sender === 'user' ? 'none' : '1px solid var(--border)',
-                  backgroundColor: msg.sender === 'user' ? '#0284c7' : 'var(--surface-secondary)',
-                  color: msg.sender === 'user' ? '#ffffff' : 'var(--text-primary)',
-                  boxShadow: msg.sender === 'user' ? '0 4px 14px rgba(2, 132, 199, 0.25)' : 'none',
-                  borderTopLeftRadius: msg.sender === 'bestie' ? '4px' : '16px',
-                  borderTopRightRadius: msg.sender === 'user' ? '4px' : '16px',
-                }}
+                className={`bestie-msg-bubble ${msg.sender === 'user' ? 'user' : 'bot'}`}
               >
-                {/* Header row */}
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    gap: '1rem',
-                    marginBottom: '0.5rem',
-                    paddingBottom: '0.35rem',
-                    borderBottom: msg.sender === 'user' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid var(--border)',
-                    fontSize: '11px',
-                    opacity: msg.sender === 'user' ? 0.9 : 0.75,
-                  }}
-                >
-                  <span style={{ fontWeight: 700, color: msg.sender === 'bestie' ? '#0284c7' : '#ffffff' }}>
-                    {msg.sender === 'bestie' ? t('Zunme AI Agent') : 'Alexander Wright (Owner)'}
-                  </span>
-                  <span>{msg.time}</span>
-                </div>
+                {/* Header for bot */}
+                {msg.sender === 'bestie' && (
+                  <div
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: '0.75rem',
+                      marginBottom: '0.35rem',
+                      fontSize: '11px',
+                      color: 'var(--text-tertiary)',
+                    }}
+                  >
+                    <span style={{ fontWeight: 600, color: '#0284c7' }}>{t('Zunme AI')}</span>
+                    <span>{msg.time}</span>
+                  </div>
+                )}
 
                 {/* Body Text */}
                 <div style={{ color: msg.sender === 'user' ? '#ffffff' : 'var(--text-primary)' }}>
@@ -989,51 +1090,14 @@ export const ZunmeAi = () => {
                   </div>
                 )}
 
-                {/* Sources Citation */}
-                {msg.sources && msg.sources.length > 0 && (
-                  <div
-                    style={{
-                      marginTop: '0.75rem',
-                      paddingTop: '0.625rem',
-                      borderTop: '1px solid var(--border)',
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      alignItems: 'center',
-                      gap: '0.35rem',
-                      fontSize: '11px',
-                    }}
-                  >
-                    <span style={{ fontWeight: 700, color: 'var(--text-tertiary)' }}>{t('Verified Sources:')}</span>
-                    {msg.sources.map((s, i) => (
-                      <span
-                        key={i}
-                        style={{
-                          padding: '0.2rem 0.5rem',
-                          borderRadius: '6px',
-                          backgroundColor: 'var(--surface)',
-                          border: '1px solid var(--border)',
-                          fontFamily: 'var(--font-mono)',
-                          fontSize: '10px',
-                          color: '#0284c7',
-                          fontWeight: 600,
-                        }}
-                      >
-                        {t(s)}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
                 {/* Interactive Action Chips */}
                 {msg.actions && msg.actions.length > 0 && (
                   <div
                     style={{
-                      marginTop: '0.75rem',
-                      paddingTop: '0.625rem',
-                      borderTop: '1px solid var(--border)',
+                      marginTop: '0.65rem',
                       display: 'flex',
                       flexWrap: 'wrap',
-                      gap: '0.5rem',
+                      gap: '0.4rem',
                     }}
                   >
                     {msg.actions.map((act, i) => (
@@ -1044,14 +1108,14 @@ export const ZunmeAi = () => {
                         style={{
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '0.35rem',
-                          padding: '0.4rem 0.75rem',
+                          gap: '0.3rem',
+                          padding: '0.3rem 0.65rem',
                           borderRadius: '8px',
-                          fontSize: '11px',
-                          fontWeight: 700,
+                          fontSize: '11.5px',
+                          fontWeight: 600,
                           cursor: 'pointer',
-                          backgroundColor: 'rgba(2, 132, 199, 0.1)',
-                          border: '1px solid rgba(2, 132, 199, 0.25)',
+                          backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                          border: '1px solid rgba(2, 132, 199, 0.2)',
                           color: '#0284c7',
                           transition: 'all 150ms ease',
                         }}
@@ -1060,12 +1124,12 @@ export const ZunmeAi = () => {
                           e.currentTarget.style.color = '#ffffff';
                         }}
                         onMouseLeave={(e) => {
-                          e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.1)';
+                          e.currentTarget.style.backgroundColor = 'rgba(2, 132, 199, 0.08)';
                           e.currentTarget.style.color = '#0284c7';
                         }}
                       >
                         <span>{t(act.label)}</span>
-                        <ChevronRight size={13} />
+                        <ChevronRight size={12} />
                       </button>
                     ))}
                   </div>
@@ -1075,42 +1139,32 @@ export const ZunmeAi = () => {
                 {msg.sender === 'bestie' && (
                   <div
                     style={{
-                      marginTop: '0.75rem',
-                      paddingTop: '0.5rem',
-                      borderTop: '1px solid var(--border)',
+                      marginTop: '0.5rem',
+                      paddingTop: '0.4rem',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'space-between',
-                      fontSize: '11px',
                       color: 'var(--text-tertiary)',
                     }}
                   >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.875rem' }}>
-                      {/* Read Aloud Button */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
+                      {/* Audio */}
                       <button
                         type="button"
                         onClick={() => speakMessage(msg.id, msg.text)}
                         style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          color: currentlySpeakingId === msg.id ? '#0284c7' : 'var(--text-tertiary)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.3rem',
-                          color: currentlySpeakingId === msg.id ? '#0284c7' : 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: 600,
                         }}
                         title={currentlySpeakingId === msg.id ? t('Stop Audio') : t('Listen')}
                       >
-                        {currentlySpeakingId === msg.id ? (
-                          <>
-                            <VolumeX size={13} color="#0284c7" />
-                            <span style={{ color: '#0284c7' }}>{t('Stop Audio')}</span>
-                          </>
-                        ) : (
-                          <>
-                            <Volume2 size={13} />
-                            <span>{t('Listen')}</span>
-                          </>
-                        )}
+                        {currentlySpeakingId === msg.id ? <VolumeX size={14} color="#0284c7" /> : <Volume2 size={14} />}
                       </button>
 
                       {/* Copy */}
@@ -1118,43 +1172,18 @@ export const ZunmeAi = () => {
                         type="button"
                         onClick={() => handleCopy(msg.id, msg.text)}
                         style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          color: copiedId === msg.id ? '#10b981' : 'var(--text-tertiary)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.3rem',
-                          color: copiedId === msg.id ? '#10b981' : 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: 600,
                         }}
+                        title={t('Copy')}
                       >
-                        {copiedId === msg.id ? <Check size={13} style={{ color: '#10b981' }} /> : <Copy size={13} />}
-                        <span>{copiedId === msg.id ? t('Copied!') : t('Copy')}</span>
-                      </button>
-
-                      {/* Download Markdown */}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const element = document.createElement('a');
-                          const file = new Blob([msg.text], { type: 'text/markdown' });
-                          element.href = URL.createObjectURL(file);
-                          element.download = `Bestie_Brief_${Date.now()}.md`;
-                          document.body.appendChild(element);
-                          element.click();
-                          document.body.removeChild(element);
-                          addToast({ title: t('Exported'), message: t('Brief saved as Markdown.'), type: 'info' });
-                        }}
-                        style={{
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.3rem',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: 600,
-                        }}
-                        title={t('Download Markdown')}
-                      >
-                        <Download size={13} />
-                        <span>{t('Export')}</span>
+                        {copiedId === msg.id ? <Check size={14} style={{ color: '#10b981' }} /> : <Copy size={14} />}
                       </button>
 
                       {/* Regenerate */}
@@ -1162,24 +1191,26 @@ export const ZunmeAi = () => {
                         type="button"
                         onClick={() => handleSend(`Regenerate response for: "${msg.text.slice(0, 30)}..."`)}
                         style={{
+                          background: 'none',
+                          border: 'none',
+                          padding: '4px',
+                          borderRadius: '6px',
+                          cursor: 'pointer',
+                          color: 'var(--text-tertiary)',
                           display: 'flex',
                           alignItems: 'center',
-                          gap: '0.3rem',
-                          color: 'var(--text-secondary)',
-                          cursor: 'pointer',
-                          fontWeight: 600,
                         }}
+                        title={t('Regenerate')}
                       >
-                        <RotateCw size={13} />
-                        <span>{t('Regenerate')}</span>
+                        <RotateCw size={14} />
                       </button>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.2rem' }}>
                       <button
                         type="button"
                         onClick={() => addToast({ title: 'Feedback Recorded', message: 'Marked as helpful.', type: 'success' })}
-                        style={{ padding: '3px 6px', borderRadius: '6px', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                        style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '6px', color: 'var(--text-tertiary)', cursor: 'pointer' }}
                         title="Helpful"
                       >
                         <ThumbsUp size={13} />
@@ -1187,7 +1218,7 @@ export const ZunmeAi = () => {
                       <button
                         type="button"
                         onClick={() => addToast({ title: 'Feedback Recorded', message: 'We will improve this response model.', type: 'info' })}
-                        style={{ padding: '3px 6px', borderRadius: '6px', color: 'var(--text-tertiary)', cursor: 'pointer' }}
+                        style={{ background: 'none', border: 'none', padding: '4px', borderRadius: '6px', color: 'var(--text-tertiary)', cursor: 'pointer' }}
                         title="Not Helpful"
                       >
                         <ThumbsDown size={13} />
@@ -1201,16 +1232,16 @@ export const ZunmeAi = () => {
               {msg.sender === 'user' && (
                 <div
                   style={{
-                    width: '36px',
-                    height: '36px',
+                    width: '32px',
+                    height: '32px',
                     borderRadius: '10px',
-                    backgroundColor: '#0f172a',
-                    color: '#ffffff',
+                    backgroundColor: 'var(--text-primary)',
+                    color: 'var(--surface)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    fontWeight: 800,
-                    fontSize: '12px',
+                    fontWeight: 700,
+                    fontSize: '11px',
                     flexShrink: 0,
                   }}
                 >
@@ -1225,8 +1256,8 @@ export const ZunmeAi = () => {
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
               <div
                 style={{
-                  width: '36px',
-                  height: '36px',
+                  width: '32px',
+                  height: '32px',
                   borderRadius: '10px',
                   background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
                   color: '#ffffff',
@@ -1235,12 +1266,12 @@ export const ZunmeAi = () => {
                   justifyContent: 'center',
                 }}
               >
-                <Sparkles size={18} />
+                <Sparkles size={16} />
               </div>
               <div
                 style={{
-                  padding: '0.75rem 1rem',
-                  borderRadius: '14px',
+                  padding: '0.65rem 0.9rem',
+                  borderRadius: '12px',
                   borderTopLeftRadius: '4px',
                   backgroundColor: 'var(--surface-secondary)',
                   border: '1px solid var(--border)',
@@ -1251,11 +1282,11 @@ export const ZunmeAi = () => {
                   color: 'var(--text-secondary)',
                 }}
               >
-                <span>Bestie is synthesizing enterprise records and executing CRM triggers...</span>
+                <span>{t('Zunme AI is thinking...')}</span>
                 <span style={{ display: 'inline-flex', gap: '3px' }}>
-                  <span style={{ width: '5px', height: '5px', borderRadius: '9999px', backgroundColor: '#0284c7', display: 'inline-block' }} />
-                  <span style={{ width: '5px', height: '5px', borderRadius: '9999px', backgroundColor: '#38bdf8', display: 'inline-block' }} />
-                  <span style={{ width: '5px', height: '5px', borderRadius: '9999px', backgroundColor: '#93c5fd', display: 'inline-block' }} />
+                  <span style={{ width: '4px', height: '4px', borderRadius: '9999px', backgroundColor: '#0284c7', display: 'inline-block' }} />
+                  <span style={{ width: '4px', height: '4px', borderRadius: '9999px', backgroundColor: '#38bdf8', display: 'inline-block' }} />
+                  <span style={{ width: '4px', height: '4px', borderRadius: '9999px', backgroundColor: '#93c5fd', display: 'inline-block' }} />
                 </span>
               </div>
             </div>
@@ -1263,15 +1294,8 @@ export const ZunmeAi = () => {
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Input Bar (Permanently Docked at Bottom) */}
-        <div
-          style={{
-            padding: '0.875rem 1.25rem',
-            borderTop: '1px solid var(--border)',
-            backgroundColor: 'var(--surface)',
-            flexShrink: 0,
-          }}
-        >
+        {/* Input Bar */}
+        <div className="bestie-input-card">
           {isListening && (
             <div
               style={{
@@ -1281,15 +1305,15 @@ export const ZunmeAi = () => {
                 padding: '6px 12px',
                 marginBottom: '8px',
                 borderRadius: '8px',
-                backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                border: '1px solid rgba(239, 68, 68, 0.3)',
+                backgroundColor: 'rgba(239, 68, 68, 0.08)',
+                border: '1px solid rgba(239, 68, 68, 0.25)',
                 color: '#ef4444',
                 fontSize: '11.5px',
-                fontWeight: 700,
+                fontWeight: 600,
               }}
             >
-              <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#ef4444', animation: 'pulse 1s infinite' }} />
-              <span>Microphone Active — Bestie is listening to your speech in real-time...</span>
+              <span style={{ width: '7px', height: '7px', borderRadius: '50%', backgroundColor: '#ef4444' }} />
+              <span>{t('Listening to your voice...')}</span>
             </div>
           )}
 
@@ -1298,15 +1322,9 @@ export const ZunmeAi = () => {
               e.preventDefault();
               handleSend();
             }}
+            className="bestie-input-form"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.4rem 0.6rem',
-              borderRadius: '14px',
-              border: isListening ? '1.5px solid #ef4444' : '1.5px solid var(--border)',
-              backgroundColor: 'var(--surface-secondary)',
-              transition: 'border-color 150ms ease',
+              border: isListening ? '1.5px solid #ef4444' : '1px solid var(--border)',
             }}
           >
             {/* Input Box */}
@@ -1314,18 +1332,8 @@ export const ZunmeAi = () => {
               type="text"
               value={inputPrompt}
               onChange={(e) => setInputPrompt(e.target.value)}
-              placeholder={isListening ? t('Listening to speech...') : t('Ask Zunme AI anything, create leads, schedule tasks, or use the mic to speak...')}
-              style={{
-                flex: 1,
-                backgroundColor: 'transparent',
-                border: 'none',
-                outline: 'none',
-                fontSize: '13px',
-                color: 'var(--text-primary)',
-                padding: '0.25rem 0.5rem',
-                fontWeight: 500,
-                width: '100%',
-              }}
+              placeholder={isListening ? t('Listening...') : t('Ask Zunme AI anything...')}
+              className="bestie-input-field"
             />
 
             {/* Voice Input (Microphone) */}
@@ -1337,16 +1345,16 @@ export const ZunmeAi = () => {
                 borderRadius: '8px',
                 backgroundColor: isListening ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
                 color: isListening ? '#ef4444' : 'var(--text-tertiary)',
-                border: isListening ? '1px solid #ef4444' : 'none',
+                border: 'none',
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 transition: 'all 150ms ease',
               }}
-              title={isListening ? t('Stop listening') : t('Start speaking (Web Speech)')}
+              title={isListening ? t('Stop listening') : t('Voice input')}
             >
-              {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+              {isListening ? <MicOff size={17} /> : <Mic size={17} />}
             </button>
 
             {/* Send Button */}
@@ -1354,40 +1362,34 @@ export const ZunmeAi = () => {
               type="submit"
               disabled={!inputPrompt.trim() || isTyping}
               style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '10px',
+                padding: '0.45rem 0.9rem',
+                borderRadius: '9px',
                 backgroundColor: !inputPrompt.trim() || isTyping ? 'var(--border)' : '#0284c7',
                 color: '#ffffff',
-                fontWeight: 700,
+                fontWeight: 600,
                 fontSize: '12px',
                 cursor: !inputPrompt.trim() || isTyping ? 'not-allowed' : 'pointer',
                 display: 'inline-flex',
                 alignItems: 'center',
-                gap: '0.35rem',
-                boxShadow: !inputPrompt.trim() || isTyping ? 'none' : '0 2px 8px rgba(2, 132, 199, 0.3)',
+                gap: '0.3rem',
+                border: 'none',
                 transition: 'all 150ms ease',
               }}
             >
               <span>{t('Send')}</span>
-              <CornerDownLeft size={14} />
+              <CornerDownLeft size={13} />
             </button>
           </form>
 
           <div
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
+              textAlign: 'center',
               fontSize: '11px',
               color: 'var(--text-tertiary)',
-              marginTop: '0.5rem',
-              padding: '0 0.25rem',
-              flexWrap: 'wrap',
-              gap: '0.5rem',
+              marginTop: '0.4rem',
             }}
           >
-            <span>{t('Autonomous CRM AI Agent • 2-Way Voice Active')}</span>
-            <span>{t('Press Enter ↵ or Speak into Mic • Local Storage Vault Connected')}</span>
+            <span>{t('Zunme AI can make mistakes. Verify important CRM actions.')}</span>
           </div>
         </div>
       </div>

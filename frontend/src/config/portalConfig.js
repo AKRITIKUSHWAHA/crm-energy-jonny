@@ -43,8 +43,12 @@ export function getOalUrl() {
 }
 
 export function getApiBaseUrl() {
-  const envApi = import.meta.env.VITE_API_URL;
-  if (envApi) return envApi.replace(/\/+$/, '');
+  let envApi = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  if (envApi) {
+    envApi = envApi.replace(/\/+$/, '');
+    if (!envApi.endsWith('/api')) envApi += '/api';
+    return envApi;
+  }
 
   const isLocalhost =
     typeof window !== 'undefined' &&
@@ -56,5 +60,5 @@ export function getApiBaseUrl() {
     return 'http://localhost:5000/api';
   }
 
-  return 'https://crm-energy-backend-production.up.railway.app/api';
+  return 'https://crm-energy-backend-production-59b6.up.railway.app/api';
 }

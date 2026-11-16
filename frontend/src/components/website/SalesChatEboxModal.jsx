@@ -1,11 +1,16 @@
 import React, { useState } from 'react';
-import { MessageSquare, X, Send, ShieldCheck, CheckCircle2, Lock, Sparkles, Building2, Mail, Phone } from 'lucide-react';
+import { MessageSquare, X, Send, ShieldCheck, CheckCircle2, Lock, Sparkles, Building2, Mail, Phone, Languages } from 'lucide-react';
+import { SUPPORTED_LANGUAGES, translateText } from '../../services/translationService';
 
 export const SalesChatEboxModal = ({ isOpen, onClose }) => {
   const [topic, setTopic] = useState('Enterprise Demo');
   const [inquiryText, setInquiryText] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [formData, setFormData] = useState({ name: '', email: '', company: '', phone: '' });
+  const [selectedLang, setSelectedLang] = useState('en');
+  const [showLangMenu, setShowLangMenu] = useState(false);
+  const [translatedTopics, setTranslatedTopics] = useState({});
+  const [isTranslating, setIsTranslating] = useState(false);
 
   if (!isOpen) return null;
 
@@ -15,6 +20,27 @@ export const SalesChatEboxModal = ({ isOpen, onClose }) => {
     'White Label CRM Partnership',
     'Third-Party ERP Integration'
   ];
+
+  const handleSelectLanguage = async (langCode) => {
+    setSelectedLang(langCode);
+    setShowLangMenu(false);
+    if (langCode === 'en') {
+      setTranslatedTopics({});
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      const newTopics = {};
+      for (const t of topics) {
+        newTopics[t] = await translateText(t, langCode);
+      }
+      setTranslatedTopics(newTopics);
+    } catch {
+      // ignore
+    } finally {
+      setIsTranslating(false);
+    }
+  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -73,23 +99,101 @@ export const SalesChatEboxModal = ({ isOpen, onClose }) => {
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={onClose}
-            className="website-modal-close-btn"
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--web-text-muted)',
-              padding: '6px',
-              borderRadius: '6px',
-              flexShrink: 0,
-              marginLeft: '6px'
-            }}
-          >
-            <X size={18} />
-          </button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', position: 'relative' }}>
+            {/* Language Translate Selector */}
+            <div style={{ position: 'relative' }}>
+              <button
+                type="button"
+                onClick={() => setShowLangMenu((prev) => !prev)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  padding: '4px 8px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  borderRadius: '6px',
+                  border: '1px solid var(--web-border)',
+                  backgroundColor: selectedLang !== 'en' ? 'rgba(2, 132, 199, 0.12)' : 'var(--web-surface)',
+                  color: selectedLang !== 'en' ? '#0284c7' : 'var(--web-text-main)',
+                  cursor: 'pointer',
+                }}
+                title="Translate eBox"
+              >
+                <Languages size={13} />
+                <span>
+                  {SUPPORTED_LANGUAGES.find((l) => l.code === selectedLang)?.flag}{' '}
+                  {SUPPORTED_LANGUAGES.find((l) => l.code === selectedLang)?.native || 'EN'}
+                </span>
+                {isTranslating && <span style={{ fontSize: '9px', opacity: 0.7 }}>...</span>}
+              </button>
+
+              {showLangMenu && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: '100%',
+                    right: 0,
+                    marginTop: '6px',
+                    width: '180px',
+                    backgroundColor: 'var(--web-surface, #ffffff)',
+                    border: '1px solid var(--web-border, #e2e8f0)',
+                    borderRadius: '8px',
+                    boxShadow: '0 8px 24px rgba(0,0,0,0.18)',
+                    padding: '4px',
+                    zIndex: 200,
+                    maxHeight: '240px',
+                    overflowY: 'auto',
+                  }}
+                >
+                  <div style={{ padding: '4px 8px', fontSize: '10px', fontWeight: 800, color: 'var(--web-text-muted)', textTransform: 'uppercase' }}>
+                    Translate Language
+                  </div>
+                  {SUPPORTED_LANGUAGES.map((lang) => (
+                    <button
+                      key={lang.code}
+                      type="button"
+                      onClick={() => handleSelectLanguage(lang.code)}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        width: '100%',
+                        padding: '6px 8px',
+                        border: 'none',
+                        background: selectedLang === lang.code ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
+                        color: selectedLang === lang.code ? '#0284c7' : 'var(--web-text-main)',
+                        borderRadius: '4px',
+                        cursor: 'pointer',
+                        fontSize: '11px',
+                        textAlign: 'left',
+                      }}
+                    >
+                      <span>{lang.flag} {lang.native}</span>
+                      <span style={{ fontSize: '9px', opacity: 0.6 }}>{lang.name}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="website-modal-close-btn"
+              style={{
+                background: 'transparent',
+                border: 'none',
+                cursor: 'pointer',
+                color: 'var(--web-text-muted)',
+                padding: '6px',
+                borderRadius: '6px',
+                flexShrink: 0,
+              }}
+            >
+              <X size={18} />
+            </button>
+          </div>
         </div>
 
         {/* Content Body */}
@@ -174,7 +278,7 @@ export const SalesChatEboxModal = ({ isOpen, onClose }) => {
                         textAlign: 'left'
                       }}
                     >
-                      {t}
+                      {translatedTopics[t] || t}
                     </button>
                   ))}
                 </div>

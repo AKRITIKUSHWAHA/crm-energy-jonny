@@ -89,6 +89,7 @@ app.use(express.json({
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Health Check Endpoint
+app.get('/health', (req, res) => res.status(200).json({ success: true, message: 'CRM nErgy API is running' }));
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
@@ -96,27 +97,68 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// API Routes
+// API Routes (Mounted under /api and root paths for seamless backward-compatibility)
 app.use('/api/auth', authRoutes);
+app.use('/auth', authRoutes);
+
 app.use('/api/leads', leadRoutes);
+app.use('/leads', leadRoutes);
+
 app.use('/api/contacts', contactRoutes);
+app.use('/contacts', contactRoutes);
+
 app.use('/api/deals', dealRoutes);
+app.use('/deals', dealRoutes);
+
 app.use('/api/tasks', taskRoutes);
+app.use('/tasks', taskRoutes);
+
 app.use('/api/notes', noteRoutes);
+app.use('/notes', noteRoutes);
+
 app.use('/api/activities', activityRoutes);
+app.use('/activities', activityRoutes);
+
 app.use('/api/users', userRoutes);
+app.use('/users', userRoutes);
+
 app.use('/api/erp', erpRoutes);
+app.use('/erp', erpRoutes);
+
 app.use('/api/invoices', invoiceRoutes);
+app.use('/invoices', invoiceRoutes);
+
 app.use('/api/communications', communicationRoutes);
+app.use('/communications', communicationRoutes);
+
 app.use('/api/territories', territoryRoutes);
+app.use('/territories', territoryRoutes);
+
 app.use('/api/hr', hrRoutes);
+app.use('/hr', hrRoutes);
+
 app.use('/api/support', supportRoutes);
+app.use('/support', supportRoutes);
+
 app.use('/api/tenants', tenantRoutes);
+app.use('/tenants', tenantRoutes);
+
 app.use('/api/manufacturing', manufacturingRoutes);
+app.use('/manufacturing', manufacturingRoutes);
+
 app.use('/api/ebox', eboxRoutes);
+app.use('/ebox', eboxRoutes);
 app.use('/api/zbox', eboxRoutes);
+app.use('/zbox', eboxRoutes);
+
 app.use('/api/v1/internal-staff', swmtpRoutes);
+app.use('/v1/internal-staff', swmtpRoutes);
+
 app.use('/api/ai', aiRoutes);
+app.use('/ai', aiRoutes);
+app.use('/api/integration', aiRoutes);
+app.use('/integration', aiRoutes);
+app.use('/api', aiRoutes);
 
 // 404 Handler for unknown routes
 app.use(notFoundHandler);

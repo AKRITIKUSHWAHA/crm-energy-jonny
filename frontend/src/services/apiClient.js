@@ -8,7 +8,8 @@
 // 2. If running in browser on localhost/127.0.0.1, use localhost:5000/api.
 // 3. If deployed on Netlify or production domain, use live Railway backend.
 function resolveApiBaseUrl() {
-  const envUrl = import.meta.env.VITE_API_BASE_URL || import.meta.env.VITE_API_URL;
+  const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
+  const envUrl = metaEnv.VITE_API_BASE_URL || metaEnv.VITE_API_URL || (typeof process !== 'undefined' ? process.env?.VITE_API_BASE_URL : null);
 
   const isLocalhost =
     typeof window !== 'undefined' &&
@@ -16,16 +17,21 @@ function resolveApiBaseUrl() {
       window.location.hostname === '127.0.0.1' ||
       window.location.hostname === '[::1]');
 
+  let url;
   if (isLocalhost) {
-    return envUrl || 'http://localhost:5000/api';
+    url = envUrl || 'http://localhost:5002/api';
+  } else if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
+    url = envUrl;
+  } else {
+    url = 'https://crm-energy-backend-production-59b6.up.railway.app/api';
   }
 
-  // Production / Netlify deployment
-  if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    return envUrl;
+  url = url.replace(/\/+$/, '');
+  if (!url.endsWith('/api')) {
+    url += '/api';
   }
 
-  return 'https://crm-energy-backend-production.up.railway.app/api';
+  return url;
 }
 
 const API_BASE_URL = resolveApiBaseUrl();
