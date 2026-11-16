@@ -162,9 +162,9 @@ export async function callGeminiApi(prompt, systemInstruction = '', model = GEMI
 
     console.log('[Bestie AI] Calling Server AI:', aiEndpoint);
 
-    // 180s (3 minutes) timeout to accommodate CPU inference time
+    // 4s timeout to avoid blocking UI when server is offline
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 180000);
+    const timeout = setTimeout(() => controller.abort(), 4000);
 
     const response = await fetch(aiEndpoint, {
       method: 'POST',

@@ -89,7 +89,12 @@ export const Sidebar = ({
                 <NavLink
                   key={item.id}
                   to={item.path}
-                  onClick={onCloseMobile}
+                  onClick={() => {
+                    if (item.id === 'bestie') {
+                      window.dispatchEvent(new CustomEvent('open-crm-ai-copilot'));
+                    }
+                    if (onCloseMobile) onCloseMobile();
+                  }}
                   title={isCollapsed ? t(item.label) : undefined}
                   style={({ isActive: isLinkActive }) => {
                     const currentActive = isLinkActive || isActive;

@@ -711,23 +711,28 @@ export const SecuredEbox = () => {
   const lastActiveMsgCountRef = useRef(0);
 
   // Initialize messages from localStorage or default seed store.
-  // IMPORTANT: Always restore seed message text to English original from SEED_TRANSLATIONS_DICT
-  // so that the translation layer always has a stable English source to translate FROM.
+  // Synchronizes immediately with savedLanguage so that page reloads maintain exact language preference.
   const [threadStore, setThreadStore] = useState(() => {
+    const savedLang = getSavedLanguage();
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
-          // Restore seed messages to English original to prevent stale translated text in store
           const restored = {};
           for (const [threadId, msgs] of Object.entries(parsed)) {
             restored[threadId] = Array.isArray(msgs)
               ? msgs.map((m) => {
-                  if (m && m.id && SEED_TRANSLATIONS_DICT[m.id]?.en) {
-                    return { ...m, text: SEED_TRANSLATIONS_DICT[m.id].en };
+                  const orig = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+                  let curText = orig;
+                  if (savedLang !== 'en') {
+                    if (SEED_TRANSLATIONS_DICT[m.id]?.[savedLang]) {
+                      curText = SEED_TRANSLATIONS_DICT[m.id][savedLang];
+                    } else {
+                      curText = m.text || orig;
+                    }
                   }
-                  return m;
+                  return { ...m, originalText: orig, text: curText, translatedTo: savedLang !== 'en' ? savedLang : null };
                 })
               : msgs;
           }
@@ -736,6 +741,19 @@ export const SecuredEbox = () => {
       }
     } catch (e) {
       console.warn('zBox storage read error:', e);
+    }
+
+    if (savedLang !== 'en') {
+      const translatedInit = {};
+      for (const [threadId, msgs] of Object.entries(INITIAL_CONVERSATIONS)) {
+        translatedInit[threadId] = msgs.map((m) => ({
+          ...m,
+          originalText: m.text,
+          text: SEED_TRANSLATIONS_DICT[m.id]?.[savedLang] || m.text,
+          translatedTo: savedLang,
+        }));
+      }
+      return translatedInit;
     }
     return INITIAL_CONVERSATIONS;
   });
@@ -967,9 +985,35 @@ export const SecuredEbox = () => {
     const activeList = threadStore[activeThreadId] || INITIAL_CONVERSATIONS[activeThreadId] || [];
     const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === langCode);
 
+    // 1. Immediately compute instant translations dictionary (0ms, synchronous)
+    const instantMap = getInstantTranslations(activeList, langCode);
+    setTranslatedMessagesMap(instantMap);
+
+    // 2. Synchronously update threadStore in memory and localStorage so all messages change immediately without refresh!
+    setThreadStore((prev) => {
+      const next = { ...prev };
+      Object.keys(next).forEach((tId) => {
+        next[tId] = (next[tId] || []).map((m) => {
+          const orig = m.originalText || SEED_TRANSLATIONS_DICT[m.id]?.en || m.text;
+          let newText = orig;
+          if (langCode !== 'en') {
+            newText = instantMap[m.id] || SEED_TRANSLATIONS_DICT[m.id]?.[langCode] || m.text;
+          }
+          return {
+            ...m,
+            originalText: orig,
+            text: newText,
+            translatedTo: langCode !== 'en' ? langCode : null,
+          };
+        });
+      });
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+      } catch {}
+      return next;
+    });
+
     if (langCode === 'en') {
-      const englishMap = getInstantTranslations(activeList, 'en');
-      setTranslatedMessagesMap(englishMap);
       addToast({
         title: 'Original Language Restored',
         message: 'Displaying original English messages.',
@@ -978,27 +1022,42 @@ export const SecuredEbox = () => {
       return;
     }
 
-    // 1. Immediately apply instant dictionary translations across all languages (0ms lag, no stale text!)
-    const instantMap = getInstantTranslations(activeList, langCode);
-    setTranslatedMessagesMap(instantMap);
-
-    setIsTranslating(true);
     addToast({
       title: `Translated to ${targetLangObj?.name || langCode}`,
       message: `Conversation translated into ${targetLangObj?.name} ${targetLangObj?.flag}. Preference saved across page refreshes!`,
       type: 'success',
     });
 
+    // 3. Background translation for any dynamic / untranslated messages
+    setIsTranslating(true);
     try {
-      // 2. Translate any dynamic / untranslated messages in background
       const resultMap = await translateMessagesBatch(activeList, langCode, activeThreadId);
-      const plainObj = {};
-      resultMap.forEach((val, key) => {
-        if (val) plainObj[key] = val;
-      });
-      const finalMap = { ...instantMap, ...plainObj };
-      setTranslatedMessagesMap(finalMap);
-      saveThreadTranslations(activeThreadId, langCode, finalMap);
+      if (resultMap && resultMap.size > 0) {
+        const plainObj = {};
+        resultMap.forEach((val, key) => {
+          if (val) plainObj[key] = val;
+        });
+        const finalMap = { ...instantMap, ...plainObj };
+        setTranslatedMessagesMap(finalMap);
+        saveThreadTranslations(activeThreadId, langCode, finalMap);
+
+        // Update threadStore with any dynamic messages translated by backend
+        setThreadStore((prev) => {
+          const next = { ...prev };
+          if (next[activeThreadId]) {
+            next[activeThreadId] = next[activeThreadId].map((m) => {
+              if (finalMap[m.id]) {
+                return { ...m, text: finalMap[m.id] };
+              }
+              return m;
+            });
+            try {
+              localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+            } catch {}
+          }
+          return next;
+        });
+      }
     } catch (err) {
       console.warn('Background translation note:', err);
     } finally {
@@ -1049,8 +1108,7 @@ export const SecuredEbox = () => {
     }
 
     // If currently batch translated, user wants to revert this message to original English
-    const currentBatchTx = translatedMessagesMap[msgId] || getInstantTranslations([{ id: msgId, text: originalText }], selectedLanguage)[msgId];
-    if (selectedLanguage !== 'en' && currentBatchTx && currentBatchTx.trim() !== (originalText || '').trim()) {
+    if (selectedLanguage !== 'en') {
       setIndividualTranslations((prev) => ({
         ...prev,
         [msgId]: { text: originalText, isOriginal: true, isTranslated: false },
@@ -1962,30 +2020,26 @@ export const SecuredEbox = () => {
                 const isSingleReverted = singleOverride && singleOverride.isOriginal;
                 const isSingleActive = singleOverride && singleOverride.isTranslated;
 
-                let displayText = m.text;
+                const origText = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+                let displayText = m.text || origText;
                 let isThisMessageTranslated = false;
                 let translatedLangName = '';
 
                 if (isSingleActive && singleOverride.text) {
                   displayText = singleOverride.text;
-                  // Only mark as translated if the text actually differs from original
-                  isThisMessageTranslated = singleOverride.text.trim() !== (m.text || '').trim();
+                  isThisMessageTranslated = true;
                   translatedLangName = singleOverride.langObj?.name || singleOverride.targetLang;
-                } else if (selectedLanguage !== 'en' && !isSingleReverted) {
-                  const tx = translatedMessagesMap[m.id] || getInstantTranslations([m], selectedLanguage)[m.id];
-                  // Only use translated text if it genuinely differs from original
-                  if (tx && tx.trim() !== (m.text || '').trim()) {
-                    displayText = tx;
-                    isThisMessageTranslated = true;
-                    translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
-                  }
-                } else if (selectedLanguage === 'en') {
-                  // Restore English: use the seed English text if available
-                  const enTx = translatedMessagesMap[m.id] || getInstantTranslations([m], 'en')[m.id];
-                  if (enTx && enTx.trim() !== (m.text || '').trim()) {
-                    displayText = enTx;
-                  }
-                  isThisMessageTranslated = false; // Never show badge for English
+                } else if (isSingleReverted) {
+                  displayText = origText;
+                  isThisMessageTranslated = false;
+                } else if (selectedLanguage !== 'en') {
+                  const tx = translatedMessagesMap[m.id] || (SEED_TRANSLATIONS_DICT[m.id]?.[selectedLanguage]) || m.text;
+                  displayText = tx || origText;
+                  isThisMessageTranslated = true;
+                  translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
+                } else {
+                  displayText = origText;
+                  isThisMessageTranslated = false;
                 }
 
                 const activeLangCode = isSingleActive ? singleOverride.targetLang : selectedLanguage;
@@ -2094,7 +2148,7 @@ export const SecuredEbox = () => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleToggleSingleTranslation(m.id, m.text);
+                              handleToggleSingleTranslation(m.id, origText);
                             }}
                             style={{
                               marginLeft: '6px',
@@ -2183,7 +2237,7 @@ export const SecuredEbox = () => {
                             type="button"
                             onClick={(e) => {
                               e.stopPropagation();
-                              handleToggleSingleTranslation(m.id, m.text);
+                              handleToggleSingleTranslation(m.id, origText);
                             }}
                             style={{
                               display: 'inline-flex',
