@@ -961,6 +961,7 @@ export const SecuredEbox = () => {
                   ? new Date(dbMsg.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
                   : 'Just now',
                 text: msgText,
+                originalText: msgText,
                 attachment,
                 isImage,
                 isVideo,
@@ -1082,7 +1083,7 @@ export const SecuredEbox = () => {
   const currentThread = threads.find((t) => t.id === activeThreadId) || threads[0];
   const activeMessages = threadStore[activeThreadId] || [];
 
-  // One-Click Language Selection Handler (Client Request + LocalStorage Persistence)
+  // One-Click Language Selection Handler (Live synchronous change across all messages without reload)
   const handleLanguageChange = async (langCode) => {
     setSelectedLanguage(langCode);
     saveLanguage(langCode);
@@ -1092,35 +1093,26 @@ export const SecuredEbox = () => {
     const activeList = threadStore[activeThreadId] || INITIAL_CONVERSATIONS[activeThreadId] || [];
     const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === langCode);
 
-    // 1. Immediately compute instant translations dictionary (0ms, synchronous)
-    const instantMap = getInstantTranslations(activeList, langCode);
-    setTranslatedMessagesMap(instantMap);
-
-    // 2. Synchronously update threadStore in memory and localStorage so all messages change immediately without refresh!
-    setThreadStore((prev) => {
-      const next = { ...prev };
-      Object.keys(next).forEach((tId) => {
-        next[tId] = (next[tId] || []).map((m) => {
-          const orig = m.originalText || SEED_TRANSLATIONS_DICT[m.id]?.en || m.text;
-          let newText = orig;
-          if (langCode !== 'en') {
-            newText = instantMap[m.id] || SEED_TRANSLATIONS_DICT[m.id]?.[langCode] || m.text;
-          }
-          return {
-            ...m,
-            originalText: orig,
-            text: newText,
-            translatedTo: langCode !== 'en' ? langCode : null,
-          };
-        });
-      });
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-      } catch {}
-      return next;
-    });
-
     if (langCode === 'en') {
+      setTranslatedMessagesMap({});
+      setThreadStore((prev) => {
+        const next = { ...prev };
+        Object.keys(next).forEach((tId) => {
+          next[tId] = (next[tId] || []).map((m) => {
+            const orig = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+            return {
+              ...m,
+              originalText: orig,
+              text: orig,
+              translatedTo: null,
+            };
+          });
+        });
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+        return next;
+      });
       addToast({
         title: 'Original Language Restored',
         message: 'Displaying original English messages.',
@@ -1129,13 +1121,38 @@ export const SecuredEbox = () => {
       return;
     }
 
-    addToast({
-      title: `Translated to ${targetLangObj?.name || langCode}`,
-      message: `Conversation translated into ${targetLangObj?.name} ${targetLangObj?.flag}. Preference saved across page refreshes!`,
-      type: 'success',
+    // 1. Immediately compute instant translations dictionary (0ms, synchronous)
+    const instantMap = getInstantTranslations(activeList, langCode);
+    setTranslatedMessagesMap(instantMap);
+
+    // 2. Synchronously update dictionary messages in threadStore so UI updates instantly
+    setThreadStore((prev) => {
+      const next = { ...prev };
+      if (next[activeThreadId]) {
+        next[activeThreadId] = next[activeThreadId].map((m) => {
+          const orig = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+          const instantTx = instantMap[m.id] || SEED_TRANSLATIONS_DICT[m.id]?.[langCode];
+          return {
+            ...m,
+            originalText: orig,
+            text: instantTx || m.text || orig,
+            translatedTo: instantTx ? langCode : m.translatedTo,
+          };
+        });
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
     });
 
-    // 3. Background translation for any dynamic / untranslated messages
+    addToast({
+      title: `Translating to ${targetLangObj?.name || langCode}`,
+      message: `Translating conversation to ${targetLangObj?.name} ${targetLangObj?.flag}...`,
+      type: 'info',
+    });
+
+    // 3. Live Batch translation for ALL messages in the thread (including user-typed / dynamic messages)
     setIsTranslating(true);
     try {
       const resultMap = await translateMessagesBatch(activeList, langCode, activeThreadId);
@@ -1148,15 +1165,22 @@ export const SecuredEbox = () => {
         setTranslatedMessagesMap(finalMap);
         saveThreadTranslations(activeThreadId, langCode, finalMap);
 
-        // Update threadStore with any dynamic messages translated by backend
+        // Update active thread with all translated text live
         setThreadStore((prev) => {
           const next = { ...prev };
           if (next[activeThreadId]) {
             next[activeThreadId] = next[activeThreadId].map((m) => {
-              if (finalMap[m.id]) {
-                return { ...m, text: finalMap[m.id] };
+              const orig = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+              const tx = finalMap[m.id];
+              if (tx && tx.trim()) {
+                return {
+                  ...m,
+                  originalText: orig,
+                  text: tx,
+                  translatedTo: langCode,
+                };
               }
-              return m;
+              return { ...m, originalText: orig };
             });
             try {
               localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
@@ -1164,9 +1188,15 @@ export const SecuredEbox = () => {
           }
           return next;
         });
+
+        addToast({
+          title: `Translated to ${targetLangObj?.name || langCode}`,
+          message: `All messages translated into ${targetLangObj?.name} ${targetLangObj?.flag}!`,
+          type: 'success',
+        });
       }
     } catch (err) {
-      console.warn('Background translation note:', err);
+      console.warn('Batch translation note:', err);
     } finally {
       setIsTranslating(false);
     }
@@ -1179,26 +1209,45 @@ export const SecuredEbox = () => {
       const instantMap = getInstantTranslations(activeList, selectedLanguage);
       setTranslatedMessagesMap(instantMap);
 
-      // Background translate any messages not in dictionary/cache
-      const pending = activeList.filter((m) => m && m.id && m.text && !instantMap[m.id]);
-      if (pending.length > 0) {
-        translateMessagesBatch(activeList, selectedLanguage, activeThreadId).then((resMap) => {
-          if (resMap && resMap.size > 0) {
-            const plainObj = {};
-            resMap.forEach((val, key) => {
-              if (val) plainObj[key] = val;
-            });
-            const merged = { ...instantMap, ...plainObj };
-            setTranslatedMessagesMap(merged);
-            saveThreadTranslations(activeThreadId, selectedLanguage, merged);
-          }
-        }).catch((e) => {
-          console.warn('Batch translation note:', e);
-        });
-      }
+      // Translate all messages not yet in map
+      translateMessagesBatch(activeList, selectedLanguage, activeThreadId).then((resMap) => {
+        if (resMap && resMap.size > 0) {
+          const plainObj = {};
+          resMap.forEach((val, key) => {
+            if (val) plainObj[key] = val;
+          });
+          const merged = { ...instantMap, ...plainObj };
+          setTranslatedMessagesMap(merged);
+          saveThreadTranslations(activeThreadId, selectedLanguage, merged);
+
+          setThreadStore((prev) => {
+            const next = { ...prev };
+            if (next[activeThreadId]) {
+              next[activeThreadId] = next[activeThreadId].map((m) => {
+                const orig = m.originalText || (SEED_TRANSLATIONS_DICT[m.id]?.en) || m.text;
+                const tx = merged[m.id];
+                if (tx && tx.trim()) {
+                  return {
+                    ...m,
+                    originalText: orig,
+                    text: tx,
+                    translatedTo: selectedLanguage,
+                  };
+                }
+                return { ...m, originalText: orig };
+              });
+              try {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(next));
+              } catch {}
+            }
+            return next;
+          });
+        }
+      }).catch((e) => {
+        console.warn('Batch translation note:', e);
+      });
     } else {
-      const englishMap = getInstantTranslations(activeList, 'en');
-      setTranslatedMessagesMap(englishMap);
+      setTranslatedMessagesMap({});
     }
   }, [activeThreadId, selectedLanguage]);
 
@@ -1520,6 +1569,7 @@ export const SecuredEbox = () => {
         title: senderTitle,
         time: 'Just now',
         text: currentMsgText,
+        originalText: currentMsgText,
         attachment: null,
         isDbRecord: false,
         conversationId: isSwmtp ? conversationId : undefined,
@@ -1531,11 +1581,17 @@ export const SecuredEbox = () => {
         [threadId]: [...(prev[threadId] || []), newMsg],
       }));
 
-      // 2. If translation is active, translate this new message into selectedLanguage
+      // 2. If translation is active, translate this new message into selectedLanguage live
       if (selectedLanguage !== 'en' && currentMsgText) {
         translateText(currentMsgText, selectedLanguage).then((tx) => {
-          if (tx) {
+          if (tx && tx.trim() && tx.trim() !== currentMsgText.trim()) {
             setTranslatedMessagesMap((prev) => ({ ...prev, [tempId]: tx }));
+            setThreadStore((prev) => ({
+              ...prev,
+              [threadId]: (prev[threadId] || []).map((m) =>
+                m.id === tempId ? { ...m, text: tx, originalText: currentMsgText, translatedTo: selectedLanguage } : m
+              ),
+            }));
           }
         });
       }
@@ -2183,10 +2239,19 @@ export const SecuredEbox = () => {
                   displayText = origText;
                   isThisMessageTranslated = false;
                 } else if (selectedLanguage !== 'en') {
-                  const tx = translatedMessagesMap[m.id] || (SEED_TRANSLATIONS_DICT[m.id]?.[selectedLanguage]) || m.text;
-                  displayText = tx || origText;
-                  isThisMessageTranslated = true;
-                  translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
+                  const tx = translatedMessagesMap[m.id] || (SEED_TRANSLATIONS_DICT[m.id]?.[selectedLanguage]);
+                  if (tx && tx.trim() && tx.trim() !== origText.trim()) {
+                    displayText = tx;
+                    isThisMessageTranslated = true;
+                    translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
+                  } else if (m.translatedTo === selectedLanguage && m.text && m.text.trim() !== origText.trim()) {
+                    displayText = m.text;
+                    isThisMessageTranslated = true;
+                    translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
+                  } else {
+                    displayText = origText;
+                    isThisMessageTranslated = false;
+                  }
                 } else {
                   displayText = origText;
                   isThisMessageTranslated = false;

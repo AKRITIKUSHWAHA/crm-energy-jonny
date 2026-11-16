@@ -26,11 +26,34 @@ async function translateServerText(text, targetLang, sourceLang = 'auto') {
   if (!text || typeof text !== 'string' || !text.trim()) return text;
   if (!targetLang || targetLang === 'en') return text;
 
-  // 1. Try Google Translate GTX (fast, server-to-server with no browser CORS)
+  const trimmed = text.trim();
+
+  // 1. Google Neural Dictionary Translate (Extremely Fast, 0 Rate-Limits, Universal Language Detection)
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(text.trim())}`;
+    const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${sourceLang}&tl=${targetLang}&q=${encodeURIComponent(trimmed)}`;
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 4500);
+    const resp = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (resp.ok) {
+      const json = await resp.json();
+      if (Array.isArray(json) && json[0]) {
+        const translated = typeof json[0] === 'string' ? json[0] : (Array.isArray(json[0]) ? json[0][0] : null);
+        if (translated && typeof translated === 'string' && translated.trim()) {
+          return translated.trim();
+        }
+      }
+    }
+  } catch (err) {
+    // Continue to next tier
+  }
+
+  // 2. Google Translate GTX Client Fallback
+  try {
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(trimmed)}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
     const resp = await fetch(url, { signal: controller.signal });
     clearTimeout(timer);
 
@@ -47,15 +70,38 @@ async function translateServerText(text, targetLang, sourceLang = 'auto') {
       }
     }
   } catch (err) {
-    // Continue to Grok fallback
+    // Continue
   }
 
-  // 2. Grok LLM Neural Translation Fallback
+  // 3. MyMemory Neural Translation API Fallback
+  try {
+    const memUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=${sourceLang}|${targetLang}`;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 4000);
+    const resp = await fetch(memUrl, { signal: controller.signal });
+    clearTimeout(timer);
+
+    if (resp.ok) {
+      const json = await resp.json();
+      let match = json.responseData?.translatedText;
+      if (!match || match.includes('MYMEMORY WARNING')) {
+        const candidate = json.matches?.find((m) => m && m.translation && !m.translation.includes('MYMEMORY WARNING'));
+        if (candidate) match = candidate.translation;
+      }
+      if (match && typeof match === 'string' && match.trim() && match.trim() !== trimmed) {
+        return match.trim();
+      }
+    }
+  } catch (memErr) {
+    // Continue
+  }
+
+  // 4. Grok LLM Neural Translation Fallback
   try {
     const langName = LANG_NAMES[targetLang] || targetLang;
-    const prompt = `Translate the following text accurately and naturally into ${langName}. Preserve formatting, names, and tone. Output ONLY the translated text without any quotation marks, notes, explanations, or prefixes:\n\n${text.trim()}`;
+    const prompt = `Translate the following text accurately and naturally into ${langName}. Preserve formatting, names, and tone. Output ONLY the translated text without any quotation marks, notes, explanations, or prefixes:\n\n${trimmed}`;
     const grokResult = await callGrok(prompt, `You are an expert enterprise translator specializing in natural, accurate translations into ${langName}. Respond with only the direct translation.`);
-    if (grokResult && typeof grokResult === 'string' && grokResult.trim() && grokResult.trim() !== text.trim()) {
+    if (grokResult && typeof grokResult === 'string' && grokResult.trim() && grokResult.trim() !== trimmed) {
       return grokResult.trim().replace(/^["']|["']$/g, '');
     }
   } catch (grokErr) {

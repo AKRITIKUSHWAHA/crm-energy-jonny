@@ -573,9 +573,9 @@ export async function translateText(text, targetLang, sourceLang = 'auto') {
     // Continue to browser fallbacks
   }
 
-  // 5. Tier 2: Direct Google Translate GTX (client proxy)
+  // 5. Tier 2: Direct Google Chrome Dict Extension API (Extremely Fast, 0 Rate Limits)
   try {
-    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${sourceLang}&tl=${targetLang}&dt=t&q=${encodeURIComponent(trimmed)}`;
+    const url = `https://clients5.google.com/translate_a/t?client=dict-chrome-ex&sl=${sourceLang}&tl=${targetLang}&q=${encodeURIComponent(trimmed)}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 4000);
 
@@ -583,36 +583,28 @@ export async function translateText(text, targetLang, sourceLang = 'auto') {
     clearTimeout(timeoutId);
 
     if (res.ok) {
-      const textResponse = await res.text();
-      if (textResponse && !textResponse.startsWith('<')) {
-        const data = JSON.parse(textResponse);
-        if (Array.isArray(data) && Array.isArray(data[0])) {
-          const rawResult = data[0]
-            .filter((item) => item && item[0])
-            .map((item) => item[0])
-            .join('');
-
-          const cleanedResult = decodeHtmlEntities(rawResult);
-
-          if (cleanedResult && cleanedResult.trim() && cleanedResult.trim() !== trimmed) {
-            translationCache.set(cacheKey, cleanedResult);
-            try {
-              if (typeof window !== 'undefined' && window.localStorage) {
-                window.localStorage.setItem(`ebox_tx_v4_single_${cacheKey}`, cleanedResult);
-              }
-            } catch {}
-            return cleanedResult;
-          }
+      const data = await res.json();
+      if (Array.isArray(data) && data[0]) {
+        const raw = typeof data[0] === 'string' ? data[0] : (Array.isArray(data[0]) ? data[0][0] : null);
+        if (raw && typeof raw === 'string' && raw.trim() && raw.trim() !== trimmed) {
+          const cleaned = decodeHtmlEntities(raw.trim());
+          translationCache.set(cacheKey, cleaned);
+          try {
+            if (typeof window !== 'undefined' && window.localStorage) {
+              window.localStorage.setItem(`ebox_tx_v4_single_${cacheKey}`, cleaned);
+            }
+          } catch {}
+          return cleaned;
         }
       }
     }
   } catch (err) {
-    // Continue to fallback
+    // Continue
   }
 
   // 6. Tier 3: MyMemory Translation API
   try {
-    const memUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=en|${targetLang}`;
+    const memUrl = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(trimmed)}&langpair=auto|${targetLang}`;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 3500);
 
@@ -621,9 +613,13 @@ export async function translateText(text, targetLang, sourceLang = 'auto') {
 
     if (memRes.ok) {
       const memData = await memRes.json();
-      const match = memData?.responseData?.translatedText;
-      if (match && typeof match === 'string' && match.trim() && !match.includes('MYMEMORY WARNING') && match.trim() !== trimmed) {
-        const cleanedMatch = decodeHtmlEntities(match);
+      let match = memData?.responseData?.translatedText;
+      if (!match || match.includes('MYMEMORY WARNING')) {
+        const candidate = memData?.matches?.find((m) => m && m.translation && !m.translation.includes('MYMEMORY WARNING'));
+        if (candidate) match = candidate.translation;
+      }
+      if (match && typeof match === 'string' && match.trim() && match.trim() !== trimmed) {
+        const cleanedMatch = decodeHtmlEntities(match.trim());
         translationCache.set(cacheKey, cleanedMatch);
         try {
           if (typeof window !== 'undefined' && window.localStorage) {
@@ -670,7 +666,7 @@ export async function translateMessagesBatch(messages, targetLang, threadId = nu
   // 3. Batch translate pending messages via Backend Translation API in a single request
   try {
     const baseUrl = apiClient.baseUrl;
-    const textsToTranslate = pendingMessages.map((m) => m.text.trim());
+    const textsToTranslate = pendingMessages.map((m) => (m.originalText || m.text).trim());
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 8000);
 
@@ -694,8 +690,9 @@ export async function translateMessagesBatch(messages, targetLang, threadId = nu
       if (Array.isArray(data.translations)) {
         data.translations.forEach((translatedStr, idx) => {
           const origMsg = pendingMessages[idx];
-          if (origMsg && translatedStr && translatedStr !== origMsg.text) {
-            results.set(origMsg.id, translatedStr);
+          const srcText = (origMsg?.originalText || origMsg?.text || '').trim();
+          if (origMsg && translatedStr && translatedStr.trim() && translatedStr.trim() !== srcText) {
+            results.set(origMsg.id, decodeHtmlEntities(translatedStr.trim()));
           }
         });
       }
@@ -708,8 +705,9 @@ export async function translateMessagesBatch(messages, targetLang, threadId = nu
   for (const msg of pendingMessages) {
     if (!results.has(msg.id)) {
       try {
-        const translated = await translateText(msg.text, targetLang);
-        if (translated && translated !== msg.text) {
+        const srcText = msg.originalText || msg.text;
+        const translated = await translateText(srcText, targetLang);
+        if (translated && translated.trim() !== (srcText || '').trim()) {
           results.set(msg.id, translated);
         }
       } catch {}
