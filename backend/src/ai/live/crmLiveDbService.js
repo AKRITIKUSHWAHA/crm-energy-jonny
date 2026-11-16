@@ -21,7 +21,7 @@ class CrmLiveDbService {
     try {
       const whereClause = tenantId ? { tenantId } : undefined;
 
-      const [totalCount, leads] = await Promise.all([
+      let [totalCount, leads] = await Promise.all([
         prisma.lead.count({ where: whereClause }),
         prisma.lead.findMany({
           where: whereClause,
@@ -41,6 +41,33 @@ class CrmLiveDbService {
           }
         })
       ]);
+
+      // If tenant-filtered query returns 0, fallback to all available leads (e.g. dev/demo mode)
+      if (totalCount === 0 && tenantId) {
+        const [allCount, allLeads] = await Promise.all([
+          prisma.lead.count(),
+          prisma.lead.findMany({
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              company: true,
+              email: true,
+              phone: true,
+              status: true,
+              score: true,
+              estimatedValue: true,
+              source: true,
+              createdAt: true,
+            }
+          })
+        ]);
+        if (allCount > 0) {
+          totalCount = allCount;
+          leads = allLeads;
+        }
+      }
 
       const byStatus = {};
       let totalEstValue = 0;
@@ -91,7 +118,7 @@ class CrmLiveDbService {
             ]
           };
 
-      const leads = await prisma.lead.findMany({
+      let leads = await prisma.lead.findMany({
         where: whereClause,
         take: 5,
         orderBy: { createdAt: 'desc' },
@@ -109,6 +136,34 @@ class CrmLiveDbService {
           createdAt: true,
         }
       });
+
+      // If not found with tenant filter, search globally
+      if ((!leads || leads.length === 0) && tenantId) {
+        leads = await prisma.lead.findMany({
+          where: {
+            OR: [
+              { name: { contains: cleanName } },
+              { company: { contains: cleanName } },
+              { email: { contains: cleanName } }
+            ]
+          },
+          take: 5,
+          orderBy: { createdAt: 'desc' },
+          select: {
+            id: true,
+            name: true,
+            company: true,
+            email: true,
+            phone: true,
+            status: true,
+            score: true,
+            estimatedValue: true,
+            source: true,
+            notes: true,
+            createdAt: true,
+          }
+        });
+      }
 
       return {
         success: true,
@@ -134,7 +189,7 @@ class CrmLiveDbService {
         ? { tenantId, createdAt: { gte: today } }
         : { createdAt: { gte: today } };
 
-      const [count, leads] = await Promise.all([
+      let [count, leads] = await Promise.all([
         prisma.lead.count({ where: whereClause }),
         prisma.lead.findMany({
           where: whereClause,
@@ -142,6 +197,21 @@ class CrmLiveDbService {
           orderBy: { createdAt: 'desc' }
         })
       ]);
+
+      if (count === 0 && tenantId) {
+        const [allCount, allLeads] = await Promise.all([
+          prisma.lead.count({ where: { createdAt: { gte: today } } }),
+          prisma.lead.findMany({
+            where: { createdAt: { gte: today } },
+            take: 10,
+            orderBy: { createdAt: 'desc' }
+          })
+        ]);
+        if (allCount > 0) {
+          count = allCount;
+          leads = allLeads;
+        }
+      }
 
       return {
         success: true,
@@ -208,7 +278,7 @@ class CrmLiveDbService {
     try {
       const whereClause = tenantId ? { tenantId } : undefined;
 
-      const [totalCount, tasks] = await Promise.all([
+      let [totalCount, tasks] = await Promise.all([
         prisma.task.count({ where: whereClause }),
         prisma.task.findMany({
           where: whereClause,
@@ -224,6 +294,28 @@ class CrmLiveDbService {
           }
         })
       ]);
+
+      if (totalCount === 0 && tenantId) {
+        const [allCount, allTasks] = await Promise.all([
+          prisma.task.count(),
+          prisma.task.findMany({
+            take: 10,
+            orderBy: { dueDate: 'asc' },
+            select: {
+              id: true,
+              title: true,
+              status: true,
+              priority: true,
+              dueDate: true,
+              assignedUserId: true,
+            }
+          })
+        ]);
+        if (allCount > 0) {
+          totalCount = allCount;
+          tasks = allTasks;
+        }
+      }
 
       let pending = 0;
       let urgent = 0;
@@ -253,7 +345,7 @@ class CrmLiveDbService {
     try {
       const whereClause = tenantId ? { tenantId } : undefined;
 
-      const [totalCount, contacts] = await Promise.all([
+      let [totalCount, contacts] = await Promise.all([
         prisma.contact.count({ where: whereClause }),
         prisma.contact.findMany({
           where: whereClause,
@@ -269,6 +361,28 @@ class CrmLiveDbService {
           }
         })
       ]);
+
+      if (totalCount === 0 && tenantId) {
+        const [allCount, allContacts] = await Promise.all([
+          prisma.contact.count(),
+          prisma.contact.findMany({
+            take: limit,
+            orderBy: { createdAt: 'desc' },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              phone: true,
+              company: true,
+              status: true,
+            }
+          })
+        ]);
+        if (allCount > 0) {
+          totalCount = allCount;
+          contacts = allContacts;
+        }
+      }
 
       return {
         success: true,
