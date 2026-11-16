@@ -694,7 +694,7 @@ model EboxMessage {
   senderName  String
   recipient   String   @default("Kiaan Tech Team")
   subject     String
-  message     String   @db.Text
+  message     String   @db.LongText
   priority    String   @default("Normal")
   isEncrypted Boolean  @default(true)
   createdAt   DateTime @default(now())

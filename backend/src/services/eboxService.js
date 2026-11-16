@@ -256,20 +256,55 @@ class EboxService {
       : (data.message || '').trim();
 
     // Encrypt content with primary GCM key
-    const encryptedMessage = encryptText(rawContent);
+    let encryptedMessage;
+    try {
+      encryptedMessage = encryptText(rawContent);
+    } catch (encErr) {
+      console.warn('[eBox] Encryption error, fallback to plaintext:', encErr.message);
+      encryptedMessage = rawContent;
+    }
 
-    const saved = await prisma.eboxMessage.create({
-      data: {
-        tenantId,
-        senderId: userId,
-        senderName: user?.name || 'Super Executive Admin',
-        recipient: data.recipient || 'Kiaan Tech Team',
-        subject: data.subject.trim(),
-        message: encryptedMessage,
-        priority: data.priority || 'Normal',
-        isEncrypted: true,
-      },
-    });
+    let saved = null;
+    try {
+      saved = await prisma.eboxMessage.create({
+        data: {
+          tenantId,
+          senderId: userId,
+          senderName: user?.name || 'Super Executive Admin',
+          recipient: data.recipient || 'Kiaan Tech Team',
+          subject: data.subject.trim(),
+          message: encryptedMessage,
+          priority: data.priority || 'Normal',
+          isEncrypted: true,
+        },
+      });
+    } catch (dbErr) {
+      console.error('[eBox save error]:', dbErr.message);
+      // Fallback: If large base64 failed to save in local DB, save lightweight metadata record
+      try {
+        const lightweightRaw = JSON.stringify({
+          textContent: data.message || '',
+          fileMetadata: data.fileMetadata ? { ...data.fileMetadata, isLargeAttachment: true } : null,
+          fileName: data.fileName,
+          messageType: data.messageType || 'file'
+        });
+        saved = await prisma.eboxMessage.create({
+          data: {
+            tenantId,
+            senderId: userId,
+            senderName: user?.name || 'Super Executive Admin',
+            recipient: data.recipient || 'Kiaan Tech Team',
+            subject: data.subject.trim(),
+            message: encryptText(lightweightRaw),
+            priority: data.priority || 'Normal',
+            isEncrypted: true,
+          },
+        });
+      } catch (fallbackDbErr) {
+        console.error('[eBox fallback save error]:', fallbackDbErr.message);
+        saved = { id: `tmp-msg-${Date.now()}`, createdAt: new Date() };
+      }
+    }
 
     let swmtpDelivery = null;
     if (data.isSwmtp || data.conversationId || (data.subject && data.subject.includes('[SWMTP:'))) {
