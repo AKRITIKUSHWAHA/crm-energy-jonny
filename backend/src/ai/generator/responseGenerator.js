@@ -9,6 +9,7 @@
 
 const CrmLiveDbService = require('../live/crmLiveDbService');
 const CrmRagEngine = require('../rag/crmRagEngine');
+const { searchTavily } = require('../services/tavilySearchService');
 
 function formatCurrencyUSD(num) {
   const n = Number(num) || 0;
@@ -647,7 +648,7 @@ function handleSoftwareKnowledge(message, classification) {
 /**
  * Handle General Technical & Intelligence Queries (React, Node.js, MySQL, RAG, REST APIs, etc.)
  */
-function handleGeneralIntelligence(message, classification) {
+async function handleGeneralIntelligence(message, classification) {
   const lower = message.toLowerCase();
 
   // 1. useState vs useEffect in React
@@ -866,16 +867,94 @@ function handleGeneralIntelligence(message, classification) {
     };
   }
 
-  // General fallback technical response
+  // General World Knowledge & Web Intelligence (People, Current Events, Entities, Facts, QA)
+  const isHi = classification?.language === 'hi';
+  try {
+    const searchResults = await searchTavily(message);
+    if (searchResults && searchResults.length > 0) {
+      const topSnippets = searchResults
+        .slice(0, 3)
+        .map((r, i) => `**${r.title || `Result ${i + 1}`}**\n${r.content?.trim() || ''}`)
+        .filter(Boolean)
+        .join('\n\n');
+
+      if (isHi) {
+        return {
+          text: `### 🌐 **${message}** — विवरण व जानकारी\n\n` +
+            `${topSnippets}\n\n` +
+            `---\n` +
+            `💡 _यह जानकारी लाइव सर्च व वेरिफाइड वेब नॉलेज इंजन द्वारा प्राप्त की गई है।_`,
+          toolExecuted: 'web_search_intelligence'
+        };
+      }
+
+      return {
+        text: `### 🌐 **${message}** — Overview & Details\n\n` +
+          `${topSnippets}\n\n` +
+          `---\n` +
+          `💡 _Information retrieved via verified real-time knowledge intelligence._`,
+        toolExecuted: 'web_search_intelligence'
+      };
+    }
+  } catch (searchErr) {
+    console.warn('[ResponseGenerator] Tavily search warning:', searchErr.message);
+  }
+
+  // Fallback intelligent general response
+  if (isHi) {
+    return {
+      text: `### 💡 **${message}** के बारे में:\n\n` +
+        `आपके प्रश्न **"${message}"** के संबंध में:\n` +
+        `• यह एक व्यापक विषय/व्यक्ति है।\n` +
+        `• आप इसके बारे में विशिष्ट प्रश्न भी पूछ सकते हैं (उदा. इतिहास, भूमिका, या महत्वपूर्ण उपलब्धियां)।\n\n` +
+        `_कृपया बताएं आप किस पहलू के बारे में अधिक जानना चाहते हैं?_`,
+      toolExecuted: 'general_assistance'
+    };
+  }
+
   return {
-    text: `### 💡 Technical Analysis & Guidance\n\n` +
-      `Regarding your question: *"**${message}**"*\n\n` +
-      `In enterprise software systems and modern web architecture:\n` +
-      `• **Clean Architecture:** Keep business logic separated from transport protocols (REST/GraphQL) and persistence layers (ORMs like Prisma/MySQL).\n` +
-      `• **State & Data Consistency:** Ensure ACID compliance on database transactions while keeping client-side state reactive with optimistic UI updates.\n` +
-      `• **Observability:** Integrate structured JSON logging, distributed tracing, and automated health checks across all microservices.\n\n` +
-      `_If you would like a deeper code implementation or architectural breakdown on this topic, let me know!_`,
+    text: `### 💡 Analysis & Guidance: **${message}**\n\n` +
+      `Regarding your inquiry on **"${message}"**:\n` +
+      `• This topic covers important domain concepts, public leadership, or technological principles.\n` +
+      `• Feel free to ask a more specific follow-up (e.g. background, timeline, comparisons, or specific use cases).\n\n` +
+      `_Let me know how you would like to explore this further!_`,
     toolExecuted: 'general_assistance'
+  };
+}
+
+/**
+ * Handle Current Date and Time
+ */
+function handleDateTime(message, classification) {
+  const isHi = classification?.language === 'hi';
+  const now = new Date();
+
+  const optionsEn = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  const dateStrEn = now.toLocaleDateString('en-US', optionsEn);
+  const timeStrEn = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+  const daysHi = ['रविवार', 'सोमवार', 'मंगलवार', 'बुधवार', 'गुरुवार', 'शुक्रवार', 'शनिवार'];
+  const monthsHi = ['जनवरी', 'फ़रवरी', 'मार्च', 'अप्रैल', 'मई', 'जून', 'जुलाई', 'अगस्त', 'सितंबर', 'अक्टूबर', 'नवंबर', 'दिसंबर'];
+  const dayNameHi = daysHi[now.getDay()];
+  const monthNameHi = monthsHi[now.getMonth()];
+  const dateStrHi = `${now.getDate()} ${monthNameHi} ${now.getFullYear()} (${dayNameHi})`;
+
+  if (isHi) {
+    return {
+      text: `📅 **आज की तारीख और समय:**\n\n` +
+        `• **तारीख (Date):** **${dateStrHi}**\n` +
+        `• **समय (Time):** **${timeStrEn}**\n\n` +
+        `_बताइए, आज आपके बिजनेस या CRM के किस काम में मदद चाहिए?_`,
+      toolExecuted: 'get_current_date'
+    };
+  }
+
+  return {
+    text: `📅 **Current Date & Time:**\n\n` +
+      `• **Date:** **${dateStrEn}**\n` +
+      `• **Time:** **${timeStrEn}**\n\n` +
+      `_Let me know if you would like to schedule a task or review today's CRM operations!_`,
+    toolExecuted: 'get_current_date'
   };
 }
 
@@ -928,12 +1007,14 @@ async function generateAiResponse(message, user = {}) {
   const classification = classifyIntent(message);
 
   switch (classification.intent) {
+    case 'DATE_TIME':
+      return handleDateTime(message, classification);
     case 'LIVE_CRM_QUERY':
       return await handleLiveCrmQuery(message, classification, user);
     case 'SOFTWARE_KNOWLEDGE':
       return handleSoftwareKnowledge(message, classification);
     case 'GENERAL_INTELLIGENCE':
-      return handleGeneralIntelligence(message, classification);
+      return await handleGeneralIntelligence(message, classification);
     case 'GREETING':
     default:
       return await handleGreeting(message, classification, user);
@@ -942,6 +1023,7 @@ async function generateAiResponse(message, user = {}) {
 
 module.exports = {
   generateAiResponse,
+  handleDateTime,
   handleLiveCrmQuery,
   handleSoftwareKnowledge,
   handleGeneralIntelligence,

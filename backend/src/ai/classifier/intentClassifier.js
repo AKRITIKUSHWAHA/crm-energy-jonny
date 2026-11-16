@@ -49,6 +49,21 @@ function classifyIntent(text) {
     };
   }
 
+  // 1b. Check Date / Time queries (e.g. "today what date", "aaj konsi date hai", "what is today's date")
+  const dateTimePatterns = [
+    /\b(what.*date|today.*date|date.*today|aaj.*(date|tarikh|din)|current.*(date|time|day)|what day is (it|today)|konsi date)\b/i,
+    /\b(what is the date|what is today's date|today's date|today date|current date|what date is it)\b/i
+  ];
+  const isCrmEntityQuery = /\b(lead|deal|task|contact|pipeline|inbound|value)\b/i.test(lower);
+  if (dateTimePatterns.some(p => p.test(lower)) && !isCrmEntityQuery) {
+    return {
+      intent: 'DATE_TIME',
+      subIntent: 'current_date',
+      language,
+      entities: {}
+    };
+  }
+
   // Extract entities for CRM live queries
   const entities = {
     personName: null,
@@ -183,10 +198,10 @@ function classifyIntent(text) {
     };
   }
 
-  // Default fallback
+  // Default fallback for any general query, entity, public figure, or world knowledge
   return {
-    intent: 'SOFTWARE_KNOWLEDGE',
-    subIntent: 'general_knowledge',
+    intent: 'GENERAL_INTELLIGENCE',
+    subIntent: 'world_knowledge',
     language,
     entities
   };
