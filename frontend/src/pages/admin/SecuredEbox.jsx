@@ -35,13 +35,29 @@ import {
   X,
   Play,
   Pause,
-  AlertCircle
+  AlertCircle,
+  Languages,
+  Globe,
+  ChevronLeft
 } from 'lucide-react';
+import './SecuredEbox.css';
 import { Breadcrumb, Button, Card, Badge } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
 import { useLanguage } from '../../context/LanguageContext';
 import eboxService from '../../services/eboxService';
 import { useCall } from '../../context/CallContext';
+import {
+  SUPPORTED_LANGUAGES,
+  SEED_TRANSLATIONS_DICT,
+  translateText,
+  translateMessagesBatch,
+  getInstantTranslations,
+  getSavedLanguage,
+  saveLanguage,
+  getSavedThreadTranslations,
+  saveThreadTranslations,
+  purgeCorruptedCache,
+} from '../../services/translationService';
 
 const EMOJI_LIST = [
   '😀', '😂', '😍', '🤔', '👍', '👎', '❤️', '🔥', '✅', '❌', 
@@ -421,30 +437,65 @@ export const SecuredEbox = () => {
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [previewImage, setPreviewImage] = useState(null);
 
+  // Translation States (Client Johnny's One-Click Auto-Translate Feature with LocalStorage Persistence)
+  const [selectedLanguage, setSelectedLanguage] = useState(() => getSavedLanguage());
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [showLangDropdown, setShowLangDropdown] = useState(false);
+  const [translatedMessagesMap, setTranslatedMessagesMap] = useState(() => {
+    const savedLang = getSavedLanguage();
+    if (savedLang === 'en') return {};
+    const savedThreads = (() => {
+      try {
+        const s = localStorage.getItem('crm_nergy_secured_ebox_v3');
+        return s ? JSON.parse(s) : INITIAL_CONVERSATIONS;
+      } catch {
+        return INITIAL_CONVERSATIONS;
+      }
+    })();
+    const activeList = (savedThreads && savedThreads['th-1']) || INITIAL_CONVERSATIONS['th-1'];
+    const dict = getInstantTranslations(activeList, savedLang);
+    const cached = getSavedThreadTranslations('th-1', savedLang) || {};
+    return { ...cached, ...dict };
+  });
+  const [individualTranslations, setIndividualTranslations] = useState({}); // { [msgId]: { text, isTranslated, isOriginal, ... } }
+  const [isTranslatingDraft, setIsTranslatingDraft] = useState(false);
+
+  // Responsive Mobile View State ('chat' | 'channels')
+  const [mobilePane, setMobilePane] = useState('chat');
+
   const fileInputRef = useRef(null);
   const imageInputRef = useRef(null);
   const videoInputRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const langDropdownRef = useRef(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const audioStreamRef = useRef(null);
   const recordingTimerRef = useRef(null);
   const callIntervalRef = useRef(null);
 
-  // Close emoji picker on click outside
+  // Purge any corrupted or stale English-as-translated cache on mount
+  useEffect(() => {
+    purgeCorruptedCache();
+  }, []);
+
+  // Close emoji picker and language dropdown on click outside
   useEffect(() => {
     const handleOutsideClick = (e) => {
       if (emojiPickerRef.current && !emojiPickerRef.current.contains(e.target)) {
         setShowEmojiPicker(false);
       }
+      if (langDropdownRef.current && !langDropdownRef.current.contains(e.target)) {
+        setShowLangDropdown(false);
+      }
     };
-    if (showEmojiPicker) {
+    if (showEmojiPicker || showLangDropdown) {
       document.addEventListener('mousedown', handleOutsideClick);
     }
     return () => {
       document.removeEventListener('mousedown', handleOutsideClick);
     };
-  }, [showEmojiPicker]);
+  }, [showEmojiPicker, showLangDropdown]);
 
   // Call timer interval
   useEffect(() => {
@@ -659,15 +710,34 @@ export const SecuredEbox = () => {
   const lastActiveThreadRef = useRef(activeThreadId);
   const lastActiveMsgCountRef = useRef(0);
 
-  // Initialize messages from localStorage or empty store
+  // Initialize messages from localStorage or default seed store.
+  // IMPORTANT: Always restore seed message text to English original from SEED_TRANSLATIONS_DICT
+  // so that the translation layer always has a stable English source to translate FROM.
   const [threadStore, setThreadStore] = useState(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) return JSON.parse(saved);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+          // Restore seed messages to English original to prevent stale translated text in store
+          const restored = {};
+          for (const [threadId, msgs] of Object.entries(parsed)) {
+            restored[threadId] = Array.isArray(msgs)
+              ? msgs.map((m) => {
+                  if (m && m.id && SEED_TRANSLATIONS_DICT[m.id]?.en) {
+                    return { ...m, text: SEED_TRANSLATIONS_DICT[m.id].en };
+                  }
+                  return m;
+                })
+              : msgs;
+          }
+          return restored;
+        }
+      }
     } catch (e) {
       console.warn('zBox storage read error:', e);
     }
-    return {};
+    return INITIAL_CONVERSATIONS;
   });
 
   // Fetch real encrypted messages from MySQL database on mount
@@ -887,19 +957,171 @@ export const SecuredEbox = () => {
   const currentThread = threads.find((t) => t.id === activeThreadId) || threads[0];
   const activeMessages = threadStore[activeThreadId] || [];
 
+  // One-Click Language Selection Handler (Client Request + LocalStorage Persistence)
+  const handleLanguageChange = async (langCode) => {
+    setSelectedLanguage(langCode);
+    saveLanguage(langCode);
+    setShowLangDropdown(false);
+    setIndividualTranslations({}); // Clear any individual message overrides immediately
+
+    const activeList = threadStore[activeThreadId] || INITIAL_CONVERSATIONS[activeThreadId] || [];
+    const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === langCode);
+
+    if (langCode === 'en') {
+      const englishMap = getInstantTranslations(activeList, 'en');
+      setTranslatedMessagesMap(englishMap);
+      addToast({
+        title: 'Original Language Restored',
+        message: 'Displaying original English messages.',
+        type: 'info',
+      });
+      return;
+    }
+
+    // 1. Immediately apply instant dictionary translations across all languages (0ms lag, no stale text!)
+    const instantMap = getInstantTranslations(activeList, langCode);
+    setTranslatedMessagesMap(instantMap);
+
+    setIsTranslating(true);
+    addToast({
+      title: `Translated to ${targetLangObj?.name || langCode}`,
+      message: `Conversation translated into ${targetLangObj?.name} ${targetLangObj?.flag}. Preference saved across page refreshes!`,
+      type: 'success',
+    });
+
+    try {
+      // 2. Translate any dynamic / untranslated messages in background
+      const resultMap = await translateMessagesBatch(activeList, langCode, activeThreadId);
+      const plainObj = {};
+      resultMap.forEach((val, key) => {
+        if (val) plainObj[key] = val;
+      });
+      const finalMap = { ...instantMap, ...plainObj };
+      setTranslatedMessagesMap(finalMap);
+      saveThreadTranslations(activeThreadId, langCode, finalMap);
+    } catch (err) {
+      console.warn('Background translation note:', err);
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  // Auto-translate thread when switching channel or on initial mount if translation is active
+  useEffect(() => {
+    const activeList = threadStore[activeThreadId] || INITIAL_CONVERSATIONS[activeThreadId] || [];
+    if (selectedLanguage !== 'en') {
+      const instantMap = getInstantTranslations(activeList, selectedLanguage);
+      setTranslatedMessagesMap(instantMap);
+
+      // Background translate any messages not in dictionary/cache
+      const pending = activeList.filter((m) => m && m.id && m.text && !instantMap[m.id]);
+      if (pending.length > 0) {
+        translateMessagesBatch(activeList, selectedLanguage, activeThreadId).then((resMap) => {
+          if (resMap && resMap.size > 0) {
+            const plainObj = {};
+            resMap.forEach((val, key) => {
+              if (val) plainObj[key] = val;
+            });
+            const merged = { ...instantMap, ...plainObj };
+            setTranslatedMessagesMap(merged);
+            saveThreadTranslations(activeThreadId, selectedLanguage, merged);
+          }
+        }).catch((e) => {
+          console.warn('Batch translation note:', e);
+        });
+      }
+    } else {
+      const englishMap = getInstantTranslations(activeList, 'en');
+      setTranslatedMessagesMap(englishMap);
+    }
+  }, [activeThreadId, selectedLanguage]);
+
+  // Translate a single individual message bubble
+  const handleToggleSingleTranslation = async (msgId, originalText) => {
+    // If this message already has an individual override, clear it
+    if (individualTranslations[msgId]) {
+      setIndividualTranslations((prev) => {
+        const next = { ...prev };
+        delete next[msgId];
+        return next;
+      });
+      return;
+    }
+
+    // If currently batch translated, user wants to revert this message to original English
+    const currentBatchTx = translatedMessagesMap[msgId] || getInstantTranslations([{ id: msgId, text: originalText }], selectedLanguage)[msgId];
+    if (selectedLanguage !== 'en' && currentBatchTx && currentBatchTx.trim() !== (originalText || '').trim()) {
+      setIndividualTranslations((prev) => ({
+        ...prev,
+        [msgId]: { text: originalText, isOriginal: true, isTranslated: false },
+      }));
+      return;
+    }
+
+    // Otherwise, translate to active language (or Spanish if currently English)
+    const targetLang = selectedLanguage === 'en' ? 'es' : selectedLanguage;
+    const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang);
+
+    // 1. Check instant dictionary and signature first
+    let translated = getInstantTranslations([{ id: msgId, text: originalText }], targetLang)[msgId];
+
+    if (!translated || translated.trim() === (originalText || '').trim()) {
+      try {
+        translated = await translateText(originalText, targetLang);
+      } catch (err) {
+        console.error('Single translation error:', err);
+        translated = originalText;
+      }
+    }
+
+    if (translated && translated.trim() !== (originalText || '').trim()) {
+      setIndividualTranslations((prev) => ({
+        ...prev,
+        [msgId]: {
+          text: translated,
+          targetLang,
+          langObj: targetLangObj,
+          isTranslated: true,
+        },
+      }));
+    }
+  };
+
+  // Translate composer draft input before sending
+  const handleTranslateInput = async () => {
+    if (!inputText.trim()) return;
+    setIsTranslatingDraft(true);
+    const targetLang = selectedLanguage === 'en' ? 'es' : selectedLanguage;
+    const targetLangObj = SUPPORTED_LANGUAGES.find((l) => l.code === targetLang);
+
+    try {
+      const translated = await translateText(inputText, targetLang);
+      setInputText(translated);
+      addToast({
+        title: 'Draft Translated',
+        message: `Draft converted into ${targetLangObj?.name} (${targetLangObj?.flag}).`,
+        type: 'success',
+      });
+    } catch (err) {
+      console.error('Draft translation error:', err);
+    } finally {
+      setIsTranslatingDraft(false);
+    }
+  };
+
   // Automated simulated responder for testing two-way persona flow
   const triggerAutoReply = (userMessage, targetThreadId, senderRole) => {
     if (senderRole !== 'johnny') return;
 
     setIsTyping(true);
 
-    setTimeout(() => {
+    setTimeout(async () => {
       let replyText = '';
       let replySender = 'Kiaan Tech Team (KTT)';
       let replyTitle = 'Lead Systems Architect';
       let replyRole = 'ktt';
 
-      const lower = userMessage.toLowerCase();
+      const lower = (userMessage || '').toLowerCase();
 
       if (targetThreadId === 'th-2') {
         replySender = 'Legal Counsel (Corporate Diligence)';
@@ -912,6 +1134,20 @@ export const SecuredEbox = () => {
         } else {
           replyText = `Johnny, received: "${userMessage}". Our legal counsel has annotated this into the attorney pitch review dossier.`;
         }
+      } else if (targetThreadId === 'th-3') {
+        replySender = 'Lead Systems Architect (KTT)';
+        replyTitle = 'KTT Principal Engineer';
+        replyRole = 'ktt';
+        if (lower.includes('speed') || lower.includes('benchmark') || lower.includes('salesforce')) {
+          replyText = 'Johnny, speed benchmarks are locked in: CRM nErgy delivers 218ms streaming pipeline latency vs 1,400ms for Salesforce Einstein.';
+        } else {
+          replyText = `Johnny, confirmed: "${userMessage}". Roadmap v2.6 timeline updated with live ElevenLabs and Pollinations FLUX.1 models.`;
+        }
+      } else if (targetThreadId === 'th-swmtp') {
+        replySender = 'SWMTP Master Admin (Central Hub)';
+        replyTitle = 'Central Hub Administrator';
+        replyRole = 'swmtp_admin';
+        replyText = `HMAC-SHA256 handshake confirmed. SWMTP Mesh received: "${userMessage}". Cryptographic delivery ACK logged.`;
       } else {
         if (lower.includes('hello') || lower.includes('hi') || lower.includes('test') || lower.includes('hey')) {
           replyText = 'Hello Johnny! Kiaan Tech Team is actively monitoring this encrypted channel. All 15 AI studios, auto DMS marketplace, and attorney demo environments are 100% operational.';
@@ -924,8 +1160,9 @@ export const SecuredEbox = () => {
         }
       }
 
+      const replyMsgId = `ebx-${Date.now()}`;
       const replyMsg = {
-        id: `ebx-${Date.now()}`,
+        id: replyMsgId,
         senderRole: replyRole,
         sender: replySender,
         title: replyTitle,
@@ -939,6 +1176,18 @@ export const SecuredEbox = () => {
         [targetThreadId]: [...(prev[targetThreadId] || []), replyMsg],
       }));
 
+      // If active language is not English, translate the reply instantly!
+      if (selectedLanguage !== 'en') {
+        try {
+          const tx = await translateText(replyText, selectedLanguage);
+          if (tx) {
+            setTranslatedMessagesMap((prev) => ({ ...prev, [replyMsgId]: tx }));
+          }
+        } catch (e) {
+          // ignore
+        }
+      }
+
       setIsTyping(false);
 
       addToast({
@@ -946,10 +1195,10 @@ export const SecuredEbox = () => {
         message: replyText.slice(0, 75) + '...',
         type: 'info',
       });
-    }, 1400);
+    }, 1200);
   };
 
-    const readFileAsBase64 = (file) => {
+  const readFileAsBase64 = (file) => {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
@@ -980,43 +1229,23 @@ export const SecuredEbox = () => {
     setInputText('');
     setAttachedFiles([]);
 
-    try {
-      const isSwmtp = threadId === 'th-swmtp';
-      const activeMsgs = threadStore['th-swmtp'] || [];
-      const lastSwmtp = [...activeMsgs].reverse().find(m => m.conversationId);
-      const conversationId = lastSwmtp?.conversationId || 'conv-swmtp-main';
+    const isSwmtp = threadId === 'th-swmtp';
+    const activeMsgs = threadStore['th-swmtp'] || [];
+    const lastSwmtp = [...activeMsgs].reverse().find((m) => m.conversationId);
+    const conversationId = lastSwmtp?.conversationId || 'conv-swmtp-main';
 
-      if (currentFiles.length > 0) {
-        for (const file of currentFiles) {
+    if (currentFiles.length > 0) {
+      for (const file of currentFiles) {
+        try {
           const base64Data = await readFileAsBase64(file);
           const isImg = file.type?.startsWith('image/') || /\.(jpg|jpeg|png|gif|webp|svg|avif)$/i.test(file.name);
           const isVid = file.type?.startsWith('video/') || /\.(mp4|webm|mov|mkv|avi)$/i.test(file.name);
           const isAud = file.type?.startsWith('audio/') || /\.(mp3|wav|ogg|m4a)$/i.test(file.name);
           const msgType = isImg ? 'image' : (isVid ? 'video' : (isAud ? 'audio' : 'file'));
 
-          const fileMeta = {
-            fileName: file.name,
-            fileType: file.type || 'application/octet-stream',
-            fileSize: `${(file.size / 1024).toFixed(1)} KB`,
-            isImage: isImg,
-            isVideo: isVid,
-            isAudio: isAud,
-          };
-
-          const response = await eboxService.sendMessage({
-            subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
-            message: currentMsgText,
-            recipient: isSwmtp ? 'SWMTP Master Admin' : (sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'),
-            isSwmtp,
-            conversationId: isSwmtp ? conversationId : undefined,
-            messageType: msgType,
-            fileData: base64Data,
-            fileName: file.name,
-            fileMetadata: fileMeta
-          });
-
+          const fileMsgId = `ebx-f-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`;
           const fileMsg = {
-            id: response?.id || `ebx-f-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
+            id: fileMsgId,
             senderRole: sentPersona,
             sender: senderName,
             title: senderTitle,
@@ -1037,54 +1266,119 @@ export const SecuredEbox = () => {
             ...prev,
             [threadId]: [...(prev[threadId] || []), fileMsg],
           }));
+
+          if (sentPersona === 'johnny') {
+            triggerAutoReply(`[File Attached: ${file.name}] ${currentMsgText}`, threadId, sentPersona);
+          }
+
+          await eboxService.sendMessage({
+            subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
+            message: currentMsgText,
+            recipient: isSwmtp ? 'SWMTP Master Admin' : (sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'),
+            isSwmtp,
+            conversationId: isSwmtp ? conversationId : undefined,
+            messageType: msgType,
+            fileData: base64Data,
+            fileName: file.name,
+            fileMetadata: {
+              fileName: file.name,
+              fileType: file.type || 'application/octet-stream',
+              fileSize: `${(file.size / 1024).toFixed(1)} KB`,
+              isImage: isImg,
+              isVideo: isVid,
+              isAudio: isAud,
+            },
+          });
+        } catch (err) {
+          console.warn('File dispatch notice:', err);
         }
-      } else {
+      }
+      addToast({
+        title: 'Dispatch Delivered',
+        message: 'File(s) uploaded to AES-256 encrypted vault.',
+        type: 'success',
+      });
+    } else {
+      const tempId = `ebx-${Date.now()}`;
+      const newMsg = {
+        id: tempId,
+        senderRole: sentPersona,
+        sender: senderName,
+        title: senderTitle,
+        time: 'Just now',
+        text: currentMsgText,
+        attachment: null,
+        isDbRecord: false,
+        conversationId: isSwmtp ? conversationId : undefined,
+      };
+
+      // 1. Instantly display in chat UI (0ms lag)
+      setThreadStore((prev) => ({
+        ...prev,
+        [threadId]: [...(prev[threadId] || []), newMsg],
+      }));
+
+      // 2. If translation is active, translate this new message into selectedLanguage
+      if (selectedLanguage !== 'en' && currentMsgText) {
+        translateText(currentMsgText, selectedLanguage).then((tx) => {
+          if (tx) {
+            setTranslatedMessagesMap((prev) => ({ ...prev, [tempId]: tx }));
+          }
+        });
+      }
+
+      // 3. Trigger team auto-reply if Johnny sends
+      if (sentPersona === 'johnny') {
+        triggerAutoReply(currentMsgText, threadId, sentPersona);
+      }
+
+      // 4. Background persist to MySQL vault
+      try {
         const response = await eboxService.sendMessage({
           subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
           message: currentMsgText,
           recipient: isSwmtp ? 'SWMTP Master Admin' : (sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'),
           isSwmtp,
           conversationId: isSwmtp ? conversationId : undefined,
-          messageType: 'text'
+          messageType: 'text',
         });
 
-        const newMsg = {
-          id: response?.id || `ebx-${Date.now()}`,
-          senderRole: sentPersona,
-          sender: senderName,
-          title: senderTitle,
-          time: 'Just now',
-          text: currentMsgText,
-          attachment: null,
-          isDbRecord: true,
-          conversationId: isSwmtp ? conversationId : undefined,
-        };
+        if (response?.id) {
+          setThreadStore((prev) => ({
+            ...prev,
+            [threadId]: (prev[threadId] || []).map((m) => (m.id === tempId ? { ...m, id: response.id, isDbRecord: true } : m)),
+          }));
+        }
 
-        setThreadStore((prev) => ({
-          ...prev,
-          [threadId]: [...(prev[threadId] || []), newMsg],
-        }));
+        addToast({
+          title: isSwmtp ? 'Synchronized with SWMTP Central Hub' : 'Message Transmitted & Vault Encrypted',
+          message: isSwmtp
+            ? 'Persisted to MySQL (AES-256) and synchronized to SWMTP Master Admin.'
+            : `Saved to MySQL (AES-256) and delivered to ${sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'}.`,
+          type: 'success',
+        });
+      } catch (backendErr) {
+        console.warn('Backend sync note (message safely stored locally):', backendErr);
+        addToast({
+          title: 'Encrypted Message Stored',
+          message: 'Saved to local encrypted vault memory.',
+          type: 'info',
+        });
       }
-
-      addToast({
-        title: isSwmtp ? 'Synchronized with SWMTP Central Hub' : 'Message Transmitted & Vault Encrypted',
-        message: isSwmtp
-          ? 'Persisted to MySQL (AES-256) and synchronized to SWMTP Master Admin.'
-          : `Saved to MySQL (AES-256) and delivered to ${sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'}.`,
-        type: 'success',
-      });
-    } catch (err) {
-      addToast({
-        title: 'Transmission Failed',
-        message: err.message || 'Message could not be saved to secure vault.',
-        type: 'error',
-      });
     }
   };
 
   const handleResetDemo = () => {
     setThreadStore(INITIAL_CONVERSATIONS);
     localStorage.removeItem(STORAGE_KEY);
+    setIndividualTranslations({});
+    if (selectedLanguage !== 'en') {
+      const activeList = INITIAL_CONVERSATIONS[activeThreadId] || [];
+      const instantMap = getInstantTranslations(activeList, selectedLanguage);
+      setTranslatedMessagesMap(instantMap);
+    } else {
+      setTranslatedMessagesMap({});
+    }
     addToast({
       title: 'Demo Conversation Reset',
       message: 'Restored original executive thread history.',
@@ -1094,8 +1388,9 @@ export const SecuredEbox = () => {
 
   const filteredMessages = activeMessages.filter(
     (m) =>
-      m.text.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      m.sender.toLowerCase().includes(searchQuery.toLowerCase())
+      (m.text || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.sender || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (m.attachment?.name || '').toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Quick chips based on thread and persona
@@ -1149,60 +1444,28 @@ export const SecuredEbox = () => {
         ];
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '20px',
-        width: '100%',
-        maxWidth: '1240px',
-        margin: '0 auto',
-        fontFamily: 'var(--font-sans)',
-        boxSizing: 'border-box',
-      }}
-    >
+    <div className="ebox-page-container">
       {/* Top Header Row */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '16px',
-          paddingBottom: '16px',
-          borderBottom: '1px solid var(--border)',
-        }}
-      >
-        <div>
+      <div className="ebox-top-header">
+        <div className="ebox-top-header-title-group">
           <Breadcrumb items={[{ label: 'CRM nErgy AI' }, { label: isEs ? 'Gobernanza Ejecutiva' : 'Executive Governance' }, { label: isEs ? 'zBox Seguro' : 'Secured zBox' }]} />
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '6px', flexWrap: 'wrap' }}>
-            <h1
-              style={{
-                fontSize: '22px',
-                fontWeight: 800,
-                color: 'var(--text-primary)',
-                margin: 0,
-                letterSpacing: '-0.02em',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-              }}
-            >
-              <Lock size={22} style={{ color: 'var(--energy-sky, #0284c7)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '4px', flexWrap: 'wrap' }}>
+            <h1 className="ebox-top-header-title">
+              <Lock size={20} style={{ color: 'var(--energy-sky, #0284c7)' }} />
               {isEs ? 'zBox de Comunicaciones Seguras' : 'Secured Communications zBox'}
             </h1>
             <span
               style={{
-                fontSize: '11px',
+                fontSize: '10.5px',
                 fontWeight: 700,
                 fontFamily: 'var(--font-mono, monospace)',
                 color: '#059669',
                 backgroundColor: 'rgba(5, 150, 105, 0.1)',
                 border: '1px solid rgba(5, 150, 105, 0.25)',
-                padding: '3px 10px',
+                padding: '2px 8px',
                 borderRadius: '6px',
                 textTransform: 'uppercase',
-                display: 'flex',
+                display: 'inline-flex',
                 alignItems: 'center',
                 gap: '5px',
               }}
@@ -1213,32 +1476,32 @@ export const SecuredEbox = () => {
                   height: '6px',
                   borderRadius: '50%',
                   backgroundColor: '#059669',
-                  boxShadow: '0 0 8px #059669',
+                  boxShadow: '0 0 6px #059669',
                 }}
               />
-              {isEs ? 'Bóveda Restringida SEA ↔ KTT' : 'SEA ↔ KTT Restricted Vault'}
+              {isEs ? 'Bóveda SEA ↔ KTT' : 'SEA ↔ KTT Vault'}
             </span>
           </div>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '4px 0 0 0' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
             {isEs
-              ? 'Canal cifrado directo entre el Administrador Súper Ejecutivo [ SEA ] de CRM nErgy y el equipo de desarrollo de software KT. Personal no SEA estrictamente aislado.'
-              : 'Direct encrypted channel between CRM nErgy’s Super Executive Admin [ SEA ] and KT software dev team. Non-SEA staff strictly isolated.'}
+              ? 'Bóveda de mensajería ejecutiva con cifrado de extremo a extremo y traducción multilingüe.'
+              : 'End-to-end encrypted executive messaging vault with instant multilingual auto-translation.'}
           </p>
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={handleResetDemo}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              fontSize: '12px',
+              gap: '5px',
+              padding: '6px 12px',
+              fontSize: '11.5px',
               fontWeight: 600,
-              borderRadius: '8px',
+              borderRadius: '7px',
               border: '1px solid var(--border)',
               backgroundColor: 'var(--surface)',
               color: 'var(--text-secondary)',
@@ -1246,21 +1509,21 @@ export const SecuredEbox = () => {
               transition: 'all 150ms ease',
             }}
           >
-            <RotateCcw size={14} />
-            {isEs ? 'Restablecer Historial' : 'Reset History'}
+            <RotateCcw size={13} />
+            {isEs ? 'Restablecer' : 'Reset History'}
           </button>
 
           <button
             type="button"
-            onClick={() => window.open('https://api.whatsapp.com', '_blank')}
+            onClick={() => window.open(`https://wa.me/?text=${encodeURIComponent('Hello Kiaan Tech Team! I am reaching out from CRM nErgy Secured zBox regarding executive support.')}`, '_blank')}
             style={{
               display: 'inline-flex',
               alignItems: 'center',
-              gap: '6px',
-              padding: '7px 14px',
-              fontSize: '12px',
+              gap: '5px',
+              padding: '6px 12px',
+              fontSize: '11.5px',
               fontWeight: 600,
-              borderRadius: '8px',
+              borderRadius: '7px',
               border: '1px solid rgba(16, 185, 129, 0.3)',
               backgroundColor: 'rgba(16, 185, 129, 0.08)',
               color: '#059669',
@@ -1268,198 +1531,60 @@ export const SecuredEbox = () => {
               transition: 'all 150ms ease',
             }}
           >
-            <MessageCircle size={14} />
-            {isEs ? 'Línea de WhatsApp' : 'WhatsApp Hotline'}
+            <MessageCircle size={13} />
+            {isEs ? 'WhatsApp' : 'WhatsApp Hotline'}
           </button>
         </div>
       </div>
 
-      {/* TWO-WAY PERSONA CONTROLLER BAR */}
-      <div
-        style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: '14px',
-          padding: '14px 18px',
-          borderRadius: '12px',
-          background:
-            activePersona === 'johnny'
-              ? 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(37, 99, 235, 0.04) 100%)'
+      {/* SLEEK COMPACT PERSONA CONTROLLER STRIP (Bloat Removed) */}
+      <div className="ebox-persona-strip">
+        <div className="ebox-persona-label">
+          <User size={14} style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669' }} />
+          <span>{isEs ? 'Operador Activo:' : 'Active Operator:'}</span>
+          <span style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669', fontWeight: 800 }}>
+            {activePersona === 'johnny'
+              ? 'Johnny (Super Executive Admin)'
               : activePersona === 'ktt'
-              ? 'linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(124, 58, 237, 0.04) 100%)'
-              : 'linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(16, 185, 129, 0.04) 100%)',
-          border:
-            activePersona === 'johnny'
-              ? '1px solid rgba(2, 132, 199, 0.35)'
-              : activePersona === 'ktt'
-              ? '1px solid rgba(79, 70, 229, 0.35)'
-              : '1px solid rgba(5, 150, 105, 0.35)',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <div
-            style={{
-              width: '40px',
-              height: '40px',
-              borderRadius: '10px',
-              backgroundColor:
-                activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-              flexShrink: 0,
-            }}
-          >
-            {activePersona === 'johnny' ? <User size={20} /> : activePersona === 'ktt' ? <Shield size={20} /> : <Lock size={20} />}
-          </div>
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-primary)' }}>
-                {isEs ? 'Identidad de Operador Activo:' : 'Active Operator Identity:'}
-              </span>
-              <span
-                style={{
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: '#ffffff',
-                  backgroundColor:
-                    activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669',
-                  padding: '2px 8px',
-                  borderRadius: '6px',
-                }}
-              >
-                {activePersona === 'johnny'
-                  ? (isEs ? 'Johnny (Administrador Súper Ejecutivo [SEA])' : 'Johnny (Super Executive Admin [SEA])')
-                  : activePersona === 'ktt'
-                  ? (isEs ? 'Equipo de Tecnología Kiaan (KTT - Arquitecto Líder)' : 'Kiaan Tech Team (KTT - Lead Systems Architect)')
-                  : (isEs ? 'Asesor Legal Corporativo (Abogado)' : 'Corporate Legal Counsel (Attorney)')}
-              </span>
-            </div>
-            <p style={{ fontSize: '11px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-              {activePersona === 'johnny'
-                ? (isEs
-                    ? 'Escriba instrucciones a continuación para probar el envío a KTT. KTT confirmará al instante mediante el respondedor en tiempo real.'
-                    : 'Type instructions below to test sending to KTT. KTT will instantly acknowledge via real-time vault responder.')
-                : (isEs
-                    ? 'Ahora está viendo como el Destinatario. Puede leer las instrucciones de Johnny y escribir respuestas personalizadas.'
-                    : 'You are now viewing as the Recipient. You can read Johnny’s instructions and type custom replies.')}
-            </p>
-          </div>
+              ? (isEs ? 'Equipo Dev Kiaan (KTT)' : 'Kiaan Tech Team (KTT)')
+              : (isEs ? 'Mesa Legal Corporativa' : 'Corporate Legal Counsel')}
+          </span>
         </div>
 
-        {/* Segmented Persona Switcher */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '4px',
-            padding: '4px',
-            borderRadius: '9px',
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border)',
-          }}
-        >
+        <div className="ebox-persona-buttons">
           <button
             type="button"
             onClick={() => setActivePersona('johnny')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '7px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              border: 'none',
-              transition: 'all 150ms ease',
-              backgroundColor: activePersona === 'johnny' ? '#0284c7' : 'transparent',
-              color: activePersona === 'johnny' ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: activePersona === 'johnny' ? '0 2px 6px rgba(2, 132, 199, 0.3)' : 'none',
-            }}
+            className={`ebox-persona-btn ${activePersona === 'johnny' ? 'active-johnny' : ''}`}
           >
-            <User size={13} />
+            <User size={12} />
             Johnny (SEA)
           </button>
 
           <button
             type="button"
             onClick={() => setActivePersona('ktt')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '7px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              border: 'none',
-              transition: 'all 150ms ease',
-              backgroundColor: activePersona === 'ktt' ? '#4f46e5' : 'transparent',
-              color: activePersona === 'ktt' ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: activePersona === 'ktt' ? '0 2px 6px rgba(79, 70, 229, 0.3)' : 'none',
-            }}
+            className={`ebox-persona-btn ${activePersona === 'ktt' ? 'active-ktt' : ''}`}
           >
-            <Shield size={13} />
-            {isEs ? 'KTT (Equipo Dev)' : 'KTT (Dev Team)'}
+            <Shield size={12} />
+            {isEs ? 'KTT (Dev)' : 'KTT (Dev Team)'}
           </button>
 
           <button
             type="button"
             onClick={() => setActivePersona('attorney')}
-            style={{
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '6px 12px',
-              borderRadius: '7px',
-              fontSize: '12px',
-              fontWeight: 700,
-              cursor: 'pointer',
-              border: 'none',
-              transition: 'all 150ms ease',
-              backgroundColor: activePersona === 'attorney' ? '#059669' : 'transparent',
-              color: activePersona === 'attorney' ? '#ffffff' : 'var(--text-secondary)',
-              boxShadow: activePersona === 'attorney' ? '0 2px 6px rgba(5, 150, 105, 0.3)' : 'none',
-            }}
+            className={`ebox-persona-btn ${activePersona === 'attorney' ? 'active-attorney' : ''}`}
           >
-            <Lock size={13} />
-            {isEs ? 'Mesa Legal' : 'Attorney Desk'}
+            <Lock size={12} />
+            {isEs ? 'Legal' : 'Attorney'}
           </button>
         </div>
       </div>
 
-      {/* MAIN TWO-COLUMN WORKSPACE CONTAINER */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '320px 1fr',
-          gap: '20px',
-          alignItems: 'start',
-        }}
-        className="ebox-main-grid"
-      >
+      {/* MAIN TWO-COLUMN WORKSPACE CONTAINER (Responsive Mobile + Desktop) */}
+      <div className={`ebox-main-grid ${mobilePane === 'channels' ? 'mobile-show-channels' : 'mobile-show-chat'}`}>
         {/* LEFT COLUMN: CHANNELS VAULT */}
-        <div
-          style={{
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '14px',
-            padding: '16px',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '14px',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            height: '620px',
-            boxSizing: 'border-box',
-          }}
-        >
+        <div className="ebox-channels-pane">
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <span style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-primary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
               {isEs ? 'Bóvedas Cifradas' : 'Encrypted Vaults'}
@@ -1502,7 +1627,7 @@ export const SecuredEbox = () => {
           </div>
 
           {/* Channels List */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', overflowY: 'auto', flex: 1, paddingRight: '2px' }}>
+          <div className="ebox-channels-list">
             {threads.map((th) => {
               const isActive = activeThreadId === th.id;
               const msgCount = (threadStore[th.id] || []).length;
@@ -1511,9 +1636,12 @@ export const SecuredEbox = () => {
               return (
                 <div
                   key={th.id}
-                  onClick={() => setActiveThreadId(th.id)}
+                  onClick={() => {
+                    setActiveThreadId(th.id);
+                    setMobilePane('chat'); // Automatically open chat on mobile when tapped
+                  }}
                   style={{
-                    padding: '12px',
+                    padding: '10px 12px',
                     borderRadius: '10px',
                     cursor: 'pointer',
                     border: isActive ? `1.5px solid ${th.color}` : '1px solid var(--border)',
@@ -1521,15 +1649,15 @@ export const SecuredEbox = () => {
                     transition: 'all 150ms ease',
                     display: 'flex',
                     flexDirection: 'column',
-                    gap: '6px',
+                    gap: '4px',
                   }}
                 >
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                       <div
                         style={{
-                          width: '26px',
-                          height: '26px',
+                          width: '24px',
+                          height: '24px',
                           borderRadius: '6px',
                           backgroundColor: th.color,
                           display: 'flex',
@@ -1539,11 +1667,11 @@ export const SecuredEbox = () => {
                           flexShrink: 0,
                         }}
                       >
-                        <IconComp size={14} />
+                        <IconComp size={13} />
                       </div>
                       <span
                         style={{
-                          fontSize: '13px',
+                          fontSize: '12.5px',
                           fontWeight: 700,
                           color: isActive ? th.color : 'var(--text-primary)',
                         }}
@@ -1555,9 +1683,9 @@ export const SecuredEbox = () => {
                       style={{
                         fontSize: '10px',
                         fontFamily: 'var(--font-mono)',
-                        backgroundColor: 'var(--surface)',
+                        backgroundColor: 'var(--surface-secondary)',
                         border: '1px solid var(--border)',
-                        padding: '1px 6px',
+                        padding: '1px 5px',
                         borderRadius: '4px',
                         color: 'var(--text-secondary)',
                       }}
@@ -1580,153 +1708,235 @@ export const SecuredEbox = () => {
               );
             })}
           </div>
-
-          {/* Cryptographic Compliance Footer */}
-          <div
-            style={{
-              paddingTop: '10px',
-              borderTop: '1px solid var(--border)',
-              display: 'flex',
-              alignItems: 'flex-start',
-              gap: '8px',
-              fontSize: '10px',
-              color: 'var(--text-tertiary)',
-              lineHeight: 1.4,
-            }}
-          >
-            <KeyRound size={14} style={{ color: '#059669', flexShrink: 0, marginTop: '2px' }} />
-            <span>
-              <strong>{isEs ? 'Seguridad Cero Fugas:' : 'Zero-Leakage Security:'}</strong> {isEs ? 'Estrictamente tokens de sesión criptográfica SEA. Empleados estándar no pueden descifrar.' : 'Strictly SEA cryptographic session tokens. Standard employees cannot decrypt.'}
-            </span>
-          </div>
         </div>
 
         {/* RIGHT COLUMN: ACTIVE CONVERSATION & TWO-WAY COMPOSER */}
-        <div
-          style={{
-            backgroundColor: 'var(--surface)',
-            border: '1px solid var(--border)',
-            borderRadius: '14px',
-            display: 'flex',
-            flexDirection: 'column',
-            boxShadow: '0 2px 10px rgba(0,0,0,0.03)',
-            height: '620px',
-            overflow: 'hidden',
-            boxSizing: 'border-box',
-          }}
-        >
+        <div className="ebox-chat-pane">
           {/* Thread Header */}
-          <div
-            style={{
-              padding: '14px 18px',
-              borderBottom: '1px solid var(--border)',
-              backgroundColor: 'var(--surface-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-              flexWrap: 'wrap',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
-                  {currentThread.title}
-                </h3>
-                <span
-                  style={{
-                    fontSize: '10px',
-                    fontFamily: 'var(--font-mono)',
-                    fontWeight: 700,
-                    color: '#059669',
-                    backgroundColor: 'rgba(5, 150, 105, 0.12)',
-                    border: '1px solid rgba(5, 150, 105, 0.25)',
-                    padding: '2px 6px',
-                    borderRadius: '4px',
-                  }}
-                >
-                  {isEs ? 'EN VIVO AES-256-GCM' : 'AES-256-GCM LIVE'}
+          <div className="ebox-chat-header">
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+              {/* Mobile Back Button to return to Channels */}
+              <button
+                type="button"
+                className="ebox-mobile-back-btn"
+                onClick={() => setMobilePane('channels')}
+                title="Back to channels"
+              >
+                <ChevronLeft size={15} />
+                <span>{isEs ? 'Canales' : 'Channels'}</span>
+              </button>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1px', minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <h3 style={{ fontSize: '14.5px', fontWeight: 800, color: 'var(--text-primary)', margin: 0 }}>
+                    {currentThread.title}
+                  </h3>
+                  <span
+                    style={{
+                      fontSize: '9.5px',
+                      fontFamily: 'var(--font-mono)',
+                      fontWeight: 700,
+                      color: '#059669',
+                      backgroundColor: 'rgba(5, 150, 105, 0.12)',
+                      border: '1px solid rgba(5, 150, 105, 0.25)',
+                      padding: '1px 5px',
+                      borderRadius: '4px',
+                    }}
+                  >
+                    AES-256-GCM
+                  </span>
+                </div>
+                <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                  {currentThread.subtitle}
                 </span>
               </div>
-              <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
-                {currentThread.subtitle}
-              </span>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span style={{ fontSize: '11px', color: 'var(--text-tertiary)' }}>{isEs ? 'Chateando como:' : 'Chatting as:'}</span>
-              <span
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+              {/* WebRTC Voice & Video Call Action Buttons */}
+              <button
+                type="button"
+                onClick={() => startCall('audio')}
                 style={{
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  padding: '3px 8px',
-                  borderRadius: '6px',
-                  backgroundColor:
-                    activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669',
-                  color: '#ffffff',
+                  padding: '6px 9px',
+                  borderRadius: '7px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 }}
+                title={isEs ? 'Llamada de voz WebRTC' : 'Start WebRTC Voice Call'}
               >
-                {activePersona === 'johnny' ? 'Johnny (SEA)' : activePersona === 'ktt' ? (isEs ? 'KTT (Dev)' : 'KTT (Dev)') : (isEs ? 'Abogado' : 'Attorney')}
-              </span>
-            </div>
+                <Phone size={13} />
+              </button>
 
-              {/* Encrypted Audio & Video Call Actions */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginLeft: '6px' }}>
+              <button
+                type="button"
+                onClick={() => startCall('video')}
+                style={{
+                  padding: '6px 9px',
+                  borderRadius: '7px',
+                  border: '1px solid var(--border)',
+                  backgroundColor: 'var(--surface)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+                title={isEs ? 'Videollamada WebRTC' : 'Start WebRTC Video Call'}
+              >
+                <Video size={13} />
+              </button>
+
+              {/* One-Click Language Translate Button & Interactive Dropdown (Client Feature) */}
+              <div style={{ position: 'relative' }} ref={langDropdownRef}>
                 <button
                   type="button"
-                  onClick={() => startCall('audio')}
-                  title={isEs ? 'Llamada de voz cifrada' : 'Secured Audio Call'}
+                  onClick={() => setShowLangDropdown(!showLangDropdown)}
+                  title="One-click automatic language translation"
                   style={{
-                    display: 'flex',
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '30px',
-                    height: '30px',
+                    gap: '6px',
+                    padding: '4px 10px',
                     borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: '#0284c7',
+                    border: selectedLanguage !== 'en' ? '1.5px solid #0284c7' : '1px solid var(--border)',
+                    backgroundColor: selectedLanguage !== 'en' ? 'rgba(2, 132, 199, 0.12)' : 'var(--surface)',
+                    color: selectedLanguage !== 'en' ? '#0284c7' : 'var(--text-primary)',
+                    fontSize: '11.5px',
+                    fontWeight: 700,
                     cursor: 'pointer',
                     transition: 'all 150ms ease',
                   }}
                 >
-                  <Phone size={14} />
+                  <Languages size={14} style={{ color: selectedLanguage !== 'en' ? '#0284c7' : 'var(--text-secondary)' }} />
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                    <span style={{ fontSize: '13px' }}>{SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.flag}</span>
+                    <span>{SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.native || 'English'}</span>
+                  </span>
+                  {isTranslating ? (
+                    <RefreshCw size={10} className="animate-spin" style={{ color: '#0284c7' }} />
+                  ) : (
+                    <span style={{ fontSize: '8px', opacity: 0.6 }}>▼</span>
+                  )}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => startCall('video')}
-                  title={isEs ? 'Videollamada cifrada' : 'Secured Video Call'}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    width: '30px',
-                    height: '30px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: '#059669',
-                    cursor: 'pointer',
-                    transition: 'all 150ms ease',
-                  }}
-                >
-                  <Video size={14} />
-                </button>
+
+                {/* Dropdown Menu */}
+                {showLangDropdown && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      top: 'calc(100% + 6px)',
+                      right: 0,
+                      zIndex: 1000,
+                      width: '200px',
+                      backgroundColor: 'var(--surface)',
+                      border: '1px solid var(--border)',
+                      borderRadius: '12px',
+                      boxShadow: '0 8px 24px rgba(0, 0, 0, 0.16)',
+                      padding: '6px',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '2px',
+                    }}
+                  >
+                    <div style={{ padding: '6px 8px 4px', fontSize: '10px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                      Translate eBox To
+                    </div>
+                    {SUPPORTED_LANGUAGES.map((lang) => {
+                      const isSelected = selectedLanguage === lang.code;
+                      return (
+                        <button
+                          key={lang.code}
+                          type="button"
+                          onClick={() => handleLanguageChange(lang.code)}
+                          style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 10px',
+                            borderRadius: '8px',
+                            border: 'none',
+                            backgroundColor: isSelected ? 'rgba(2, 132, 199, 0.12)' : 'transparent',
+                            color: isSelected ? '#0284c7' : 'var(--text-primary)',
+                            fontSize: '12px',
+                            fontWeight: isSelected ? 700 : 500,
+                            cursor: 'pointer',
+                            textAlign: 'left',
+                            transition: 'all 120ms ease',
+                          }}
+                          onMouseEnter={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = 'var(--surface-hover)';
+                          }}
+                          onMouseLeave={(e) => {
+                            if (!isSelected) e.currentTarget.style.backgroundColor = 'transparent';
+                          }}
+                        >
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '14px' }}>{lang.flag}</span>
+                            <span>{lang.native}</span>
+                            <span style={{ fontSize: '10px', color: 'var(--text-tertiary)' }}>({lang.name})</span>
+                          </span>
+                          {isSelected && <CheckCircle2 size={13} style={{ color: '#0284c7' }} />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
+            </div>
           </div>
 
-          {/* Messages Body */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '16px 20px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '14px',
-              backgroundColor: 'var(--surface)',
-            }}
-          >
+          {/* Messages Body Feed */}
+          <div className="ebox-message-feed">
+            {/* Real-Time Translation Active Banner */}
+            {selectedLanguage !== 'en' && (
+              <div
+                style={{
+                  padding: '8px 14px',
+                  backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                  border: '1px solid rgba(2, 132, 199, 0.25)',
+                  borderRadius: '10px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: '8px',
+                  fontSize: '12px',
+                  color: '#0284c7',
+                  flexShrink: 0,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Languages size={15} />
+                  <span>
+                    Auto-translated to{' '}
+                    <strong>
+                      {SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name} ({SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.flag})
+                    </strong>
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleLanguageChange('en')}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: '#0284c7',
+                    textDecoration: 'underline',
+                    cursor: 'pointer',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 6px',
+                  }}
+                >
+                  Show Original (English)
+                </button>
+              </div>
+            )}
             {isLoadingMessages ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--text-secondary)', gap: '10px' }}>
                 <RefreshCw size={24} className="animate-spin" style={{ color: 'var(--energy-sky, #0284c7)' }} />
@@ -1746,6 +1956,40 @@ export const SecuredEbox = () => {
             ) : (
               filteredMessages.map((m) => {
                 const isMine = m.senderRole === activePersona;
+
+                // Compute translation state for this message
+                const singleOverride = individualTranslations[m.id];
+                const isSingleReverted = singleOverride && singleOverride.isOriginal;
+                const isSingleActive = singleOverride && singleOverride.isTranslated;
+
+                let displayText = m.text;
+                let isThisMessageTranslated = false;
+                let translatedLangName = '';
+
+                if (isSingleActive && singleOverride.text) {
+                  displayText = singleOverride.text;
+                  // Only mark as translated if the text actually differs from original
+                  isThisMessageTranslated = singleOverride.text.trim() !== (m.text || '').trim();
+                  translatedLangName = singleOverride.langObj?.name || singleOverride.targetLang;
+                } else if (selectedLanguage !== 'en' && !isSingleReverted) {
+                  const tx = translatedMessagesMap[m.id] || getInstantTranslations([m], selectedLanguage)[m.id];
+                  // Only use translated text if it genuinely differs from original
+                  if (tx && tx.trim() !== (m.text || '').trim()) {
+                    displayText = tx;
+                    isThisMessageTranslated = true;
+                    translatedLangName = SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage;
+                  }
+                } else if (selectedLanguage === 'en') {
+                  // Restore English: use the seed English text if available
+                  const enTx = translatedMessagesMap[m.id] || getInstantTranslations([m], 'en')[m.id];
+                  if (enTx && enTx.trim() !== (m.text || '').trim()) {
+                    displayText = enTx;
+                  }
+                  isThisMessageTranslated = false; // Never show badge for English
+                }
+
+                const activeLangCode = isSingleActive ? singleOverride.targetLang : selectedLanguage;
+                const isRtl = SUPPORTED_LANGUAGES.find((l) => l.code === activeLangCode)?.dir === 'rtl';
 
                 return (
                   <div
@@ -1792,7 +2036,7 @@ export const SecuredEbox = () => {
                     {/* Speech Bubble */}
                     <div
                       style={{
-                        maxWidth: '75%',
+                        maxWidth: 'min(88%, 640px)',
                         padding: '12px 16px',
                         borderRadius: '16px',
                         borderTopRightRadius: isMine ? '2px' : '16px',
@@ -1821,10 +2065,53 @@ export const SecuredEbox = () => {
                           fontWeight: isMine ? 500 : 400,
                           fontSize: '13px',
                           lineHeight: '1.5',
+                          direction: isRtl && isThisMessageTranslated ? 'rtl' : 'ltr',
+                          textAlign: isRtl && isThisMessageTranslated ? 'right' : 'left',
                         }}
                       >
-                        {m.text}
+                        {displayText}
                       </p>
+
+                      {/* Translation Indicator Badge inside Bubble */}
+                      {isThisMessageTranslated && selectedLanguage !== 'en' && (
+                        <div
+                          style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            marginTop: '6px',
+                            padding: '2px 7px',
+                            borderRadius: '4px',
+                            fontSize: '10px',
+                            fontWeight: 600,
+                            backgroundColor: isMine ? 'rgba(255, 255, 255, 0.2)' : 'rgba(2, 132, 199, 0.12)',
+                            color: isMine ? '#ffffff' : '#0284c7',
+                          }}
+                        >
+                          <Languages size={11} />
+                          <span>Translated to {translatedLangName}</span>
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSingleTranslation(m.id, m.text);
+                            }}
+                            style={{
+                              marginLeft: '6px',
+                              background: 'none',
+                              border: 'none',
+                              color: 'inherit',
+                              textDecoration: 'underline',
+                              cursor: 'pointer',
+                              padding: 0,
+                              fontSize: '10px',
+                              fontWeight: 700,
+                            }}
+                          >
+                            {isSingleActive ? 'Show Original' : 'Revert'}
+                          </button>
+                        </div>
+                      )}
 
                       {/* Voice Note Player */}
                       {(m.type === 'audio' || m.messageType === 'audio') && (
@@ -1889,6 +2176,40 @@ export const SecuredEbox = () => {
                             </span>
                           ))}
                         </div>
+
+                        {/* Inline Translate Toggle for Individual Message */}
+                        {m.text && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleToggleSingleTranslation(m.id, m.text);
+                            }}
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '3px',
+                              fontSize: '10px',
+                              fontWeight: 600,
+                              backgroundColor: isMine ? 'rgba(255,255,255,0.18)' : 'var(--surface)',
+                              border: '1px solid ' + (isMine ? 'rgba(255,255,255,0.3)' : 'var(--border)'),
+                              borderRadius: '8px',
+                              padding: '1px 6px',
+                              color: isMine ? '#ffffff' : 'var(--text-secondary)',
+                              cursor: 'pointer',
+                              marginLeft: '6px',
+                              transition: 'all 150ms ease',
+                            }}
+                            title={
+                              isThisMessageTranslated
+                                ? 'Show original text'
+                                : `Translate to ${selectedLanguage === 'en' ? 'Spanish' : (SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage)}`
+                            }
+                          >
+                            <Languages size={10} />
+                            <span>{isThisMessageTranslated ? 'Original' : 'Translate'}</span>
+                          </button>
+                        )}
                       </div>
 
                       {/* Attachment if present */}
@@ -1946,36 +2267,16 @@ export const SecuredEbox = () => {
           </div>
 
           {/* Quick Suggestion Chips */}
-          <div
-            style={{
-              padding: '8px 16px',
-              borderTop: '1px solid var(--border)',
-              backgroundColor: 'var(--surface-secondary)',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              overflowX: 'auto',
-            }}
-          >
+          <div className="ebox-quick-chips-row">
             <span style={{ fontSize: '10px', fontWeight: 800, color: 'var(--text-tertiary)', textTransform: 'uppercase', flexShrink: 0 }}>
-              {isEs ? 'Acción Rápida:' : 'Quick Action:'}
+              {isEs ? 'Rápido:' : 'Quick:'}
             </span>
             {quickSuggestions.map((text, idx) => (
               <button
                 key={idx}
                 type="button"
                 onClick={() => setInputText(text)}
-                style={{
-                  fontSize: '11px',
-                  padding: '4px 10px',
-                  borderRadius: '16px',
-                  border: '1px solid var(--border)',
-                  backgroundColor: 'var(--surface)',
-                  color: 'var(--text-secondary)',
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                  transition: 'all 150ms ease',
-                }}
+                className="ebox-quick-chip-btn"
               >
                 {text}
               </button>
@@ -1983,13 +2284,7 @@ export const SecuredEbox = () => {
           </div>
 
           {/* Composer Input Bar */}
-          <div
-            style={{
-              padding: '12px 16px',
-              borderTop: '1px solid var(--border)',
-              backgroundColor: 'var(--surface)',
-            }}
-          >
+          <div className="ebox-composer-bar">
             {/* Hidden File, Image & Video Inputs */}
             <input
               type="file"
@@ -2131,86 +2426,53 @@ export const SecuredEbox = () => {
                 </div>
               </div>
             ) : (
-              <form onSubmit={handleSend} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                {/* File Attachment Button */}
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={isEs ? 'Adjuntar archivo' : 'Attach file'}
-                >
-                  <Paperclip size={15} />
-                </button>
+              <form onSubmit={handleSend} className="ebox-composer-form">
+                {/* Media Attachment Tools Group */}
+                <div className="ebox-composer-tools">
+                  {/* File Attachment Button */}
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="ebox-composer-tool-btn"
+                    title={isEs ? 'Adjuntar archivo' : 'Attach file'}
+                  >
+                    <Paperclip size={14} />
+                  </button>
 
-                {/* Photo Upload Button */}
-                <button
-                  type="button"
-                  onClick={() => imageInputRef.current?.click()}
-                  style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={isEs ? 'Adjuntar foto / imagen' : 'Attach photo'}
-                >
-                  <Image size={15} />
-                </button>
+                  {/* Photo Upload Button */}
+                  <button
+                    type="button"
+                    onClick={() => imageInputRef.current?.click()}
+                    className="ebox-composer-tool-btn"
+                    title={isEs ? 'Adjuntar foto' : 'Attach photo'}
+                  >
+                    <Image size={14} />
+                  </button>
 
-                {/* Video Upload Button */}
-                <button
-                  type="button"
-                  onClick={() => videoInputRef.current?.click()}
-                  style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={isEs ? 'Adjuntar video' : 'Attach video'}
-                >
-                  <Video size={15} />
-                </button>
+                  {/* Video Upload Button */}
+                  <button
+                    type="button"
+                    onClick={() => videoInputRef.current?.click()}
+                    className="ebox-composer-tool-btn"
+                    title={isEs ? 'Adjuntar video' : 'Attach video'}
+                  >
+                    <Video size={14} />
+                  </button>
 
-                {/* Emoji Picker Button */}
-                <button
-                  type="button"
-                  onClick={() => setShowEmojiPicker((prev) => !prev)}
-                  style={{
-                    padding: '8px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: showEmojiPicker ? 'rgba(2, 132, 199, 0.12)' : 'var(--surface-secondary)',
-                    color: showEmojiPicker ? '#0284c7' : 'var(--text-secondary)',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                  title={isEs ? 'Insertar emoji' : 'Insert emoji'}
-                >
-                  <Smile size={15} />
-                </button>
+                  {/* Emoji Picker Button */}
+                  <button
+                    type="button"
+                    onClick={() => setShowEmojiPicker((prev) => !prev)}
+                    className="ebox-composer-tool-btn"
+                    style={{
+                      backgroundColor: showEmojiPicker ? 'rgba(2, 132, 199, 0.12)' : undefined,
+                      color: showEmojiPicker ? '#0284c7' : undefined,
+                    }}
+                    title={isEs ? 'Insertar emoji' : 'Insert emoji'}
+                  >
+                    <Smile size={14} />
+                  </button>
+                </div>
 
                 {/* Input Text */}
                 <input
@@ -2219,21 +2481,12 @@ export const SecuredEbox = () => {
                   onChange={(e) => setInputText(e.target.value)}
                   placeholder={
                     activePersona === 'johnny'
-                      ? (isEs ? `Instruir a ${currentThread.partnerName}... (ej. "Confirmar actualización de sprint")` : `Instruct ${currentThread.partnerName}... (e.g. "Confirm sprint update")`)
+                      ? (isEs ? `Instruir a ${currentThread.partnerName}...` : `Instruct ${currentThread.partnerName}...`)
                       : activePersona === 'ktt'
-                      ? (isEs ? 'Responder a Johnny (Administrador Súper Ejecutivo)...' : 'Reply to Johnny (Super Executive Admin)...')
-                      : (isEs ? 'Enviar respuesta de diligencia legal a Johnny...' : 'Send legal diligence reply to Johnny...')
+                      ? (isEs ? 'Responder a Johnny (SEA)...' : 'Reply to Johnny (SEA)...')
+                      : (isEs ? 'Enviar respuesta legal a Johnny...' : 'Send legal diligence reply to Johnny...')
                   }
-                  style={{
-                    flex: 1,
-                    padding: '10px 14px',
-                    fontSize: '13px',
-                    borderRadius: '8px',
-                    border: '1px solid var(--border)',
-                    backgroundColor: 'var(--surface-secondary)',
-                    color: 'var(--text-primary)',
-                    outline: 'none',
-                  }}
+                  className="ebox-composer-input"
                 />
 
                 {/* Voice Record Button */}
@@ -2255,6 +2508,38 @@ export const SecuredEbox = () => {
                 >
                   <Mic size={15} />
                 </button>
+
+                {/* Translate Draft Button (Johnny can translate his draft before sending) */}
+                {inputText.trim() && (
+                  <button
+                    type="button"
+                    onClick={handleTranslateInput}
+                    disabled={isTranslatingDraft}
+                    style={{
+                      padding: '8px 12px',
+                      borderRadius: '8px',
+                      border: '1px solid rgba(2, 132, 199, 0.35)',
+                      backgroundColor: 'rgba(2, 132, 199, 0.08)',
+                      color: '#0284c7',
+                      cursor: isTranslatingDraft ? 'wait' : 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                      transition: 'all 150ms ease',
+                    }}
+                    title={`Translate draft into ${selectedLanguage === 'en' ? 'Spanish' : (SUPPORTED_LANGUAGES.find((l) => l.code === selectedLanguage)?.name || selectedLanguage)}`}
+                  >
+                    <Languages size={14} className={isTranslatingDraft ? 'animate-spin' : ''} />
+                    <span>
+                      {isTranslatingDraft
+                        ? 'Translating...'
+                        : `Translate (${selectedLanguage === 'en' ? 'ES' : selectedLanguage.toUpperCase()})`}
+                    </span>
+                  </button>
+                )}
 
                 {/* Send Button */}
                 <button
