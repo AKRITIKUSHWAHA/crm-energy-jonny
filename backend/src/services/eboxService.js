@@ -193,14 +193,23 @@ const decryptText = (cipherText) => {
 };
 
 class EboxService {
-  async getMessages(tenantId) {
+  async getMessages(tenantId, userContext = null) {
     try {
       const messages = await prisma.eboxMessage.findMany({
         where: { tenantId },
         orderBy: { createdAt: 'desc' },
       });
 
-      return messages.map((m) => {
+      // Determine if requesting user is an Executive (Business Owner or Super Admin)
+      const rawRole = (userContext?.role || '').toLowerCase().replace(/[\s-]/g, '_');
+      const isExecutive = !userContext ||
+        rawRole === 'business_owner' ||
+        rawRole === 'super_admin' ||
+        rawRole === 'owner' ||
+        userContext?.role === 'BUSINESS_OWNER' ||
+        userContext?.role === 'SUPER_ADMIN';
+
+      const decrypted = messages.map((m) => {
         let plainMessage = m.message;
         let decryptFailed = false;
 
@@ -221,6 +230,44 @@ class EboxService {
           isDecryptError: decryptFailed,
         };
       });
+
+      // If Executive, return all messages across all vaults & role channels
+      if (isExecutive) {
+        return decrypted;
+      }
+
+      // If Non-Executive role (e.g. Content Creator, Influencer, Customer, etc.):
+      // ONLY return messages that belong to their dedicated 1-on-1 vault with Business Owner!
+      const userUserId = userContext?.userId || userContext?.id;
+      const userNameLower = (userContext?.name || '').toLowerCase();
+
+      return decrypted.filter((m) => {
+        const subj = (m.subject || '').toLowerCase();
+        const recip = (m.recipient || '').toLowerCase();
+        const sender = (m.senderName || '').toLowerCase();
+
+        // 1. Matches their explicit role tag [ROLE:roleId] or [CHANNEL:roleId]
+        if (subj.includes(`[role:${rawRole}]`) || subj.includes(`[channel:${rawRole}]`)) {
+          return true;
+        }
+
+        // 2. Sent by this user
+        if (m.senderId && m.senderId === userUserId) {
+          return true;
+        }
+
+        // 3. Recipient matches user name or user role
+        if (recip.includes(rawRole) || (userNameLower && recip.includes(userNameLower))) {
+          return true;
+        }
+
+        // 4. Sender matches user name or user role
+        if (sender.includes(rawRole) || (userNameLower && sender.includes(userNameLower))) {
+          return true;
+        }
+
+        return false;
+      });
     } catch (err) {
       console.error('[eBox getMessages critical error]:', err);
       // Return empty array instead of failing request with 500
@@ -228,22 +275,47 @@ class EboxService {
     }
   }
 
-  async sendMessage(tenantId, userId, data) {
-    if (!data.subject || (!data.message && !data.fileData && !data.fileMetadata)) {
+  async sendMessage(tenantId, userId, data, userContext = null) {
+    if (!data.subject && !data.channelId && (!data.message && !data.fileData && !data.fileMetadata)) {
       const err = new Error('Subject and message content or attachment are required.');
       err.statusCode = 400;
       throw err;
     }
 
+    const rawRole = (userContext?.role || '').toLowerCase().replace(/[\s-]/g, '_');
+    const isExecutive = !userContext ||
+      rawRole === 'business_owner' ||
+      rawRole === 'super_admin' ||
+      rawRole === 'owner' ||
+      userContext?.role === 'BUSINESS_OWNER' ||
+      userContext?.role === 'SUPER_ADMIN';
+
     let user = null;
     try {
       user = await prisma.user.findUnique({
         where: { id: userId },
-        select: { name: true },
+        select: { name: true, role: true },
       });
     } catch (userErr) {
       console.warn('[eBox] Could not fetch user name:', userErr.message);
     }
+
+    const senderDisplayName = data.senderName || user?.name || userContext?.name || (isExecutive ? 'Super Executive Admin' : `${userContext?.role || 'Staff Member'}`);
+
+    // Compute subject with role tag if non-executive or targeting a specific role channel
+    let subject = (data.subject || '').trim();
+    if (!isExecutive) {
+      if (!subject.toLowerCase().includes(`[role:${rawRole}]`)) {
+        subject = `[ROLE:${rawRole}] ${subject || 'Direct Vault Message'}`;
+      }
+    } else if (data.roleChannelId) {
+      const targetRole = data.roleChannelId.replace('th-role-', '');
+      if (!subject.toLowerCase().includes(`[role:${targetRole}]`)) {
+        subject = `[ROLE:${targetRole}] ${subject || 'Direct Vault Message'}`;
+      }
+    }
+
+    const recipient = data.recipient || (isExecutive ? 'Kiaan Tech Team' : 'Business Owner & Super Admin');
 
     const rawContent = (data.fileData || data.fileMetadata)
       ? JSON.stringify({
@@ -270,9 +342,9 @@ class EboxService {
         data: {
           tenantId,
           senderId: userId,
-          senderName: user?.name || 'Super Executive Admin',
-          recipient: data.recipient || 'Kiaan Tech Team',
-          subject: data.subject.trim(),
+          senderName: senderDisplayName,
+          recipient,
+          subject,
           message: encryptedMessage,
           priority: data.priority || 'Normal',
           isEncrypted: true,
@@ -292,9 +364,9 @@ class EboxService {
           data: {
             tenantId,
             senderId: userId,
-            senderName: user?.name || 'Super Executive Admin',
-            recipient: data.recipient || 'Kiaan Tech Team',
-            subject: data.subject.trim(),
+            senderName: senderDisplayName,
+            recipient,
+            subject,
             message: encryptText(lightweightRaw),
             priority: data.priority || 'Normal',
             isEncrypted: true,

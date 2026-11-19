@@ -39,12 +39,17 @@ import {
   Languages,
   Globe,
   ChevronLeft,
-  Trash2
+  Trash2,
+  Target,
+  Bot,
+  UserCheck
 } from 'lucide-react';
 import './SecuredEbox.css';
 import { Breadcrumb, Button, Card, Badge } from '../../components/ui';
 import { useToast } from '../../context/ToastContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { useAuth } from '../../context/AuthContext';
+import { normalizeRoleId } from '../../utils/rbac';
 import eboxService from '../../services/eboxService';
 import { useCall } from '../../context/CallContext';
 import {
@@ -411,19 +416,148 @@ const INITIAL_CONVERSATIONS = {
       conversationId: 'conv-swmtp-main',
     },
   ],
+  'th-role-crm_pro': [
+    {
+      id: 'ebx-role-crm_pro-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Hello CRM Pro! Welcome to your direct encrypted communications line with Business Owner & Super Admin. High-tier sales deals and enterprise proposals can be coordinated here.',
+      attachment: null,
+    }
+  ],
+  'th-role-content_creator': [
+    {
+      id: 'ebx-role-content_creator-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Hello Content Creator! Your direct vault with Business Owner & Super Admin is active for creative assets, prompts, and video approvals.',
+      attachment: null,
+    }
+  ],
+  'th-role-influencer': [
+    {
+      id: 'ebx-role-influencer-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Welcome! This is your private VIP vault with Executive Ownership for sponsorships, referral deals, and campaign terms.',
+      attachment: null,
+    }
+  ],
+  'th-role-customer': [
+    {
+      id: 'ebx-role-customer-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Welcome to your VIP Client Concierge vault connected directly to Executive Leadership.',
+      attachment: null,
+    }
+  ],
+  'th-role-content_builder': [
+    {
+      id: 'ebx-role-content_builder-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Studio content production desk connected directly with Business Owner & Super Admin.',
+      attachment: null,
+    }
+  ],
+  'th-role-affiliate_partner': [
+    {
+      id: 'ebx-role-affiliate_partner-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Affiliate executive hotline connected to Executive Leadership for commission tracking and tier reviews.',
+      attachment: null,
+    }
+  ],
+  'th-role-ai_marketing_pro': [
+    {
+      id: 'ebx-role-ai_marketing_pro-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'AI Marketing campaign reviews, ad spends, and growth directives channel with Business Owner.',
+      attachment: null,
+    }
+  ],
+  'th-role-hr': [
+    {
+      id: 'ebx-role-hr-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Confidential HR governance vault connected directly with Business Owner & Executive Leadership.',
+      attachment: null,
+    }
+  ],
+  'th-role-admin_1': [
+    {
+      id: 'ebx-role-admin_1-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Operations Level 1 channel active with Business Owner & Super Admin.',
+      attachment: null,
+    }
+  ],
+  'th-role-admin_2': [
+    {
+      id: 'ebx-role-admin_2-1',
+      senderRole: 'business_owner',
+      sender: 'Johnny (Super Executive Admin)',
+      title: 'SEA / Business Owner',
+      time: 'Sep 16, 09:00 AM',
+      text: 'Enterprise Operations Level 2 channel active with Business Owner & Super Admin.',
+      attachment: null,
+    }
+  ],
+};
+
+const ROLE_CHANNELS_META = {
+  crm_pro: { name: 'CRM Pro', label: 'CRM Pro Sales Director', color: '#3b82f6', icon: Target },
+  content_creator: { name: 'Content Creator', label: 'AI Media & Video Creator', color: '#ec4899', icon: Video },
+  influencer: { name: 'Influencer', label: 'Brand Ambassador & Deals', color: '#f59e0b', icon: Sparkles },
+  customer: { name: 'Customer / Client', label: 'Client Concierge Vault', color: '#0284c7', icon: User },
+  content_builder: { name: 'Content Builder', label: 'Campaign & Content Builder', color: '#a78bfa', icon: Sparkles },
+  affiliate_partner: { name: 'Affiliate Partner', label: 'Affiliate Commission Desk', color: '#fb923c', icon: Target },
+  ai_marketing_pro: { name: 'AI Marketing Pro', label: 'AI Marketing Specialist', color: '#10b981', icon: Bot },
+  hr: { name: 'HR Officer', label: 'HR & Recruiting Officer', color: '#f43f5e', icon: UserCheck },
+  admin_1: { name: 'Admin Level 1', label: 'Operations & Inbound Desk', color: '#06b6d4', icon: ShieldCheck },
+  admin_2: { name: 'Admin Level 2', label: 'Enterprise Operations Desk', color: '#14b8a6', icon: ShieldCheck },
 };
 
 const STORAGE_KEY = 'crm_nergy_secured_ebox_v3';
 
 export const SecuredEbox = () => {
+  const { crmUser, user } = useAuth();
+  const currentUser = crmUser || user;
+  const currentRoleId = normalizeRoleId(currentUser, 'crm') || 'business_owner';
+  const isExecutive = currentRoleId === 'business_owner' || currentRoleId === 'super_admin';
+  const currentRoleMeta = ROLE_CHANNELS_META[currentRoleId] || { name: currentUser?.name || 'Authorized User', label: currentUser?.role || 'Staff', color: '#6366f1' };
+
   const { startCall: initiateRealCall, callState } = useCall();
   const { addToast } = useToast();
   const { language } = useLanguage();
   const isEs = language === 'ES';
   const [inputText, setInputText] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeThreadId, setActiveThreadId] = useState('th-1');
-  const [activePersona, setActivePersona] = useState('johnny'); // 'johnny' | 'ktt' | 'attorney'
+  const [activeThreadId, setActiveThreadId] = useState(() => (isExecutive ? 'th-1' : `th-role-${currentRoleId}`));
+  const [activePersona, setActivePersona] = useState(() => (isExecutive ? 'johnny' : currentRoleId)); // 'johnny' | 'ktt' | 'attorney' | currentRoleId
   const [isTyping, setIsTyping] = useState(false);
   const [isLoadingMessages, setIsLoadingMessages] = useState(true);
   const [fetchError, setFetchError] = useState(null);
@@ -519,10 +653,10 @@ export const SecuredEbox = () => {
 
   const startCall = (type) => {
     initiateRealCall({
-      targetStaffId: 'staff-admin-01',
-      targetDisplayName: 'Master Administrator',
+      targetStaffId: isExecutive ? 'staff-admin-01' : 'staff-business-owner',
+      targetDisplayName: isExecutive ? (currentThread?.partnerName || 'Master Administrator') : 'Business Owner (Executive)',
       callType: type,
-      conversationId: 'conv-swmtp-main'
+      conversationId: activeThreadId === 'th-swmtp' ? 'conv-swmtp-main' : `conv-${activeThreadId}`
     });
   };
 
@@ -882,11 +1016,16 @@ export const SecuredEbox = () => {
             const next = { ...prev };
 
             dbMessages.forEach((dbMsg) => {
-              let targetThread = 'th-1';
               const subjectLower = (dbMsg.subject || '').toLowerCase();
+              const roleMatch = subjectLower.match(/\[role:([a-z0-9_-]+)\]/);
               const isSwmtpMsg = subjectLower.includes('[swmtp:') || subjectLower.includes('swmtp') || dbMsg.senderName?.toLowerCase().includes('swmtp') || dbMsg.recipient?.toLowerCase().includes('swmtp');
 
-              if (isSwmtpMsg) {
+              let targetThread = 'th-1';
+              if (roleMatch && roleMatch[1]) {
+                targetThread = `th-role-${roleMatch[1]}`;
+              } else if (!isExecutive) {
+                targetThread = `th-role-${currentRoleId}`;
+              } else if (isSwmtpMsg) {
                 targetThread = 'th-swmtp';
               } else if (subjectLower.includes('attorney') || subjectLower.includes('pitch') || subjectLower.includes('legal')) {
                 targetThread = 'th-2';
@@ -899,16 +1038,41 @@ export const SecuredEbox = () => {
 
               let senderRole = 'johnny';
               let senderTitle = 'SEA / Business Owner';
-              if (isSwmtpMsg) {
-                const isHubAdmin = dbMsg.senderName?.toLowerCase().includes('swmtp') || dbMsg.senderName?.toLowerCase().includes('master admin') || dbMsg.senderId?.includes('swmtp');
-                senderRole = isHubAdmin ? 'swmtp_admin' : 'johnny';
-                senderTitle = isHubAdmin ? 'SWMTP Master Admin' : 'SEA / Business Owner';
-              } else if (isAttorney) {
-                senderRole = 'attorney';
-                senderTitle = 'Senior Diligence Attorney';
-              } else if (isKtt) {
-                senderRole = 'ktt';
-                senderTitle = 'Lead Systems Architect';
+              const senderLower = (dbMsg.senderName || '').toLowerCase();
+
+              if (!isExecutive) {
+                const isSentByMe = (dbMsg.senderId && (dbMsg.senderId === currentUser?.id || dbMsg.senderId === currentUser?.userId)) ||
+                  senderLower.includes(currentRoleId) ||
+                  (currentUser?.name && senderLower.includes(currentUser.name.toLowerCase()));
+                if (isSentByMe) {
+                  senderRole = currentRoleId;
+                  senderTitle = currentUser?.name || currentRoleMeta.name || 'My Role';
+                } else {
+                  senderRole = 'business_owner';
+                  senderTitle = 'Business Owner & Super Admin';
+                }
+              } else {
+                if (roleMatch && roleMatch[1]) {
+                  const targetR = roleMatch[1];
+                  const isRoleSender = senderLower.includes(targetR) || (!senderLower.includes('johnny') && !senderLower.includes('admin') && !senderLower.includes('owner'));
+                  if (isRoleSender) {
+                    senderRole = targetR;
+                    senderTitle = ROLE_CHANNELS_META[targetR]?.name || targetR;
+                  } else {
+                    senderRole = 'johnny';
+                    senderTitle = 'SEA / Business Owner';
+                  }
+                } else if (isSwmtpMsg) {
+                  const isHubAdmin = dbMsg.senderName?.toLowerCase().includes('swmtp') || dbMsg.senderName?.toLowerCase().includes('master admin') || dbMsg.senderId?.includes('swmtp');
+                  senderRole = isHubAdmin ? 'swmtp_admin' : 'johnny';
+                  senderTitle = isHubAdmin ? 'SWMTP Master Admin' : 'SEA / Business Owner';
+                } else if (isAttorney) {
+                  senderRole = 'attorney';
+                  senderTitle = 'Senior Diligence Attorney';
+                } else if (isKtt) {
+                  senderRole = 'ktt';
+                  senderTitle = 'Lead Systems Architect';
+                }
               }
 
               const convMatch = dbMsg.subject?.match(/\[SWMTP:([^\]]+)\]/);
@@ -1038,7 +1202,14 @@ export const SecuredEbox = () => {
     lastActiveMsgCountRef.current = currentMsgCount;
   }, [activeThreadId, activePersona, currentMsgCount, isTyping]);
 
-  const threads = [
+  useEffect(() => {
+    if (!isExecutive) {
+      setActiveThreadId(`th-role-${currentRoleId}`);
+      setActivePersona(currentRoleId);
+    }
+  }, [currentRoleId, isExecutive]);
+
+  const masterExecutiveThreads = [
     {
       id: 'th-1',
       title: isEs ? 'Equipo de Desarrollo KT' : 'KT Software Dev Team',
@@ -1085,7 +1256,25 @@ export const SecuredEbox = () => {
     },
   ];
 
-  const currentThread = threads.find((t) => t.id === activeThreadId) || threads[0];
+  const roleThreads = Object.entries(ROLE_CHANNELS_META).map(([roleKey, meta]) => ({
+    id: `th-role-${roleKey}`,
+    title: isExecutive ? `${meta.name} Direct` : (isEs ? 'Bóveda de Comando Ejecutivo' : 'Executive Command Vault'),
+    subtitle: isExecutive
+      ? `Johnny (SEA) ↔ ${meta.name}`
+      : `${meta.name} ↔ Business Owner / Super Admin`,
+    badge: isExecutive ? 'Role Direct Vault' : 'Private 1-on-1 Executive Channel',
+    partnerName: isExecutive ? meta.name : 'Johnny (Super Executive Admin)',
+    partnerRole: isExecutive ? roleKey : 'business_owner',
+    color: meta.color,
+    accentBg: `${meta.color}18`,
+    icon: meta.icon,
+  }));
+
+  const threads = isExecutive
+    ? [...masterExecutiveThreads, ...roleThreads]
+    : roleThreads.filter((th) => th.id === `th-role-${currentRoleId}`);
+
+  const currentThread = threads.find((t) => t.id === activeThreadId) || threads[0] || roleThreads[0];
   const activeMessages = threadStore[activeThreadId] || [];
 
   // One-Click Language Selection Handler (Live synchronous change across all messages without reload)
@@ -1382,19 +1571,37 @@ export const SecuredEbox = () => {
 
   // Automated simulated responder for testing two-way persona flow
   const triggerAutoReply = (userMessage, targetThreadId, senderRole) => {
-    if (senderRole !== 'johnny') return;
+    if (isExecutive && senderRole !== 'johnny') return;
 
     setIsTyping(true);
 
     setTimeout(async () => {
       let replyText = '';
-      let replySender = 'Kiaan Tech Team (KTT)';
-      let replyTitle = 'Lead Systems Architect';
-      let replyRole = 'ktt';
+      let replySender = 'Johnny (Super Executive Admin)';
+      let replyTitle = 'SEA / Business Owner';
+      let replyRole = 'business_owner';
 
       const lower = (userMessage || '').toLowerCase();
 
-      if (targetThreadId === 'th-2') {
+      if (!isExecutive) {
+        replySender = 'Johnny (Super Executive Admin)';
+        replyTitle = 'SEA / Business Owner';
+        replyRole = 'business_owner';
+        if (lower.includes('hello') || lower.includes('hi') || lower.includes('hey')) {
+          replyText = `Hello ${currentUser?.name || currentRoleMeta.name}! Executive Command is active. How can we support your workflow today?`;
+        } else if (lower.includes('status') || lower.includes('update') || lower.includes('report') || lower.includes('lead') || lower.includes('task')) {
+          replyText = `Thank you for the update. Executive Ownership has reviewed your submission. Please proceed with the active milestone.`;
+        } else {
+          replyText = `Received from ${currentRoleMeta.name}: "${userMessage}". Logged into executive docket. Keep up the great work!`;
+        }
+      } else if (targetThreadId.startsWith('th-role-')) {
+        const targetRoleKey = targetThreadId.replace('th-role-', '');
+        const targetMeta = ROLE_CHANNELS_META[targetRoleKey] || { name: 'Staff Member' };
+        replySender = targetMeta.name;
+        replyTitle = targetMeta.label || targetMeta.name;
+        replyRole = targetRoleKey;
+        replyText = `Confirmed instruction from Business Owner: "${userMessage}". Working on this immediately and will keep the executive vault updated!`;
+      } else if (targetThreadId === 'th-2') {
         replySender = 'Legal Counsel (Corporate Diligence)';
         replyTitle = 'Senior Diligence Attorney';
         replyRole = 'attorney';
@@ -1484,26 +1691,50 @@ export const SecuredEbox = () => {
 
     let senderName = 'Johnny (Super Executive Admin)';
     let senderTitle = 'SEA / Business Owner';
-    if (activePersona === 'ktt') {
-      senderName = 'Kiaan Tech Team (KTT)';
-      senderTitle = 'Lead Systems Architect';
-    } else if (activePersona === 'attorney') {
-      senderName = 'Legal Counsel (Corporate Diligence)';
-      senderTitle = 'Senior Diligence Attorney';
+    let sentPersona = activePersona;
+
+    if (isExecutive) {
+      if (activePersona === 'ktt') {
+        senderName = 'Kiaan Tech Team (KTT)';
+        senderTitle = 'Lead Systems Architect';
+      } else if (activePersona === 'attorney') {
+        senderName = 'Legal Counsel (Corporate Diligence)';
+        senderTitle = 'Senior Diligence Attorney';
+      } else {
+        senderName = 'Johnny (Super Executive Admin)';
+        senderTitle = 'SEA / Business Owner';
+      }
+    } else {
+      senderName = `${currentUser?.name || currentRoleMeta.name} (${currentRoleMeta.name})`;
+      senderTitle = currentUser?.role || currentRoleMeta.label || currentRoleMeta.name;
+      sentPersona = currentRoleId;
     }
 
     const currentMsgText = inputText.trim();
     const currentFiles = [...attachedFiles];
-    const sentPersona = activePersona;
     const threadId = activeThreadId;
 
     setInputText('');
     setAttachedFiles([]);
 
     const isSwmtp = threadId === 'th-swmtp';
+    const isRoleChannel = threadId.startsWith('th-role-');
+    const targetRoleKey = isRoleChannel ? threadId.replace('th-role-', '') : null;
     const activeMsgs = threadStore['th-swmtp'] || [];
     const lastSwmtp = [...activeMsgs].reverse().find((m) => m.conversationId);
     const conversationId = lastSwmtp?.conversationId || 'conv-swmtp-main';
+
+    const computedSubject = isSwmtp
+      ? `[SWMTP:${conversationId}] Reply by ${senderName}`
+      : isRoleChannel
+      ? `[ROLE:${targetRoleKey}] ${currentThread.title}`
+      : currentThread.title;
+
+    const computedRecipient = isSwmtp
+      ? 'SWMTP Master Admin'
+      : isExecutive
+      ? (currentThread.partnerName || 'Staff Member')
+      : 'Business Owner & Super Admin';
 
     if (currentFiles.length > 0) {
       for (const file of currentFiles) {
@@ -1539,9 +1770,9 @@ export const SecuredEbox = () => {
           }));
 
           await eboxService.sendMessage({
-            subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
+            subject: computedSubject,
             message: currentMsgText,
-            recipient: isSwmtp ? 'SWMTP Master Admin' : (sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'),
+            recipient: computedRecipient,
             isSwmtp,
             conversationId: isSwmtp ? conversationId : undefined,
             messageType: msgType,
@@ -1604,9 +1835,9 @@ export const SecuredEbox = () => {
       // 3. Background persist to MySQL vault
       try {
         const response = await eboxService.sendMessage({
-          subject: isSwmtp ? `[SWMTP:${conversationId}] Reply by Johnny` : currentThread.title,
+          subject: computedSubject,
           message: currentMsgText,
-          recipient: isSwmtp ? 'SWMTP Master Admin' : (sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'),
+          recipient: computedRecipient,
           isSwmtp,
           conversationId: isSwmtp ? conversationId : undefined,
           messageType: 'text',
@@ -1623,7 +1854,7 @@ export const SecuredEbox = () => {
           title: isSwmtp ? 'Synchronized with SWMTP Central Hub' : 'Message Transmitted & Vault Encrypted',
           message: isSwmtp
             ? 'Persisted to MySQL (AES-256) and synchronized to SWMTP Master Admin.'
-            : `Saved to MySQL (AES-256) and delivered to ${sentPersona === 'johnny' ? currentThread.partnerName : 'Johnny (SEA)'}.`,
+            : `Saved to MySQL (AES-256) and delivered to ${computedRecipient}.`,
           type: 'success',
         });
       } catch (backendErr) {
@@ -1634,6 +1865,9 @@ export const SecuredEbox = () => {
           type: 'info',
         });
       }
+
+      // Trigger automatic reply in demo
+      triggerAutoReply(currentMsgText, threadId, sentPersona);
     }
   };
 
@@ -1664,7 +1898,19 @@ export const SecuredEbox = () => {
 
   // Quick chips based on thread and persona
   const quickSuggestions =
-    activeThreadId === 'th-swmtp'
+    !isExecutive
+      ? isEs
+        ? [
+            'Hola Propietario del Negocio, compartiendo actualización para revisión.',
+            'Por favor verifique nuestros últimos entregables.',
+            'Confirmando que nuestro canal privado está cifrado.',
+          ]
+        : [
+            'Hello Business Owner, sharing status update for review.',
+            'Please verify our latest deliverables.',
+            'Confirming our direct channel is securely encrypted.',
+          ]
+      : activeThreadId === 'th-swmtp'
       ? isEs
         ? [
             'Confirmado Administrador Principal: canal seguro sincronizado.',
@@ -1748,13 +1994,19 @@ export const SecuredEbox = () => {
                   boxShadow: '0 0 6px #059669',
                 }}
               />
-              {isEs ? 'Bóveda SEA ↔ KTT' : 'SEA ↔ KTT Vault'}
+              {isExecutive
+                ? (isEs ? 'Bóveda SEA ↔ KTT' : 'SEA ↔ KTT Vault')
+                : `${currentRoleMeta.name} ↔ Executive Vault`}
             </span>
           </div>
           <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: '2px 0 0 0' }}>
-            {isEs
-              ? 'Bóveda de mensajería ejecutiva con cifrado de extremo a extremo y traducción multilingüe.'
-              : 'End-to-end encrypted executive messaging vault with instant multilingual auto-translation.'}
+            {isExecutive
+              ? (isEs
+                  ? 'Bóveda de mensajería ejecutiva con cifrado de extremo a extremo y traducción multilingüe.'
+                  : 'End-to-end encrypted executive messaging vault with instant multilingual auto-translation.')
+              : (isEs
+                  ? `Canal privado y cifrado directamente con la Dirección Ejecutiva (${currentRoleMeta.name}).`
+                  : `Private encrypted direct line connected to Executive Leadership (${currentRoleMeta.name}).`)}
           </p>
         </div>
 
@@ -1806,49 +2058,51 @@ export const SecuredEbox = () => {
         </div>
       </div>
 
-      {/* SLEEK COMPACT PERSONA CONTROLLER STRIP (Bloat Removed) */}
-      <div className="ebox-persona-strip">
-        <div className="ebox-persona-label">
-          <User size={14} style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669' }} />
-          <span>{isEs ? 'Operador Activo:' : 'Active Operator:'}</span>
-          <span style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669', fontWeight: 800 }}>
-            {activePersona === 'johnny'
-              ? 'Johnny (Super Executive Admin)'
-              : activePersona === 'ktt'
-              ? (isEs ? 'Equipo Dev Kiaan (KTT)' : 'Kiaan Tech Team (KTT)')
-              : (isEs ? 'Mesa Legal Corporativa' : 'Corporate Legal Counsel')}
-          </span>
+      {/* SLEEK COMPACT PERSONA CONTROLLER STRIP (Executive Admins Only) */}
+      {isExecutive && (
+        <div className="ebox-persona-strip">
+          <div className="ebox-persona-label">
+            <User size={14} style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669' }} />
+            <span>{isEs ? 'Operador Activo:' : 'Active Operator:'}</span>
+            <span style={{ color: activePersona === 'johnny' ? '#0284c7' : activePersona === 'ktt' ? '#4f46e5' : '#059669', fontWeight: 800 }}>
+              {activePersona === 'johnny'
+                ? 'Johnny (Super Executive Admin)'
+                : activePersona === 'ktt'
+                ? (isEs ? 'Equipo Dev Kiaan (KTT)' : 'Kiaan Tech Team (KTT)')
+                : (isEs ? 'Mesa Legal Corporativa' : 'Corporate Legal Counsel')}
+            </span>
+          </div>
+
+          <div className="ebox-persona-buttons">
+            <button
+              type="button"
+              onClick={() => setActivePersona('johnny')}
+              className={`ebox-persona-btn ${activePersona === 'johnny' ? 'active-johnny' : ''}`}
+            >
+              <User size={12} />
+              Johnny (SEA)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActivePersona('ktt')}
+              className={`ebox-persona-btn ${activePersona === 'ktt' ? 'active-ktt' : ''}`}
+            >
+              <Shield size={12} />
+              {isEs ? 'KTT (Dev)' : 'KTT (Dev Team)'}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActivePersona('attorney')}
+              className={`ebox-persona-btn ${activePersona === 'attorney' ? 'active-attorney' : ''}`}
+            >
+              <Lock size={12} />
+              {isEs ? 'Legal' : 'Attorney'}
+            </button>
+          </div>
         </div>
-
-        <div className="ebox-persona-buttons">
-          <button
-            type="button"
-            onClick={() => setActivePersona('johnny')}
-            className={`ebox-persona-btn ${activePersona === 'johnny' ? 'active-johnny' : ''}`}
-          >
-            <User size={12} />
-            Johnny (SEA)
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActivePersona('ktt')}
-            className={`ebox-persona-btn ${activePersona === 'ktt' ? 'active-ktt' : ''}`}
-          >
-            <Shield size={12} />
-            {isEs ? 'KTT (Dev)' : 'KTT (Dev Team)'}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setActivePersona('attorney')}
-            className={`ebox-persona-btn ${activePersona === 'attorney' ? 'active-attorney' : ''}`}
-          >
-            <Lock size={12} />
-            {isEs ? 'Legal' : 'Attorney'}
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* MAIN TWO-COLUMN WORKSPACE CONTAINER (Responsive Mobile + Desktop) */}
       <div className={`ebox-main-grid ${mobilePane === 'channels' ? 'mobile-show-channels' : 'mobile-show-chat'}`}>
