@@ -27,7 +27,8 @@ import {
   Grid,
   Search,
   Car,
-  Lock
+  Lock,
+  ShieldAlert
 } from 'lucide-react';
 
 export const crmNavigation = [
@@ -61,6 +62,7 @@ export const crmNavigation = [
   { id: 'search', label: 'Internal AI Search', icon: Search, path: '/crm/search', section: 'Governance & Data' },
   { id: 'reports', label: 'Reports Hub', icon: FileText, path: '/crm/reports', section: 'Governance & Data' },
   { id: 'admin', label: 'Administration', icon: ShieldCheck, path: '/crm/admin', section: 'Governance & Data' },
+  { id: 'roles-permissions', label: 'Roles & Permissions', icon: ShieldAlert, path: '/crm/roles-permissions', section: 'Governance & Data' },
   { id: 'ebox', label: 'Secured zBox (SEA)', icon: Lock, path: '/crm/ebox', section: 'Governance & Data' },
   { id: 'settings', label: 'Settings', icon: Settings, path: '/crm/settings', section: 'Governance & Data' },
 ];

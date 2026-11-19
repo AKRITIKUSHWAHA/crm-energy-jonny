@@ -32,6 +32,7 @@ export const CRM_ROLE_CONFIG = {
       'search',
       'reports',
       'admin',
+      'roles-permissions',
       'ebox',
       'settings',
     ],
@@ -59,6 +60,8 @@ export const CRM_ROLE_CONFIG = {
       '/crm/analytics',
       '/crm/reports',
       '/crm/admin',
+      '/crm/roles-permissions',
+      '/crm/admin/roles-permissions',
       '/crm/admin/ebox',
       '/crm/ebox',
       '/crm/settings',
@@ -435,6 +438,7 @@ export const CRM_ROLE_CONFIG = {
       'search',
       'reports',
       'admin',
+      'roles-permissions',
       'ebox',
       'settings',
     ],
@@ -462,6 +466,8 @@ export const CRM_ROLE_CONFIG = {
       '/crm/analytics',
       '/crm/reports',
       '/crm/admin',
+      '/crm/roles-permissions',
+      '/crm/admin/roles-permissions',
       '/crm/admin/ebox',
       '/crm/ebox',
       '/admin/secured-ebox',
@@ -677,12 +683,141 @@ export const normalizeRoleId = (roleInput, product = 'crm') => {
 };
 
 /**
+ * Maps each CRM Navigation ID to its corresponding route paths and prefixes
+ */
+export const NAV_ID_TO_ROUTES_MAP = {
+  dashboard: ['/crm/dashboard'],
+  contacts: ['/crm/contacts'],
+  leads: ['/crm/leads'],
+  pipeline: ['/crm/pipeline'],
+  tasks: ['/crm/tasks'],
+  communication: ['/crm/communication'],
+  territory: ['/crm/territory'],
+  erp: [
+    '/crm/erp',
+    '/crm/erp/projects',
+    '/crm/erp/procurement',
+    '/crm/erp/sales-orders',
+    '/crm/erp/finance',
+    '/crm/erp/inventory',
+    '/crm/erp/supply-chain',
+    '/crm/erp/manufacturing',
+    '/crm/erp/reports',
+    '/omp',
+    '/omp/executive/central-office'
+  ],
+  bestie: ['/crm/bestie'],
+  'ai-voice': ['/crm/ai-voice'],
+  ai: ['/crm/ai-studio'],
+  'ai-video': ['/crm/ai-video'],
+  marketing: ['/crm/marketing'],
+  hr: [
+    '/crm/hr',
+    '/crm/hr/employees',
+    '/crm/hr/candidates',
+    '/crm/hr/jobs',
+    '/crm/hr/interviews',
+    '/crm/hr/reports'
+  ],
+  support: [
+    '/crm/support',
+    '/crm/support/tickets',
+    '/crm/support/chat',
+    '/crm/support/kb',
+    '/crm/support/reports'
+  ],
+  'knowledge-base': ['/crm/knowledge-base'],
+  'my-apps': ['/crm/my-apps'],
+  search: ['/crm/search'],
+  reports: ['/crm/reports', '/crm/analytics'],
+  admin: ['/crm/admin'],
+  'roles-permissions': ['/crm/roles-permissions', '/crm/admin/roles-permissions'],
+  ebox: ['/crm/ebox', '/crm/admin/ebox', '/admin/secured-ebox'],
+  settings: ['/crm/settings', '/crm/profile']
+};
+
+export const CUSTOM_PERMISSIONS_STORAGE_KEY = 'crm_custom_role_permissions';
+
+/**
+ * Returns baseline role permissions dictionary computed from CRM_ROLE_CONFIG
+ */
+export const getDefaultRolePermissionsMatrix = () => {
+  const defaults = {};
+  Object.keys(CRM_ROLE_CONFIG).forEach((roleKey) => {
+    defaults[roleKey] = [...(CRM_ROLE_CONFIG[roleKey]?.allowedNavIds || [])];
+  });
+  return defaults;
+};
+
+/**
+ * Returns dynamic role permissions from localStorage cache with fallback to baseline defaults
+ */
+export const getDynamicRolePermissions = () => {
+  try {
+    const cached = localStorage.getItem(CUSTOM_PERMISSIONS_STORAGE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0) {
+        return parsed;
+      }
+    }
+  } catch (e) {}
+  return getDefaultRolePermissionsMatrix();
+};
+
+/**
+ * Stores dynamic role permissions in localStorage and broadcasts update event
+ */
+export const setDynamicRolePermissions = (matrix) => {
+  try {
+    if (matrix && typeof matrix === 'object') {
+      localStorage.setItem(CUSTOM_PERMISSIONS_STORAGE_KEY, JSON.stringify(matrix));
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('crm-permissions-updated', { detail: matrix }));
+      }
+    }
+  } catch (e) {}
+};
+
+/**
  * Returns role configuration for the active user.
  */
 export const getRoleConfig = (userOrRoleId, product = 'crm') => {
   const roleId = normalizeRoleId(userOrRoleId, product);
   const configMap = product === 'crm' ? CRM_ROLE_CONFIG : OAL_ROLE_CONFIG;
-  return configMap[roleId] || (product === 'crm' ? CRM_ROLE_CONFIG.owner : OAL_ROLE_CONFIG.borrower);
+  const baseConfig = configMap[roleId] || (product === 'crm' ? CRM_ROLE_CONFIG.business_owner : OAL_ROLE_CONFIG.borrower);
+
+  if (product === 'crm') {
+    const dynamicMatrix = getDynamicRolePermissions();
+    if (dynamicMatrix && Array.isArray(dynamicMatrix[roleId])) {
+      const allowedNavIds = [...dynamicMatrix[roleId]];
+
+      // Safe lock: business_owner & super_admin must retain administrative access
+      if (roleId === 'business_owner' || roleId === 'super_admin') {
+        const mustHave = ['dashboard', 'admin', 'roles-permissions', 'settings'];
+        mustHave.forEach((m) => {
+          if (!allowedNavIds.includes(m)) allowedNavIds.push(m);
+        });
+      }
+
+      // Compute allowed routes from active nav items
+      const dynamicRoutes = new Set(baseConfig.allowedRoutes || []);
+      allowedNavIds.forEach((navId) => {
+        const routes = NAV_ID_TO_ROUTES_MAP[navId];
+        if (Array.isArray(routes)) {
+          routes.forEach((r) => dynamicRoutes.add(r));
+        }
+      });
+
+      return {
+        ...baseConfig,
+        allowedNavIds,
+        allowedRoutes: Array.from(dynamicRoutes)
+      };
+    }
+  }
+
+  return baseConfig;
 };
 
 /**

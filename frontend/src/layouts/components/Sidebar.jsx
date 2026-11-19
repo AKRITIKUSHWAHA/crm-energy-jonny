@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { LogOut, Shield } from 'lucide-react';
 import { crmNavigation, oalNavigation } from '../../data/mockData';
@@ -17,6 +17,14 @@ export const Sidebar = ({
   const { logout, crmUser, oalUser } = useAuth();
   const { addToast } = useToast();
   const { t } = useLanguage();
+
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+
+  useEffect(() => {
+    const handlePermUpdate = () => setPermissionsVersion((v) => v + 1);
+    window.addEventListener('crm-permissions-updated', handlePermUpdate);
+    return () => window.removeEventListener('crm-permissions-updated', handlePermUpdate);
+  }, []);
 
   const currentUser = product === 'crm' ? crmUser : oalUser;
   const roleConfig = getRoleConfig(currentUser, product);

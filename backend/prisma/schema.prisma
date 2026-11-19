@@ -735,3 +735,19 @@ model StaffCallSession {
   @@index([tenantId])
   @@map("staff_call_sessions")
 }
+
+/// Dynamic Role-Based Access Control Menu Permissions per Tenant
+model RolePermission {
+  id            String   @id @default(cuid())
+  tenantId      String
+  roleId        String
+  allowedNavIds String   @db.LongText
+  allowedRoutes String?  @db.LongText
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, roleId], map: "unique_tenant_role")
+  @@index([tenantId])
+  @@map("role_permissions")
+}
+

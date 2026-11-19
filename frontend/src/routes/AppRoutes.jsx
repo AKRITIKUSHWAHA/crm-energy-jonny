@@ -206,7 +206,7 @@ export const AppRoutes = () => {
         <Route path="/crm/company-setup" element={<CrmCompanySetup />} />
         <Route path="/crm/admin-setup" element={<CrmAdminSetup />} />
         <Route path="/crm/employee-invite" element={<CrmEmployeeInvite />} />
-        <Route path="/crm/roles-permissions" element={<CrmRolesPermissions />} />
+        <Route path="/crm/onboarding/roles-permissions" element={<CrmRolesPermissions />} />
         <Route path="/crm/onboarding-complete" element={<CrmOnboardingComplete />} />
       </Route>
 
@@ -264,6 +264,8 @@ export const AppRoutes = () => {
           <Route path="/crm/analytics" element={<CrmAnalytics />} />
           <Route path="/crm/reports" element={<CrmReports />} />
           <Route path="/crm/admin" element={<CrmAdmin />} />
+          <Route path="/crm/roles-permissions" element={<CrmRolesPermissions />} />
+          <Route path="/crm/admin/roles-permissions" element={<CrmRolesPermissions />} />
           <Route path="/crm/admin/ebox" element={<SecuredEbox />} />
           <Route path="/crm/ebox" element={<SecuredEbox />} />
           <Route path="/crm/settings" element={<CrmSettings />} />

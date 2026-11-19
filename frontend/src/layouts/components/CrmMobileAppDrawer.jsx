@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   X,
@@ -24,6 +24,14 @@ export const CrmMobileAppDrawer = ({ isOpen, onClose, product = 'crm', onOpenSea
   const { crmUser, oalUser, logout } = useAuth();
   const { addToast } = useToast();
   const { t } = useLanguage();
+
+  const [permissionsVersion, setPermissionsVersion] = useState(0);
+
+  useEffect(() => {
+    const handlePermUpdate = () => setPermissionsVersion((v) => v + 1);
+    window.addEventListener('crm-permissions-updated', handlePermUpdate);
+    return () => window.removeEventListener('crm-permissions-updated', handlePermUpdate);
+  }, []);
 
   if (!isOpen) return null;
 
