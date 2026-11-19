@@ -192,6 +192,24 @@ const decryptText = (cipherText) => {
   return cipherText;
 };
 
+function normalizeRole(roleStr) {
+  if (!roleStr) return 'business_owner';
+  const r = roleStr.toLowerCase().replace(/[^a-z0-9]/g, '_');
+  if (r.includes('owner')) return 'business_owner';
+  if (r.includes('super_admin') || r.includes('root')) return 'super_admin';
+  if (r.includes('crm_pro') || r.includes('crm')) return 'crm_pro';
+  if (r.includes('creator')) return 'content_creator';
+  if (r.includes('builder')) return 'content_builder';
+  if (r.includes('influencer')) return 'influencer';
+  if (r.includes('customer') || r.includes('client')) return 'customer';
+  if (r.includes('affiliate')) return 'affiliate_partner';
+  if (r.includes('marketing') || r.includes('mktg')) return 'ai_marketing_pro';
+  if (r.includes('hr')) return 'hr';
+  if (r.includes('admin_2') || r.includes('admin_ii')) return 'admin_2';
+  if (r.includes('admin_1') || r.includes('admin_i')) return 'admin_1';
+  return r;
+}
+
 class EboxService {
   async getMessages(tenantId, userContext = null) {
     try {
@@ -201,11 +219,10 @@ class EboxService {
       });
 
       // Determine if requesting user is an Executive (Business Owner or Super Admin)
-      const rawRole = (userContext?.role || '').toLowerCase().replace(/[\s-]/g, '_');
+      const rawRole = normalizeRole(userContext?.role);
       const isExecutive = !userContext ||
         rawRole === 'business_owner' ||
         rawRole === 'super_admin' ||
-        rawRole === 'owner' ||
         userContext?.role === 'BUSINESS_OWNER' ||
         userContext?.role === 'SUPER_ADMIN';
 
@@ -282,11 +299,10 @@ class EboxService {
       throw err;
     }
 
-    const rawRole = (userContext?.role || '').toLowerCase().replace(/[\s-]/g, '_');
+    const rawRole = normalizeRole(userContext?.role);
     const isExecutive = !userContext ||
       rawRole === 'business_owner' ||
       rawRole === 'super_admin' ||
-      rawRole === 'owner' ||
       userContext?.role === 'BUSINESS_OWNER' ||
       userContext?.role === 'SUPER_ADMIN';
 
@@ -309,7 +325,7 @@ class EboxService {
         subject = `[ROLE:${rawRole}] ${subject || 'Direct Vault Message'}`;
       }
     } else if (data.roleChannelId) {
-      const targetRole = data.roleChannelId.replace('th-role-', '');
+      const targetRole = normalizeRole(data.roleChannelId.replace('th-role-', ''));
       if (!subject.toLowerCase().includes(`[role:${targetRole}]`)) {
         subject = `[ROLE:${targetRole}] ${subject || 'Direct Vault Message'}`;
       }

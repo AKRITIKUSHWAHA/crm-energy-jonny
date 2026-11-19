@@ -1015,7 +1015,10 @@ export const SecuredEbox = () => {
             let hasChanges = false;
             const next = { ...prev };
 
-            dbMessages.forEach((dbMsg) => {
+            // Sort chronologically so conversation history renders in natural timeline order
+            const chronoSorted = [...dbMessages].sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+
+            chronoSorted.forEach((dbMsg) => {
               const subjectLower = (dbMsg.subject || '').toLowerCase();
               const roleMatch = subjectLower.match(/\[role:([a-z0-9_-]+)\]/);
               const isSwmtpMsg = subjectLower.includes('[swmtp:') || subjectLower.includes('swmtp') || dbMsg.senderName?.toLowerCase().includes('swmtp') || dbMsg.recipient?.toLowerCase().includes('swmtp');
@@ -1170,7 +1173,7 @@ export const SecuredEbox = () => {
     };
 
     fetchEboxMessages();
-    const pollInterval = setInterval(fetchEboxMessages, 8000);
+    const pollInterval = setInterval(fetchEboxMessages, 4000);
     return () => {
       isMounted = false;
       clearInterval(pollInterval);
@@ -1571,7 +1574,11 @@ export const SecuredEbox = () => {
 
   // Automated simulated responder for testing two-way persona flow
   const triggerAutoReply = (userMessage, targetThreadId, senderRole) => {
-    if (isExecutive && senderRole !== 'johnny') return;
+    // Only fire auto-reply when non-executive sends (simulated BO ack) or when BO sends to a role channel (simulated role ack)
+    const isRoleChannel = targetThreadId.startsWith('th-role-');
+    const shouldFireForExecutive = isExecutive && isRoleChannel && (senderRole === 'johnny' || senderRole === 'business_owner');
+    const shouldFireForNonExecutive = !isExecutive;
+    if (!shouldFireForExecutive && !shouldFireForNonExecutive) return;
 
     setIsTyping(true);
 
@@ -1701,12 +1708,15 @@ export const SecuredEbox = () => {
         senderName = 'Legal Counsel (Corporate Diligence)';
         senderTitle = 'Senior Diligence Attorney';
       } else {
-        senderName = 'Johnny (Super Executive Admin)';
+        // When Business Owner sends to a role channel → persona = 'johnny' / 'business_owner'
+        senderName = currentUser?.name ? `${currentUser.name} (Business Owner)` : 'Johnny (Super Executive Admin)';
         senderTitle = 'SEA / Business Owner';
+        sentPersona = 'johnny';
       }
     } else {
-      senderName = `${currentUser?.name || currentRoleMeta.name} (${currentRoleMeta.name})`;
-      senderTitle = currentUser?.role || currentRoleMeta.label || currentRoleMeta.name;
+      // Non-executive: sender is the role user themselves
+      senderName = currentUser?.name || currentRoleMeta.name;
+      senderTitle = currentRoleMeta.label || currentRoleMeta.name;
       sentPersona = currentRoleId;
     }
 
@@ -1724,17 +1734,33 @@ export const SecuredEbox = () => {
     const lastSwmtp = [...activeMsgs].reverse().find((m) => m.conversationId);
     const conversationId = lastSwmtp?.conversationId || 'conv-swmtp-main';
 
-    const computedSubject = isSwmtp
-      ? `[SWMTP:${conversationId}] Reply by ${senderName}`
-      : isRoleChannel
-      ? `[ROLE:${targetRoleKey}] ${currentThread.title}`
-      : currentThread.title;
+    // --- Subject always carries [ROLE:roleKey] so both sides (BO + Role User) can see it ---
+    let computedSubject;
+    if (isSwmtp) {
+      computedSubject = `[SWMTP:${conversationId}] Reply by ${senderName}`;
+    } else if (isRoleChannel) {
+      // Executive replying to a role channel OR role user sending to BO — always tag with role
+      computedSubject = `[ROLE:${targetRoleKey}] ${currentThread.title}`;
+    } else if (!isExecutive) {
+      // Non-executive in their vault — also tag with their role
+      computedSubject = `[ROLE:${currentRoleId}] ${currentThread.title}`;
+    } else {
+      computedSubject = currentThread.title;
+    }
 
+    // Recipient: who receives this message
     const computedRecipient = isSwmtp
       ? 'SWMTP Master Admin'
-      : isExecutive
-      ? (currentThread.partnerName || 'Staff Member')
-      : 'Business Owner & Super Admin';
+      : isExecutive && isRoleChannel
+      ? (currentThread.partnerName || targetRoleKey || 'Staff Member')
+      : !isExecutive
+      ? 'Business Owner & Super Admin'
+      : (currentThread.partnerName || 'Staff Member');
+
+    // roleChannelId passed to backend so it can tag subject correctly even from executive side
+    const roleChannelId = (isRoleChannel && targetRoleKey) ? threadId
+      : (!isExecutive && currentRoleId) ? `th-role-${currentRoleId}`
+      : undefined;
 
     if (currentFiles.length > 0) {
       for (const file of currentFiles) {
@@ -1773,8 +1799,10 @@ export const SecuredEbox = () => {
             subject: computedSubject,
             message: currentMsgText,
             recipient: computedRecipient,
+            senderName,
             isSwmtp,
             conversationId: isSwmtp ? conversationId : undefined,
+            roleChannelId: roleChannelId,
             messageType: msgType,
             fileData: base64Data,
             fileName: file.name,
@@ -1838,8 +1866,10 @@ export const SecuredEbox = () => {
           subject: computedSubject,
           message: currentMsgText,
           recipient: computedRecipient,
+          senderName,
           isSwmtp,
           conversationId: isSwmtp ? conversationId : undefined,
+          roleChannelId: roleChannelId,
           messageType: 'text',
         });
 
@@ -2478,7 +2508,35 @@ export const SecuredEbox = () => {
               </div>
             ) : (
               filteredMessages.map((m) => {
-                const isMine = m.senderRole === activePersona;
+                // isMine: true if this message was sent by the currently logged-in user/persona
+                const isMine = isExecutive
+                  ? (m.senderRole === 'johnny' || m.senderRole === 'business_owner' || m.senderRole === activePersona)
+                  : (m.senderRole === currentRoleId);
+
+                // Role badge color lookup
+                const roleMeta = ROLE_CHANNELS_META[m.senderRole] || null;
+                const badgeBg = m.senderRole === 'johnny' || m.senderRole === 'business_owner'
+                  ? 'rgba(2,132,199,0.12)' : m.senderRole === 'ktt'
+                  ? 'rgba(79,70,229,0.12)' : m.senderRole === 'attorney'
+                  ? 'rgba(5,150,105,0.12)' : m.senderRole === 'swmtp_admin'
+                  ? 'rgba(245,158,11,0.12)' : roleMeta
+                  ? `${roleMeta.color}18` : 'rgba(100,116,139,0.12)';
+                const badgeColor = m.senderRole === 'johnny' || m.senderRole === 'business_owner'
+                  ? '#0284c7' : m.senderRole === 'ktt'
+                  ? '#4f46e5' : m.senderRole === 'attorney'
+                  ? '#059669' : m.senderRole === 'swmtp_admin'
+                  ? '#d97706' : roleMeta
+                  ? roleMeta.color : 'var(--text-secondary)';
+                const badgeBorder = `1px solid ${badgeColor}50`;
+
+                // Bubble gradient for "mine" messages
+                const myBubbleGrad = isExecutive
+                  ? activePersona === 'ktt'
+                    ? 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)'
+                    : activePersona === 'attorney'
+                    ? 'linear-gradient(135deg, #059669 0%, #047857 100%)'
+                    : 'linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%)'
+                  : `linear-gradient(135deg, ${(ROLE_CHANNELS_META[currentRoleId]?.color || '#6366f1')} 0%, ${(ROLE_CHANNELS_META[currentRoleId]?.color || '#6366f1')}cc 100%)`;
 
                 // Compute translation state for this message
                 const singleOverride = individualTranslations[m.id];
@@ -2545,9 +2603,7 @@ export const SecuredEbox = () => {
                         style={{
                           fontWeight: 700,
                           color: isMine
-                            ? activePersona === 'johnny'
-                              ? '#0284c7'
-                              : '#4f46e5'
+                            ? badgeColor
                             : 'var(--text-primary)',
                         }}
                       >
@@ -2559,12 +2615,12 @@ export const SecuredEbox = () => {
                           fontWeight: 700,
                           padding: '1px 6px',
                           borderRadius: '4px',
-                          backgroundColor: m.senderRole === 'johnny' ? 'rgba(2, 132, 199, 0.12)' : m.senderRole === 'ktt' ? 'rgba(79, 70, 229, 0.12)' : m.senderRole === 'attorney' ? 'rgba(5, 150, 105, 0.12)' : 'rgba(100, 116, 139, 0.12)',
-                          color: m.senderRole === 'johnny' ? '#0284c7' : m.senderRole === 'ktt' ? '#4f46e5' : m.senderRole === 'attorney' ? '#059669' : 'var(--text-secondary)',
-                          border: '1px solid ' + (m.senderRole === 'johnny' ? 'rgba(2, 132, 199, 0.3)' : m.senderRole === 'ktt' ? 'rgba(79, 70, 229, 0.3)' : m.senderRole === 'attorney' ? 'rgba(5, 150, 105, 0.3)' : 'rgba(100, 116, 139, 0.3)'),
+                          backgroundColor: badgeBg,
+                          color: badgeColor,
+                          border: badgeBorder,
                         }}
                       >
-                        {m.title || (m.senderRole === 'johnny' ? 'SEA / Owner' : m.senderRole === 'ktt' ? 'Lead Systems Architect' : m.senderRole === 'attorney' ? 'Legal Diligence Attorney' : 'SWMTP Master Admin')}
+                        {m.title || (m.senderRole === 'johnny' || m.senderRole === 'business_owner' ? 'SEA / Business Owner' : m.senderRole === 'ktt' ? 'Lead Systems Architect' : m.senderRole === 'attorney' ? 'Legal Diligence Attorney' : m.senderRole === 'swmtp_admin' ? 'SWMTP Master Admin' : (ROLE_CHANNELS_META[m.senderRole]?.label || m.senderRole || 'Staff'))}
                       </span>
                       <span>•</span>
                       <span>{m.time}</span>
@@ -2586,16 +2642,14 @@ export const SecuredEbox = () => {
                         fontSize: '13px',
                         lineHeight: '1.5',
                         background: isMine
-                          ? activePersona === 'johnny'
-                            ? 'linear-gradient(135deg, #0284c7 0%, #1d4ed8 100%)'
-                            : activePersona === 'ktt'
-                            ? 'linear-gradient(135deg, #4f46e5 0%, #6366f1 100%)'
-                            : 'linear-gradient(135deg, #059669 0%, #047857 100%)'
-                          : m.senderRole === 'johnny'
+                          ? myBubbleGrad
+                          : m.senderRole === 'johnny' || m.senderRole === 'business_owner'
                           ? 'rgba(2, 132, 199, 0.08)'
+                          : roleMeta
+                          ? `${roleMeta.color}12`
                           : 'var(--surface-secondary)',
                         color: isMine ? '#ffffff' : 'var(--text-primary)',
-                        border: isMine ? 'none' : '1px solid var(--border)',
+                        border: isMine ? 'none' : `1px solid ${roleMeta ? `${roleMeta.color}30` : 'var(--border)'}`,
                         boxShadow: isMine ? '0 3px 10px rgba(0,0,0,0.12)' : '0 2px 6px rgba(0,0,0,0.04)',
                       }}
                     >

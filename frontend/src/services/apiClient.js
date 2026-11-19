@@ -64,6 +64,23 @@ class ApiClient {
       headers['Authorization'] = `Bearer ${token}`;
     }
 
+    // Attach active CRM user session headers so backend services (e.g. eBox) know the caller role dynamically
+    if (typeof localStorage !== 'undefined') {
+      try {
+        const savedUserStr = localStorage.getItem('crm_user');
+        if (savedUserStr) {
+          const u = JSON.parse(savedUserStr);
+          if (u?.id) headers['x-user-role-id'] = u.id;
+          if (u?.role) headers['x-user-role'] = u.role;
+          if (u?.userId || u?.id) headers['x-user-id'] = u.userId || u.id;
+          if (u?.name) headers['x-user-name'] = u.name;
+          if (u?.tenantId) headers['x-tenant-id'] = u.tenantId;
+        }
+      } catch (e) {
+        // Safe json parse ignore
+      }
+    }
+
     return headers;
   }
 
