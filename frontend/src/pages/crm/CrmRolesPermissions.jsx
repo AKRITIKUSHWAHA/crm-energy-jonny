@@ -1,38 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import {
-  ShieldAlert,
-  ShieldCheck,
-  Check,
-  X,
-  RotateCcw,
-  Save,
-  Search,
-  Lock,
-  Layers,
-  Sparkles,
-  Users,
-  Target,
-  Kanban,
-  CheckSquare,
-  MessageSquare,
-  Boxes,
-  UserCheck,
-  LifeBuoy,
-  BookOpen,
-  MapPin,
-  Bot,
-  Mic,
-  Video,
-  Megaphone,
-  Grid,
-  FileText,
-  Settings,
-  LayoutDashboard,
-  CheckCircle2,
-  AlertTriangle,
-  Info,
-  ChevronRight,
-  Database
+  ShieldAlert, ShieldCheck, Check, X, RotateCcw, Save, Search, Lock,
+  Layers, Sparkles, Users, Target, Kanban, CheckSquare, MessageSquare,
+  Boxes, UserCheck, LifeBuoy, BookOpen, MapPin, Bot, Mic, Video,
+  Megaphone, Grid, FileText, Settings, LayoutDashboard, CheckCircle2,
+  AlertTriangle, Info, Database, ChevronRight
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useToast } from '../../context/ToastContext';
@@ -43,337 +15,685 @@ import {
   getDefaultRolePermissionsMatrix
 } from '../../utils/rbac';
 
-// 12 Standard Platform Roles
-const ROLE_DEFINITIONS = [
-  { id: 'business_owner', name: 'Business Owner', subtitle: 'Executive Super Admin', tag: 'Executive', color: 'indigo' },
-  { id: 'super_admin', name: 'Super Admin', subtitle: 'Platform Root Governance', tag: 'Root', color: 'purple' },
-  { id: 'crm_pro', name: 'CRM Pro', subtitle: 'High-Volume Sales Director', tag: 'Sales', color: 'blue' },
-  { id: 'content_creator', name: 'Content Creator', subtitle: 'Creative & Digital Assets', tag: 'Media', color: 'pink' },
-  { id: 'influencer', name: 'Influencer', subtitle: 'Brand Partner & Deals', tag: 'Partner', color: 'amber' },
-  { id: 'ai_marketing_pro', name: 'AI Marketing Pro', subtitle: 'Growth & Campaigns', tag: 'Marketing', color: 'emerald' },
-  { id: 'admin_1', name: 'Admin Level 1', subtitle: 'Operations & Inbound Desk', tag: 'Ops', color: 'cyan' },
-  { id: 'admin_2', name: 'Admin Level 2', subtitle: 'Enterprise Operations Desk', tag: 'Ops', color: 'teal' },
-  { id: 'customer', name: 'Customer / Client', subtitle: 'Self-Service Vault', tag: 'Portal', color: 'sky' },
-  { id: 'content_builder', name: 'Content Builder', subtitle: 'Studio Production Suite', tag: 'Studio', color: 'violet' },
-  { id: 'affiliate_partner', name: 'Affiliate Partner', subtitle: 'Referral & Commission Desk', tag: 'Affiliate', color: 'orange' },
-  { id: 'hr', name: 'HR Officer', subtitle: 'Talent, Recruiting & Ops', tag: 'HR', color: 'rose' }
+// ─── Constants ───────────────────────────────────────────────────────────────
+
+const ROLES = [
+  { id: 'business_owner',   name: 'Business Owner',   short: 'B.Owner',   subtitle: 'Executive Super Admin',         emoji: '👑', accent: '#6366f1' },
+  { id: 'super_admin',      name: 'Super Admin',       short: 'S.Admin',   subtitle: 'Platform Root Governance',      emoji: '🛡️', accent: '#8b5cf6' },
+  { id: 'crm_pro',          name: 'CRM Pro',           short: 'CRM Pro',   subtitle: 'High-Volume Sales Director',    emoji: '💼', accent: '#3b82f6' },
+  { id: 'content_creator',  name: 'Content Creator',   short: 'Creator',   subtitle: 'Creative & Digital Assets',     emoji: '🎨', accent: '#ec4899' },
+  { id: 'influencer',       name: 'Influencer',        short: 'Influencer',subtitle: 'Brand Partner & Deals',         emoji: '⭐', accent: '#f59e0b' },
+  { id: 'ai_marketing_pro', name: 'AI Marketing Pro',  short: 'AI Mktg',  subtitle: 'Growth & Campaigns',            emoji: '🤖', accent: '#10b981' },
+  { id: 'admin_1',          name: 'Admin Level 1',     short: 'Admin 1',   subtitle: 'Operations & Inbound Desk',     emoji: '🏢', accent: '#06b6d4' },
+  { id: 'admin_2',          name: 'Admin Level 2',     short: 'Admin 2',   subtitle: 'Enterprise Operations Desk',    emoji: '🏛️', accent: '#14b8a6' },
+  { id: 'customer',         name: 'Customer / Client', short: 'Customer',  subtitle: 'Self-Service Portal Vault',     emoji: '👤', accent: '#38bdf8' },
+  { id: 'content_builder',  name: 'Content Builder',   short: 'Builder',   subtitle: 'Studio Production Suite',       emoji: '🎬', accent: '#a78bfa' },
+  { id: 'affiliate_partner',name: 'Affiliate Partner', short: 'Affiliate', subtitle: 'Referral & Commission Desk',    emoji: '🤝', accent: '#fb923c' },
+  { id: 'hr',               name: 'HR Officer',        short: 'HR',        subtitle: 'Talent, Recruiting & Ops',      emoji: '👥', accent: '#f43f5e' },
 ];
 
-// All 23 Business Owner Navigation Menus Grouped by Section
-const CRM_NAV_CATALOG = [
+const NAV_CATALOG = [
   // Core CRM
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: '/crm/dashboard', section: 'Core CRM', description: 'Real-time KPIs, pipeline analytics and activity stream' },
-  { id: 'contacts', label: 'Contacts', icon: Users, path: '/crm/contacts', section: 'Core CRM', description: 'Unified address book, customer profiles, and notes' },
-  { id: 'leads', label: 'Leads Directory', icon: Target, path: '/crm/leads', section: 'Core CRM', description: 'Prospect management, scoring, and inbound queue' },
-  { id: 'pipeline', label: 'Sales Pipeline', icon: Kanban, path: '/crm/pipeline', section: 'Core CRM', description: '8-stage visual deal boards and revenue projections' },
-  { id: 'tasks', label: 'Tasks & Reminders', icon: CheckSquare, path: '/crm/tasks', section: 'Core CRM', description: 'Task calendar, checklists, and automated reminders' },
-  { id: 'communication', label: 'Communication Hub', icon: MessageSquare, path: '/crm/communication', section: 'Core CRM', description: 'Central inbox, call context, and unified messaging' },
-  { id: 'territory', label: 'Territory Management', icon: MapPin, path: '/crm/territory', section: 'Core CRM', description: 'Geographic sales quota, zoning, and rep allocation' },
-
+  { id: 'dashboard',      label: 'Dashboard',           icon: LayoutDashboard, path: '/crm/dashboard',      section: 'Core CRM',           description: 'Real-time KPIs, pipeline analytics and activity stream' },
+  { id: 'contacts',       label: 'Contacts',             icon: Users,           path: '/crm/contacts',       section: 'Core CRM',           description: 'Unified address book, customer profiles, and notes' },
+  { id: 'leads',          label: 'Leads Directory',      icon: Target,          path: '/crm/leads',          section: 'Core CRM',           description: 'Prospect management, scoring, and inbound queue' },
+  { id: 'pipeline',       label: 'Sales Pipeline',       icon: Kanban,          path: '/crm/pipeline',       section: 'Core CRM',           description: '8-stage visual deal boards and revenue projections' },
+  { id: 'tasks',          label: 'Tasks & Reminders',    icon: CheckSquare,     path: '/crm/tasks',          section: 'Core CRM',           description: 'Task calendar, checklists, and automated reminders' },
+  { id: 'communication',  label: 'Communication Hub',    icon: MessageSquare,   path: '/crm/communication',  section: 'Core CRM',           description: 'Central inbox, call context, and unified messaging' },
+  { id: 'territory',      label: 'Territory Management', icon: MapPin,          path: '/crm/territory',      section: 'Core CRM',           description: 'Geographic sales quota, zoning, and rep allocation' },
   // Enterprise ERP
-  { id: 'erp', label: 'ERP & Operations', icon: Boxes, path: '/crm/erp', section: 'Enterprise ERP', description: 'Supply chain, inventory orders, and procurement ledger' },
-
+  { id: 'erp',            label: 'ERP & Operations',     icon: Boxes,           path: '/crm/erp',            section: 'Enterprise ERP',     description: 'Supply chain, inventory orders, and procurement ledger' },
   // AI SuperHouse
-  { id: 'bestie', label: 'Zunme AI Agent', icon: Bot, path: '/crm/bestie', section: 'AI SuperHouse', description: 'Natural language CRM intelligence and live assistant' },
-  { id: 'ai-voice', label: 'AI Voice Agent', icon: Mic, path: '/crm/ai-voice', section: 'AI SuperHouse', description: 'Real-time conversational voice caller and dispatcher' },
-  { id: 'ai', label: 'AI Content Studio', icon: Sparkles, path: '/crm/ai-studio', section: 'AI SuperHouse', description: 'Generative copywriting, marketing assets, and briefs' },
-  { id: 'ai-video', label: 'AI Video Agent', icon: Video, path: '/crm/ai-video', section: 'AI SuperHouse', description: 'AI avatar synthesis and personalized video generator' },
-  { id: 'marketing', label: 'AI Marketing Hub', icon: Megaphone, path: '/crm/marketing', section: 'AI SuperHouse', description: 'Automated multi-channel campaigns and ad spend ROI' },
-
+  { id: 'bestie',         label: 'Zunme AI Agent',       icon: Bot,             path: '/crm/bestie',         section: 'AI SuperHouse',      description: 'Natural language CRM intelligence and live assistant' },
+  { id: 'ai-voice',       label: 'AI Voice Agent',       icon: Mic,             path: '/crm/ai-voice',       section: 'AI SuperHouse',      description: 'Real-time conversational voice caller and dispatcher' },
+  { id: 'ai',             label: 'AI Content Studio',    icon: Sparkles,        path: '/crm/ai-studio',      section: 'AI SuperHouse',      description: 'Generative copywriting, marketing assets, and briefs' },
+  { id: 'ai-video',       label: 'AI Video Agent',       icon: Video,           path: '/crm/ai-video',       section: 'AI SuperHouse',      description: 'AI avatar synthesis and personalized video generator' },
+  { id: 'marketing',      label: 'AI Marketing Hub',     icon: Megaphone,       path: '/crm/marketing',      section: 'AI SuperHouse',      description: 'Automated multi-channel campaigns and ad spend ROI' },
   // Business Solutions
-  { id: 'hr', label: 'HR & Recruiting', icon: UserCheck, path: '/crm/hr', section: 'Business Solutions', description: 'Hiring pipeline, employee profiles, and leave logs' },
-  { id: 'support', label: 'Customer Support', icon: LifeBuoy, path: '/crm/support', section: 'Business Solutions', description: 'Customer ticketing system and SLA resolution desk' },
-  { id: 'knowledge-base', label: 'Knowledge Base', icon: BookOpen, path: '/crm/knowledge-base', section: 'Business Solutions', description: 'SOPs, documentation, onboarding and technical articles' },
-  { id: 'my-apps', label: 'My Fav Apps', icon: Grid, path: '/crm/my-apps', section: 'Business Solutions', description: 'Connected tools, third-party integrations and app grid' },
-
+  { id: 'hr',             label: 'HR & Recruiting',      icon: UserCheck,       path: '/crm/hr',             section: 'Business Solutions', description: 'Hiring pipeline, employee profiles, and leave logs' },
+  { id: 'support',        label: 'Customer Support',     icon: LifeBuoy,        path: '/crm/support',        section: 'Business Solutions', description: 'Customer ticketing system and SLA resolution desk' },
+  { id: 'knowledge-base', label: 'Knowledge Base',       icon: BookOpen,        path: '/crm/knowledge-base', section: 'Business Solutions', description: 'SOPs, documentation, onboarding and technical articles' },
+  { id: 'my-apps',        label: 'My Fav Apps',          icon: Grid,            path: '/crm/my-apps',        section: 'Business Solutions', description: 'Connected tools, third-party integrations and app grid' },
   // Governance & Data
-  { id: 'search', label: 'Internal AI Search', icon: Search, path: '/crm/search', section: 'Governance & Data', description: 'Fast search across leads, deals, tickets and messages' },
-  { id: 'reports', label: 'Reports Hub', icon: FileText, path: '/crm/reports', section: 'Governance & Data', description: 'Executive revenue summaries and audit exports' },
-  { id: 'admin', label: 'Administration', icon: ShieldCheck, path: '/crm/admin', section: 'Governance & Data', description: 'Tenant provisioning, global defaults and system health' },
-  { id: 'roles-permissions', label: 'Roles & Permissions', icon: ShieldAlert, path: '/crm/roles-permissions', section: 'Governance & Data', description: 'Granular menu access control across all 12 platform roles' },
-  { id: 'ebox', label: 'Secured zBox (SEA)', icon: Lock, path: '/crm/ebox', section: 'Governance & Data', description: 'AES-256 encrypted peer vaults with SWMTP live bridge' },
-  { id: 'settings', label: 'Settings', icon: Settings, path: '/crm/settings', section: 'Governance & Data', description: 'System preferences, profile defaults, and theme options' }
+  { id: 'search',            label: 'Internal AI Search',    icon: Search,       path: '/crm/search',            section: 'Governance & Data',  description: 'Fast global search across leads, deals, tickets, messages' },
+  { id: 'reports',           label: 'Reports Hub',           icon: FileText,     path: '/crm/reports',           section: 'Governance & Data',  description: 'Executive revenue summaries and audit exports' },
+  { id: 'admin',             label: 'Administration',        icon: ShieldCheck,  path: '/crm/admin',             section: 'Governance & Data',  description: 'Tenant provisioning, global defaults and system health' },
+  { id: 'roles-permissions', label: 'Roles & Permissions',   icon: ShieldAlert,  path: '/crm/roles-permissions', section: 'Governance & Data',  description: 'Granular menu access control across all 12 platform roles' },
+  { id: 'ebox',              label: 'Secured zBox (SEA)',    icon: Lock,         path: '/crm/ebox',              section: 'Governance & Data',  description: 'AES-256 encrypted peer vaults with SWMTP live bridge' },
+  { id: 'settings',          label: 'Settings',              icon: Settings,     path: '/crm/settings',          section: 'Governance & Data',  description: 'System preferences, profile defaults, and theme options' },
 ];
 
-// Safety locked modules for executive accounts to avoid accidental lockout
-const MANDATORY_EXECUTIVE_MODULES = ['dashboard', 'admin', 'roles-permissions', 'settings'];
+const LOCKED_MODULES = ['dashboard', 'admin', 'roles-permissions', 'settings'];
+const TOTAL = NAV_CATALOG.length;
+
+const SECTION_COLORS = {
+  'Core CRM':           { bg: 'rgba(99,102,241,0.08)',  border: 'rgba(99,102,241,0.2)',  text: '#6366f1', dot: '#6366f1' },
+  'Enterprise ERP':     { bg: 'rgba(245,158,11,0.08)', border: 'rgba(245,158,11,0.2)',  text: '#d97706', dot: '#f59e0b' },
+  'AI SuperHouse':      { bg: 'rgba(139,92,246,0.08)', border: 'rgba(139,92,246,0.2)',  text: '#7c3aed', dot: '#8b5cf6' },
+  'Business Solutions': { bg: 'rgba(16,185,129,0.08)', border: 'rgba(16,185,129,0.2)',  text: '#059669', dot: '#10b981' },
+  'Governance & Data':  { bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)',   text: '#dc2626', dot: '#ef4444' },
+};
+
+// ─── Component ───────────────────────────────────────────────────────────────
 
 export const CrmRolesPermissions = () => {
   const { user } = useAuth();
   const { addToast } = useToast();
 
   const [activeRole, setActiveRole] = useState('business_owner');
-  // Initialize immediately from cached permissions or computed defaults (Zero Delay)
-  const [permissionsMatrix, setPermissionsMatrix] = useState(() => {
-    return getDynamicRolePermissions() || getDefaultRolePermissionsMatrix();
-  });
-
-  const [isDbConnected, setIsDbConnected] = useState(false);
+  const [matrix, setMatrix] = useState(() =>
+    getDynamicRolePermissions() || getDefaultRolePermissionsMatrix()
+  );
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [dbSynced, setDbSynced] = useState(false);
+  const [dirty, setDirty] = useState(false);
+  const [search, setSearch] = useState('');
 
-  // Sync with MySQL on mount
+  // Load from MySQL on mount
   useEffect(() => {
-    let isMounted = true;
-    const fetchMatrix = async () => {
+    let alive = true;
+    (async () => {
       setLoading(true);
       try {
         const res = await rolePermissionService.getPermissions();
-        if (isMounted && res?.data && typeof res.data === 'object') {
-          setPermissionsMatrix(res.data);
-          setIsDbConnected(true);
+        if (alive && res?.data && typeof res.data === 'object') {
+          setMatrix(res.data);
+          setDbSynced(!res.fromCache && !res.fromDefaults);
         }
-      } catch (err) {
-        console.warn('[CrmRolesPermissions] Syncing with local cache:', err);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    };
-
-    fetchMatrix();
-    return () => {
-      isMounted = false;
-    };
+      } catch (_) {}
+      if (alive) setLoading(false);
+    })();
+    return () => { alive = false; };
   }, []);
 
-  // Allowed nav IDs for active role
-  const activeNavIds = useMemo(() => {
-    return permissionsMatrix[activeRole] || [];
-  }, [permissionsMatrix, activeRole]);
+  const activeIds = useMemo(() => matrix[activeRole] || [], [matrix, activeRole]);
+  const isOn = (id) => activeIds.includes(id);
+  const isLocked = (id) => (activeRole === 'business_owner' || activeRole === 'super_admin') && LOCKED_MODULES.includes(id);
 
-  // Is module toggled
-  const isModuleActive = (navId) => {
-    return activeNavIds.includes(navId);
-  };
-
-  // Is module locked/mandatory for this role
-  const isModuleLocked = (navId) => {
-    if (activeRole === 'business_owner' || activeRole === 'super_admin') {
-      return MANDATORY_EXECUTIVE_MODULES.includes(navId);
-    }
-    return false;
-  };
-
-  // Toggle individual module permission
-  const handleToggleModule = (navId) => {
-    if (isModuleLocked(navId)) {
-      addToast({
-        title: 'Safety Lock Active',
-        message: `The '${navId}' module is mandatory for ${activeRole} to prevent accidental platform lockout.`,
-        type: 'warning'
-      });
+  const toggle = (id) => {
+    if (isLocked(id)) {
+      addToast({ title: 'Safety Lock', message: `'${id}' is mandatory for executive roles.`, type: 'warning' });
       return;
     }
-
-    setPermissionsMatrix((prev) => {
-      const currentList = prev[activeRole] ? [...prev[activeRole]] : [];
-      let updated;
-      if (currentList.includes(navId)) {
-        updated = currentList.filter((id) => id !== navId);
-      } else {
-        updated = [...currentList, navId];
-      }
-      return {
-        ...prev,
-        [activeRole]: updated
-      };
+    setMatrix(prev => {
+      const cur = prev[activeRole] ? [...prev[activeRole]] : [];
+      return { ...prev, [activeRole]: cur.includes(id) ? cur.filter(x => x !== id) : [...cur, id] };
     });
-    setHasUnsavedChanges(true);
+    setDirty(true);
   };
 
-  // Select all modules for active role
-  const handleSelectAll = () => {
-    const allIds = CRM_NAV_CATALOG.map((m) => m.id);
-    setPermissionsMatrix((prev) => ({
-      ...prev,
-      [activeRole]: allIds
-    }));
-    setHasUnsavedChanges(true);
-    addToast({
-      title: 'All Menus Enabled',
-      message: `Enabled all 23 navigation modules for ${activeRole}.`,
-      type: 'info'
-    });
+  const selectAll = () => {
+    setMatrix(prev => ({ ...prev, [activeRole]: NAV_CATALOG.map(m => m.id) }));
+    setDirty(true);
   };
 
-  // Deselect all non-mandatory modules
-  const handleDeselectAll = () => {
-    let remaining = [];
-    if (activeRole === 'business_owner' || activeRole === 'super_admin') {
-      remaining = [...MANDATORY_EXECUTIVE_MODULES];
-    }
-    setPermissionsMatrix((prev) => ({
-      ...prev,
-      [activeRole]: remaining
-    }));
-    setHasUnsavedChanges(true);
-    addToast({
-      title: 'Menus Cleared',
-      message: `Cleared selectable menu access for ${activeRole}.`,
-      type: 'info'
-    });
+  const clearAll = () => {
+    const keep = (activeRole === 'business_owner' || activeRole === 'super_admin') ? [...LOCKED_MODULES] : [];
+    setMatrix(prev => ({ ...prev, [activeRole]: keep }));
+    setDirty(true);
   };
 
-  // Save changes to MySQL Database and broadcast to sidebar
-  const handleSave = async () => {
+  const save = async () => {
     setSaving(true);
     try {
-      const res = await rolePermissionService.bulkUpdatePermissions(permissionsMatrix);
+      const res = await rolePermissionService.bulkUpdatePermissions(matrix);
       if (res?.success) {
-        setHasUnsavedChanges(false);
-        setIsDbConnected(true);
-        // Dispatch instant event to update live Sidebar and Drawer without browser reload
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('crm-permissions-updated', { detail: permissionsMatrix }));
-        }
-        addToast({
-          title: 'Permissions Synchronized',
-          message: 'Saved updated role permissions to MySQL and refreshed active session in real-time.',
-          type: 'success'
-        });
+        setDirty(false);
+        setDbSynced(true);
+        window.dispatchEvent(new CustomEvent('crm-permissions-updated', { detail: matrix }));
+        addToast({ title: 'Saved to MySQL ✓', message: 'Permissions applied live across all sessions.', type: 'success' });
       } else {
-        throw new Error(res?.error || res?.message || 'Failed to persist changes');
+        throw new Error(res?.error || 'Save failed');
       }
     } catch (err) {
-      addToast({
-        title: 'Save Failed',
-        message: err.message || 'Error communicating with backend database.',
-        type: 'error'
-      });
-    } finally {
-      setSaving(false);
+      addToast({ title: 'Save Failed', message: err.message, type: 'error' });
     }
+    setSaving(false);
   };
 
-  // Reset to system baseline defaults
-  const handleResetDefaults = async () => {
-    if (!window.confirm('Are you sure you want to restore baseline enterprise role permissions for all 12 roles? Custom changes will be reset.')) {
-      return;
-    }
+  const resetDefaults = async () => {
+    if (!window.confirm('Reset all 12 roles to enterprise baseline defaults?')) return;
     setSaving(true);
     try {
       const res = await rolePermissionService.resetToDefaults();
       if (res?.success && res?.data) {
-        setPermissionsMatrix(res.data);
-        setHasUnsavedChanges(false);
-        if (typeof window !== 'undefined') {
-          window.dispatchEvent(new CustomEvent('crm-permissions-updated', { detail: res.data }));
-        }
-        addToast({
-          title: 'Defaults Restored',
-          message: 'Restored baseline enterprise permission matrix across all 12 roles.',
-          type: 'info'
-        });
+        setMatrix(res.data);
+        setDirty(false);
+        window.dispatchEvent(new CustomEvent('crm-permissions-updated', { detail: res.data }));
+        addToast({ title: 'Defaults Restored', message: 'Enterprise baseline applied to all 12 roles.', type: 'info' });
       }
     } catch (err) {
-      addToast({
-        title: 'Reset Failed',
-        message: err.message || 'Could not reset default permissions.',
-        type: 'error'
-      });
-    } finally {
-      setSaving(false);
+      addToast({ title: 'Reset Failed', message: err.message, type: 'error' });
     }
+    setSaving(false);
   };
 
-  // Filter modules based on search input
-  const filteredCatalog = useMemo(() => {
-    if (!searchQuery.trim()) return CRM_NAV_CATALOG;
-    const q = searchQuery.toLowerCase();
-    return CRM_NAV_CATALOG.filter(
-      (m) =>
-        m.label.toLowerCase().includes(q) ||
-        m.section.toLowerCase().includes(q) ||
-        m.id.toLowerCase().includes(q) ||
-        m.description.toLowerCase().includes(q)
+  const filtered = useMemo(() => {
+    if (!search.trim()) return NAV_CATALOG;
+    const q = search.toLowerCase();
+    return NAV_CATALOG.filter(m =>
+      m.label.toLowerCase().includes(q) ||
+      m.id.toLowerCase().includes(q) ||
+      m.section.toLowerCase().includes(q) ||
+      m.description.toLowerCase().includes(q)
     );
-  }, [searchQuery]);
+  }, [search]);
 
-  // Group filtered modules by section
-  const groupedModules = useMemo(() => {
-    const groups = {};
-    filteredCatalog.forEach((item) => {
-      if (!groups[item.section]) groups[item.section] = [];
-      groups[item.section].push(item);
+  const grouped = useMemo(() => {
+    const g = {};
+    filtered.forEach(item => {
+      if (!g[item.section]) g[item.section] = [];
+      g[item.section].push(item);
     });
-    return groups;
-  }, [filteredCatalog]);
+    return g;
+  }, [filtered]);
 
-  const activeRoleDef = ROLE_DEFINITIONS.find((r) => r.id === activeRole) || ROLE_DEFINITIONS[0];
+  const roleDef = ROLES.find(r => r.id === activeRole) || ROLES[0];
+
+  // ─── Styles (inline, using CSS vars for theme-safety) ────────────────────
+
+  const s = {
+    page: {
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '0',
+      width: '100%',
+      maxWidth: '100%',
+    },
+    // Top header
+    header: {
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '16px',
+      padding: '16px 20px',
+      marginBottom: '14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+    },
+    headerTop: {
+      display: 'flex',
+      alignItems: 'flex-start',
+      justifyContent: 'space-between',
+      gap: '12px',
+      flexWrap: 'wrap',
+    },
+    headerLeft: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '12px',
+    },
+    iconBox: {
+      width: '44px',
+      height: '44px',
+      borderRadius: '12px',
+      background: 'rgba(99,102,241,0.1)',
+      border: '1px solid rgba(99,102,241,0.25)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexShrink: 0,
+    },
+    h1: {
+      fontSize: '18px',
+      fontWeight: 700,
+      color: 'var(--text-primary)',
+      margin: 0,
+      lineHeight: 1.3,
+    },
+    subtitle: {
+      fontSize: '12px',
+      color: 'var(--text-secondary)',
+      marginTop: '2px',
+    },
+    dbBadge: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '4px',
+      fontSize: '11px',
+      fontWeight: 600,
+      padding: '3px 8px',
+      borderRadius: '999px',
+      background: dbSynced ? 'rgba(16,185,129,0.12)' : 'rgba(99,102,241,0.1)',
+      color: dbSynced ? '#059669' : '#6366f1',
+      border: `1px solid ${dbSynced ? 'rgba(16,185,129,0.25)' : 'rgba(99,102,241,0.25)'}`,
+      marginTop: '4px',
+      width: 'fit-content',
+    },
+    btnRow: {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '8px',
+      flexShrink: 0,
+    },
+    btnReset: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 14px',
+      borderRadius: '10px',
+      fontSize: '12px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      background: 'var(--surface-secondary)',
+      color: 'var(--text-secondary)',
+      border: '1px solid var(--border)',
+      transition: 'all 160ms',
+      whiteSpace: 'nowrap',
+    },
+    btnSave: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '6px',
+      padding: '8px 18px',
+      borderRadius: '10px',
+      fontSize: '13px',
+      fontWeight: 700,
+      cursor: 'pointer',
+      background: dirty ? 'linear-gradient(135deg,#4f46e5,#7c3aed)' : '#6366f1',
+      color: '#fff',
+      border: 'none',
+      boxShadow: dirty ? '0 4px 16px rgba(99,102,241,0.4)' : 'none',
+      transition: 'all 160ms',
+      whiteSpace: 'nowrap',
+    },
+    // Dirty banner
+    dirtyBanner: {
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '8px',
+      padding: '10px 14px',
+      borderRadius: '10px',
+      background: 'rgba(245,158,11,0.08)',
+      border: '1px solid rgba(245,158,11,0.3)',
+      fontSize: '12px',
+      color: 'var(--warning, #d97706)',
+    },
+    // Main layout
+    layout: {
+      display: 'flex',
+      gap: '14px',
+      alignItems: 'flex-start',
+    },
+    // Left sidebar
+    sidebar: {
+      width: '230px',
+      minWidth: '230px',
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '14px',
+      overflow: 'hidden',
+      flexShrink: 0,
+      position: 'sticky',
+      top: '12px',
+    },
+    sidebarHeader: {
+      padding: '12px 14px',
+      borderBottom: '1px solid var(--border)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    },
+    sidebarTitle: {
+      fontSize: '11px',
+      fontWeight: 700,
+      color: 'var(--text-secondary)',
+      textTransform: 'uppercase',
+      letterSpacing: '0.07em',
+    },
+    sidebarScroll: {
+      overflowY: 'auto',
+      maxHeight: 'calc(100vh - 220px)',
+      padding: '8px',
+    },
+    // Role item in sidebar
+    roleItem: (isActive, accent) => ({
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '8px',
+      padding: '9px 10px',
+      borderRadius: '10px',
+      cursor: 'pointer',
+      marginBottom: '3px',
+      background: isActive ? `${accent}18` : 'transparent',
+      border: `1px solid ${isActive ? `${accent}40` : 'transparent'}`,
+      transition: 'all 140ms',
+    }),
+    roleEmoji: {
+      fontSize: '16px',
+      lineHeight: 1,
+      flexShrink: 0,
+    },
+    roleInfo: {
+      flex: 1,
+      minWidth: 0,
+    },
+    roleName: (isActive, accent) => ({
+      fontSize: '12.5px',
+      fontWeight: isActive ? 700 : 500,
+      color: isActive ? accent : 'var(--text-primary)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: 'block',
+    }),
+    roleSubtitle: {
+      fontSize: '10.5px',
+      color: 'var(--text-tertiary)',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      display: 'block',
+    },
+    countPill: (count, total) => ({
+      fontSize: '10px',
+      fontWeight: 700,
+      padding: '2px 6px',
+      borderRadius: '999px',
+      flexShrink: 0,
+      background: count === total
+        ? 'rgba(16,185,129,0.12)' : count > 0
+        ? 'rgba(99,102,241,0.1)' : 'var(--surface-secondary)',
+      color: count === total
+        ? '#059669' : count > 0
+        ? '#6366f1' : 'var(--text-tertiary)',
+      border: `1px solid ${count === total
+        ? 'rgba(16,185,129,0.25)' : count > 0
+        ? 'rgba(99,102,241,0.2)' : 'var(--border)'}`,
+      fontFamily: 'var(--font-mono)',
+    }),
+    // Right content
+    right: {
+      flex: 1,
+      minWidth: 0,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '12px',
+    },
+    // Role config card
+    configCard: {
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '14px',
+      overflow: 'hidden',
+    },
+    configHeader: {
+      padding: '14px 16px',
+      borderBottom: '1px solid var(--border)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+      flexWrap: 'wrap',
+    },
+    activeRoleChip: (accent) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      fontSize: '11px',
+      fontWeight: 700,
+      padding: '3px 10px',
+      borderRadius: '999px',
+      background: `${accent}15`,
+      color: accent,
+      border: `1px solid ${accent}35`,
+    }),
+    configTitle: {
+      fontSize: '15px',
+      fontWeight: 700,
+      color: 'var(--text-primary)',
+      margin: '3px 0 0',
+    },
+    btnSmall: (danger = false) => ({
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '5px',
+      padding: '6px 12px',
+      borderRadius: '8px',
+      fontSize: '11px',
+      fontWeight: 600,
+      cursor: 'pointer',
+      background: 'var(--surface-secondary)',
+      color: danger ? 'var(--error, #dc2626)' : 'var(--text-primary)',
+      border: '1px solid var(--border)',
+      transition: 'all 140ms',
+      whiteSpace: 'nowrap',
+    }),
+    // Notice
+    notice: (type) => ({
+      margin: '12px 16px',
+      padding: '10px 12px',
+      borderRadius: '10px',
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '8px',
+      fontSize: '12px',
+      lineHeight: '1.5',
+      background: type === 'lock' ? 'rgba(99,102,241,0.07)' : 'var(--surface-secondary)',
+      color: type === 'lock' ? '#6366f1' : 'var(--text-secondary)',
+      border: `1px solid ${type === 'lock' ? 'rgba(99,102,241,0.2)' : 'var(--border)'}`,
+    }),
+    // Search
+    searchWrap: {
+      margin: '0 16px 14px',
+      position: 'relative',
+    },
+    searchInput: {
+      width: '100%',
+      padding: '9px 12px 9px 36px',
+      borderRadius: '10px',
+      fontSize: '13px',
+      background: 'var(--surface-secondary)',
+      color: 'var(--text-primary)',
+      border: '1px solid var(--border)',
+      outline: 'none',
+      boxSizing: 'border-box',
+      transition: 'border-color 160ms',
+    },
+    searchIcon: {
+      position: 'absolute',
+      left: '11px',
+      top: '50%',
+      transform: 'translateY(-50%)',
+      color: 'var(--text-tertiary)',
+      pointerEvents: 'none',
+    },
+    // Section group
+    sectionCard: (sectionName) => {
+      const sc = SECTION_COLORS[sectionName] || { bg: 'var(--surface-secondary)', border: 'var(--border)', text: 'var(--text-secondary)', dot: 'var(--text-tertiary)' };
+      return {
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '14px',
+        overflow: 'hidden',
+        marginBottom: '10px',
+      };
+    },
+    sectionHeader: (sectionName) => {
+      const sc = SECTION_COLORS[sectionName] || { bg: 'transparent', border: 'var(--border)', text: 'var(--text-secondary)', dot: 'var(--text-tertiary)' };
+      return {
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '10px 14px',
+        background: sc.bg,
+        borderBottom: `1px solid ${sc.border}`,
+      };
+    },
+    sectionTitle: (sectionName) => {
+      const sc = SECTION_COLORS[sectionName] || { text: 'var(--text-secondary)', dot: 'var(--text-tertiary)' };
+      return {
+        display: 'flex',
+        alignItems: 'center',
+        gap: '7px',
+        fontSize: '12px',
+        fontWeight: 700,
+        color: sc.text,
+        textTransform: 'uppercase',
+        letterSpacing: '0.06em',
+      };
+    },
+    sectionDot: (sectionName) => {
+      const sc = SECTION_COLORS[sectionName] || { dot: 'var(--text-tertiary)' };
+      return { width: '7px', height: '7px', borderRadius: '50%', background: sc.dot, flexShrink: 0 };
+    },
+    sectionCount: {
+      fontSize: '11px',
+      fontWeight: 600,
+      color: 'var(--text-tertiary)',
+      fontFamily: 'var(--font-mono)',
+    },
+    // Module grid
+    moduleGrid: {
+      display: 'grid',
+      gridTemplateColumns: 'repeat(2, 1fr)',
+      gap: '1px',
+      background: 'var(--border)',
+    },
+    // Module item
+    moduleItem: (active, locked) => ({
+      display: 'flex',
+      alignItems: 'flex-start',
+      gap: '10px',
+      padding: '11px 14px',
+      cursor: locked ? 'not-allowed' : 'pointer',
+      background: active ? 'rgba(99,102,241,0.05)' : 'var(--surface)',
+      transition: 'background 140ms',
+      position: 'relative',
+      userSelect: 'none',
+    }),
+    checkbox: (active, locked) => ({
+      width: '18px',
+      height: '18px',
+      borderRadius: '5px',
+      border: `2px solid ${locked ? 'var(--text-tertiary)' : active ? '#6366f1' : 'var(--border-strong)'}`,
+      background: active ? '#6366f1' : locked ? 'var(--surface-secondary)' : 'transparent',
+      flexShrink: 0,
+      marginTop: '1px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      transition: 'all 140ms',
+    }),
+    moduleIcon: (active) => ({
+      color: active ? '#6366f1' : 'var(--text-tertiary)',
+      flexShrink: 0,
+      marginTop: '1px',
+      transition: 'color 140ms',
+    }),
+    moduleBody: {
+      flex: 1,
+      minWidth: 0,
+    },
+    moduleName: (active) => ({
+      fontSize: '12.5px',
+      fontWeight: active ? 600 : 500,
+      color: active ? 'var(--text-primary)' : 'var(--text-secondary)',
+      display: 'flex',
+      alignItems: 'center',
+      gap: '5px',
+      flexWrap: 'wrap',
+    }),
+    moduleDesc: {
+      fontSize: '11px',
+      color: 'var(--text-tertiary)',
+      marginTop: '2px',
+      lineHeight: 1.4,
+      overflow: 'hidden',
+      display: '-webkit-box',
+      WebkitLineClamp: 2,
+      WebkitBoxOrient: 'vertical',
+    },
+    modulePath: {
+      display: 'inline-block',
+      marginTop: '5px',
+      fontSize: '10px',
+      fontFamily: 'var(--font-mono)',
+      color: 'var(--text-tertiary)',
+      background: 'var(--surface-secondary)',
+      border: '1px solid var(--border)',
+      borderRadius: '5px',
+      padding: '2px 6px',
+      maxWidth: '100%',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+    },
+    lockedTag: {
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: '3px',
+      fontSize: '10px',
+      fontWeight: 600,
+      padding: '1px 6px',
+      borderRadius: '4px',
+      background: 'var(--surface-secondary)',
+      color: 'var(--text-tertiary)',
+      border: '1px solid var(--border)',
+    },
+    // Bottom bar
+    bottomBar: {
+      background: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '14px',
+      padding: '12px 16px',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: '12px',
+      flexWrap: 'wrap',
+    },
+    summaryText: {
+      fontSize: '13px',
+      color: 'var(--text-secondary)',
+    },
+  };
+
+  // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-5 w-full max-w-full pb-16">
-      {/* Breadcrumb & Navigation Path */}
-      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 font-medium">
-        <span>CRM nErgy AI</span>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span>Governance & Data</span>
-        <ChevronRight className="w-3.5 h-3.5" />
-        <span className="text-slate-900 dark:text-slate-200 font-semibold">Roles & Permissions Hub</span>
-      </div>
-
-      {/* Top Header Card */}
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-5 sm:p-6 shadow-sm transition-colors">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start sm:items-center gap-3.5">
-            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800/60 text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-              <ShieldAlert className="w-6 h-6" />
+    <div style={s.page}>
+      {/* ── TOP HEADER ── */}
+      <div style={s.header}>
+        <div style={s.headerTop}>
+          <div style={s.headerLeft}>
+            <div style={s.iconBox}>
+              <ShieldAlert size={22} color="#6366f1" />
             </div>
             <div>
-              <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                  Roles & Permissions Manager
-                </h1>
-                <span className="inline-flex items-center gap-1 text-[11px] px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 dark:bg-emerald-500/10 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 font-medium">
-                  <Database className="w-3 h-3" />
-                  {isDbConnected ? 'MySQL Connected' : 'Live Sync Active'}
-                </span>
+              <h1 style={s.h1}>Roles & Permissions Manager</h1>
+              <div style={s.dbBadge}>
+                <Database size={11} />
+                {loading ? 'Syncing with MySQL...' : dbSynced ? 'MySQL Connected & Synced' : 'Live Sync Active'}
               </div>
-              <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1">
-                Configure menu visibility for all 12 platform login roles. Permissions apply instantly to the sidebar, mobile drawer, and route guards.
-              </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex flex-wrap items-center gap-2.5 pt-2 md:pt-0">
-            <button
-              onClick={handleResetDefaults}
-              disabled={saving || loading}
-              className="inline-flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-medium bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition disabled:opacity-50"
-            >
-              <RotateCcw className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+          <div style={s.btnRow}>
+            <button style={s.btnReset} onClick={resetDefaults} disabled={saving}>
+              <RotateCcw size={13} />
               Reset Defaults
             </button>
-
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className={`inline-flex items-center justify-center gap-2 px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition shadow-sm ${
-                hasUnsavedChanges
-                  ? 'bg-indigo-600 hover:bg-indigo-700 text-white ring-2 ring-indigo-400/40 animate-pulse'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white'
-              } disabled:opacity-50`}
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Saving to Database...' : hasUnsavedChanges ? 'Save Changes *' : 'Save Permissions'}
+            <button style={s.btnSave} onClick={save} disabled={saving}>
+              <Save size={13} />
+              {saving ? 'Saving...' : dirty ? 'Save Changes *' : 'Save Permissions'}
             </button>
           </div>
         </div>
 
-        {/* Unsaved Changes Banner */}
-        {hasUnsavedChanges && (
-          <div className="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-800 dark:text-amber-400 bg-amber-50 dark:bg-amber-500/10 p-3 rounded-xl border border-amber-200 dark:border-amber-500/20">
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-600 dark:text-amber-400" />
-              <span>You have unsaved changes in the permission matrix. Click "Save Permissions" to persist to MySQL database.</span>
+        {/* Unsaved warning */}
+        {dirty && (
+          <div style={s.dirtyBanner}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '7px' }}>
+              <AlertTriangle size={14} />
+              <span>Unsaved changes — click <strong>Save Changes</strong> to persist to MySQL database.</span>
             </div>
             <button
-              onClick={handleSave}
-              disabled={saving}
-              className="font-bold underline text-amber-900 dark:text-amber-300 hover:text-amber-700"
+              onClick={save}
+              style={{ fontWeight: 700, fontSize: '12px', cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', textDecoration: 'underline' }}
             >
               Save Now
             </button>
@@ -381,305 +701,177 @@ export const CrmRolesPermissions = () => {
         )}
       </div>
 
-      {/* Mobile / Tablet Horizontal Role Swipeable Bar (< 1024px) */}
-      <div className="block lg:hidden">
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            Select Role (12 Roles)
-          </span>
-          <span className="text-xs font-medium text-indigo-600 dark:text-indigo-400 font-mono">
-            {activeRoleDef.name} ({activeNavIds.length}/23)
-          </span>
-        </div>
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          {ROLE_DEFINITIONS.map((role) => {
-            const isSelected = activeRole === role.id;
-            const count = (permissionsMatrix[role.id] || []).length;
-            return (
-              <button
-                key={role.id}
-                onClick={() => setActiveRole(role.id)}
-                className={`flex-shrink-0 px-3.5 py-2 rounded-xl text-xs font-semibold border transition flex items-center gap-2 ${
-                  isSelected
-                    ? 'bg-indigo-600 text-white border-indigo-600 shadow-sm'
-                    : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800 hover:bg-slate-50'
-                }`}
-              >
-                <span>{role.name}</span>
-                <span
-                  className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono ${
-                    isSelected ? 'bg-white/20 text-white' : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
-                  }`}
+      {/* ── MAIN LAYOUT (Sidebar + Editor) ── */}
+      <div style={s.layout}>
+
+        {/* ── LEFT: 12-Role Selector Sidebar ── */}
+        <div style={s.sidebar}>
+          <div style={s.sidebarHeader}>
+            <span style={s.sidebarTitle}>Platform Roles</span>
+            <span style={{ ...s.sidebarTitle, color: 'var(--text-tertiary)', textTransform: 'none', letterSpacing: 'normal' }}>
+              {ROLES.length} total
+            </span>
+          </div>
+          <div style={s.sidebarScroll}>
+            {ROLES.map(role => {
+              const isActive = activeRole === role.id;
+              const count = (matrix[role.id] || []).length;
+              return (
+                <div
+                  key={role.id}
+                  style={s.roleItem(isActive, role.accent)}
+                  onClick={() => setActiveRole(role.id)}
                 >
-                  {count}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Main Two-Column Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-        {/* Left Column: 12 Roles Selector Rail (Desktop >= 1024px) */}
-        <div className="hidden lg:block lg:col-span-4 sticky top-4">
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 shadow-sm space-y-3">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                <h2 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
-                  Platform Login Roles
-                </h2>
-              </div>
-              <span className="text-xs text-slate-500 dark:text-slate-400 font-mono">12 Total</span>
-            </div>
-
-            <div className="space-y-1.5 max-h-[calc(100vh-220px)] overflow-y-auto pr-1">
-              {ROLE_DEFINITIONS.map((role) => {
-                const isSelected = activeRole === role.id;
-                const count = (permissionsMatrix[role.id] || []).length;
-                const total = CRM_NAV_CATALOG.length;
-
-                return (
-                  <button
-                    key={role.id}
-                    onClick={() => setActiveRole(role.id)}
-                    className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between ${
-                      isSelected
-                        ? 'bg-indigo-50/80 dark:bg-indigo-950/50 border-indigo-300 dark:border-indigo-500/50 shadow-xs ring-1 ring-indigo-500/20'
-                        : 'bg-white dark:bg-slate-900/60 border-slate-200/80 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800/40 text-slate-700 dark:text-slate-300'
-                    }`}
-                  >
-                    <div className="min-w-0 pr-2">
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`text-sm font-semibold truncate ${
-                            isSelected ? 'text-indigo-950 dark:text-white' : 'text-slate-800 dark:text-slate-200'
-                          }`}
-                        >
-                          {role.name}
-                        </span>
-                        {role.id === 'business_owner' && (
-                          <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.2 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/40">
-                            Owner
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-slate-500 dark:text-slate-400 truncate mt-0.5">
-                        {role.subtitle}
-                      </p>
-                    </div>
-
-                    <div className="text-right flex-shrink-0">
-                      <span
-                        className={`text-xs px-2 py-0.5 rounded-full font-mono font-medium border ${
-                          count === total
-                            ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30'
-                            : count > 0
-                            ? 'bg-blue-50 dark:bg-blue-500/10 text-blue-700 dark:text-blue-400 border-blue-200 dark:border-blue-500/30'
-                            : 'bg-slate-100 dark:bg-slate-800 text-slate-500 border-slate-200 dark:border-slate-700'
-                        }`}
-                      >
-                        {count}/{total}
-                      </span>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+                  <span style={s.roleEmoji}>{role.emoji}</span>
+                  <div style={s.roleInfo}>
+                    <span style={s.roleName(isActive, role.accent)}>{role.name}</span>
+                    <span style={s.roleSubtitle}>{role.subtitle}</span>
+                  </div>
+                  <span style={s.countPill(count, TOTAL)}>{count}/{TOTAL}</span>
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Right Column: Active Role Menu Permission Editor */}
-        <div className="lg:col-span-8 space-y-4">
-          {/* Active Role Control & Search Card */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3.5">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+        {/* ── RIGHT: Permission Editor ── */}
+        <div style={s.right}>
+
+          {/* Role config header */}
+          <div style={s.configCard}>
+            <div style={s.configHeader}>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs uppercase tracking-wider font-semibold text-slate-500 dark:text-slate-400">
-                    Configuring:
-                  </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full font-bold bg-indigo-50 text-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-500/40">
-                    {activeRoleDef.name} ({activeRoleDef.id})
+                <div>
+                  <span style={{ fontSize: '11px', color: 'var(--text-tertiary)', fontWeight: 600 }}>Configuring: </span>
+                  <span style={s.activeRoleChip(roleDef.accent)}>
+                    {roleDef.emoji} {roleDef.name} ({roleDef.id})
                   </span>
                 </div>
-                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white mt-0.5">
-                  Navigation Menu Access Permissions
-                </h3>
+                <div style={s.configTitle}>Navigation Menu Access Permissions</div>
               </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleSelectAll}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 border border-slate-200 dark:border-slate-700 transition"
-                >
-                  Enable All (23)
-                </button>
-                <button
-                  onClick={handleDeselectAll}
-                  className="px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-rose-600 dark:text-rose-400 border border-slate-200 dark:border-slate-700 transition"
-                >
-                  Clear Optional
-                </button>
+              <div style={{ display: 'flex', gap: '8px', flexShrink: 0 }}>
+                <button style={s.btnSmall(false)} onClick={selectAll}>Enable All ({TOTAL})</button>
+                <button style={s.btnSmall(true)} onClick={clearAll}>Clear Optional</button>
               </div>
             </div>
 
-            {/* Role Notice / Safety Lock Info */}
-            {activeRole === 'business_owner' || activeRole === 'super_admin' ? (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800/40 text-indigo-900 dark:text-indigo-300 text-xs">
-                <Lock className="w-4 h-4 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" />
+            {/* Executive safety notice */}
+            {(activeRole === 'business_owner' || activeRole === 'super_admin') ? (
+              <div style={s.notice('lock')}>
+                <Lock size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
                 <div>
-                  <span className="font-semibold text-indigo-950 dark:text-indigo-200">
-                    Executive Safety Protocol Active:
-                  </span>{' '}
-                  Critical governance modules ({MANDATORY_EXECUTIVE_MODULES.join(', ')}) are permanently locked to ensure executive accounts cannot be locked out of platform administration.
+                  <strong>Executive Safety Lock Active:</strong> Critical modules (
+                  {LOCKED_MODULES.join(', ')}) are permanently locked to prevent accidental platform lockout.
                 </div>
               </div>
             ) : (
-              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 text-slate-700 dark:text-slate-300 text-xs">
-                <Info className="w-4 h-4 text-slate-500 dark:text-slate-400 flex-shrink-0 mt-0.5" />
+              <div style={s.notice('info')}>
+                <Info size={14} style={{ flexShrink: 0, marginTop: '1px' }} />
                 <div>
-                  Select which sidebar menus and platform routes this role can access. Menus toggled off here are immediately hidden from the sidebar and blocked by route guards.
+                  Toggle which sidebar menus and routes this role can access. Changes apply instantly to the live sidebar and route guards when saved.
                 </div>
               </div>
             )}
 
-            {/* Search Filter Box */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            {/* Search */}
+            <div style={s.searchWrap}>
+              <Search size={15} style={s.searchIcon} />
               <input
                 type="text"
-                placeholder="Search menus (e.g. leads, erp, bestie, ebox, hr, pipeline)..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl pl-10 pr-4 py-2.5 text-xs sm:text-sm text-slate-900 dark:text-slate-100 placeholder-slate-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/40 focus:border-indigo-500 transition"
+                placeholder="Search menus — leads, erp, bestie, ebox, pipeline..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={s.searchInput}
               />
-              {searchQuery && (
+              {search && (
                 <button
-                  onClick={() => setSearchQuery('')}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-xs"
+                  onClick={() => setSearch('')}
+                  style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-tertiary)' }}
                 >
-                  <X className="w-4 h-4" />
+                  <X size={14} />
                 </button>
               )}
             </div>
           </div>
 
-          {/* Grouped Modules Checklists */}
-          <div className="space-y-4">
-            {Object.keys(groupedModules).length === 0 ? (
-              <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-8 text-center text-slate-500 dark:text-slate-400">
-                <p className="text-sm">No menus match your search query: "{searchQuery}"</p>
-              </div>
-            ) : (
-              Object.entries(groupedModules).map(([sectionName, modules]) => {
-                const sectionActiveCount = modules.filter((m) => isModuleActive(m.id)).length;
-                return (
-                  <div
-                    key={sectionName}
-                    className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-3"
-                  >
-                    <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
-                      <div className="flex items-center gap-2">
-                        <Layers className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
-                        <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
-                          {sectionName}
-                        </h4>
-                      </div>
-                      <span className="text-xs text-slate-500 dark:text-slate-400 font-mono font-medium">
-                        {sectionActiveCount} of {modules.length} Enabled
-                      </span>
+          {/* Module Sections */}
+          {Object.keys(grouped).length === 0 ? (
+            <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '14px', padding: '32px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '13px' }}>
+              No menus match "{search}"
+            </div>
+          ) : (
+            Object.entries(grouped).map(([section, modules]) => {
+              const activeInSection = modules.filter(m => isOn(m.id)).length;
+              return (
+                <div key={section} style={s.sectionCard(section)}>
+                  {/* Section header */}
+                  <div style={s.sectionHeader(section)}>
+                    <div style={s.sectionTitle(section)}>
+                      <span style={s.sectionDot(section)} />
+                      {section}
                     </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
-                      {modules.map((mod) => {
-                        const IconComponent = mod.icon;
-                        const active = isModuleActive(mod.id);
-                        const locked = isModuleLocked(mod.id);
-
-                        return (
-                          <div
-                            key={mod.id}
-                            onClick={() => !locked && handleToggleModule(mod.id)}
-                            className={`p-3.5 rounded-xl border transition-all cursor-pointer select-none flex items-start gap-3 relative ${
-                              active
-                                ? 'bg-indigo-50/60 dark:bg-indigo-950/30 border-indigo-300 dark:border-indigo-500/40 shadow-xs'
-                                : 'bg-slate-50/60 dark:bg-slate-900/40 border-slate-200/80 dark:border-slate-800 hover:bg-slate-100/60 dark:hover:bg-slate-800/40'
-                            } ${locked ? 'cursor-not-allowed opacity-90' : ''}`}
-                          >
-                            {/* Checkbox Icon */}
-                            <div
-                              className={`w-5 h-5 rounded-md flex items-center justify-center border mt-0.5 transition-colors flex-shrink-0 ${
-                                active
-                                  ? 'bg-indigo-600 border-indigo-600 text-white shadow-xs'
-                                  : 'border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-transparent'
-                              } ${locked ? 'bg-slate-200 dark:bg-slate-700 border-slate-300 dark:border-slate-600 text-slate-600 dark:text-slate-300' : ''}`}
-                            >
-                              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-                            </div>
-
-                            {/* Module Details */}
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <IconComponent
-                                  className={`w-4 h-4 flex-shrink-0 ${
-                                    active
-                                      ? 'text-indigo-600 dark:text-indigo-400'
-                                      : 'text-slate-400 dark:text-slate-500'
-                                  }`}
-                                />
-                                <span
-                                  className={`text-xs sm:text-sm font-semibold truncate ${
-                                    active
-                                      ? 'text-slate-900 dark:text-white'
-                                      : 'text-slate-600 dark:text-slate-400'
-                                  }`}
-                                >
-                                  {mod.label}
-                                </span>
-                                {locked && (
-                                  <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-300 dark:border-slate-700 flex items-center gap-1 font-mono">
-                                    <Lock className="w-2.5 h-2.5" /> Locked
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 line-clamp-2">
-                                {mod.description}
-                              </p>
-                              <div className="mt-1.5 flex items-center gap-2">
-                                <span className="text-[10px] sm:text-[11px] font-mono text-slate-600 dark:text-slate-400 bg-white dark:bg-slate-950 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-800">
-                                  {mod.path}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <span style={s.sectionCount}>
+                      {activeInSection} / {modules.length} Enabled
+                    </span>
                   </div>
-                );
-              })
-            )}
-          </div>
 
-          {/* Bottom Summary & Save Bar */}
-          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
-            <div className="flex items-center gap-2.5 text-xs text-slate-700 dark:text-slate-300">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
-              <span>
-                <strong className="text-slate-900 dark:text-white">{activeNavIds.length} of {CRM_NAV_CATALOG.length}</strong> menus enabled for{' '}
-                <strong className="text-indigo-600 dark:text-indigo-400">{activeRoleDef.name}</strong>.
+                  {/* 2-col module grid */}
+                  <div style={s.moduleGrid}>
+                    {modules.map(mod => {
+                      const Icon = mod.icon;
+                      const active = isOn(mod.id);
+                      const locked = isLocked(mod.id);
+                      return (
+                        <div
+                          key={mod.id}
+                          style={s.moduleItem(active, locked)}
+                          onClick={() => toggle(mod.id)}
+                        >
+                          {/* Checkbox */}
+                          <div style={s.checkbox(active, locked)}>
+                            {(active || locked) && <Check size={11} strokeWidth={3} color="#fff" />}
+                          </div>
+
+                          {/* Icon */}
+                          <div style={s.moduleIcon(active)}>
+                            <Icon size={15} />
+                          </div>
+
+                          {/* Text */}
+                          <div style={s.moduleBody}>
+                            <div style={s.moduleName(active)}>
+                              <span>{mod.label}</span>
+                              {locked && (
+                                <span style={s.lockedTag}>
+                                  <Lock size={9} />
+                                  Locked
+                                </span>
+                              )}
+                            </div>
+                            <div style={s.moduleDesc}>{mod.description}</div>
+                            <span style={s.modulePath}>{mod.path}</span>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })
+          )}
+
+          {/* Bottom summary bar */}
+          <div style={s.bottomBar}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <CheckCircle2 size={16} color="#10b981" />
+              <span style={s.summaryText}>
+                <strong style={{ color: 'var(--text-primary)' }}>{activeIds.length} of {TOTAL}</strong> menus enabled for{' '}
+                <strong style={{ color: roleDef.accent }}>{roleDef.name}</strong>
               </span>
             </div>
-
-            <button
-              onClick={handleSave}
-              disabled={saving || loading}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold bg-indigo-600 hover:bg-indigo-700 text-white transition shadow-sm disabled:opacity-50"
-            >
-              <Save className="w-4 h-4" />
-              {saving ? 'Synchronizing with MySQL...' : 'Save & Apply Live'}
+            <button style={s.btnSave} onClick={save} disabled={saving}>
+              <Save size={14} />
+              {saving ? 'Synchronizing...' : 'Save & Apply Live'}
             </button>
           </div>
         </div>
