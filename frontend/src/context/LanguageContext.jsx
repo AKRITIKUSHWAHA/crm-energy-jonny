@@ -1272,14 +1272,31 @@ export const DICTIONARY = {
     'Contacted Yesterday': 'Contactado Ayer',
     'Closing This Month': 'Cierre este Mes',
 
-
-
+    // Settings Profile & Company Form Translations
+    'Finance & Operations': 'Finanzas y Operaciones',
+    'Operations & Sales': 'Operaciones y Ventas',
+    'Commercial Debt & Supply Chain': 'Deuda Comercial y Cadena de Suministro',
+    'Enterprise Software & SaaS': 'Software Empresarial y SaaS',
+    'Logistics & Fleet Management': 'Logística y Gestión de Flotas',
+    'Energy & Clean Tech': 'Energía y Tecnología Limpia',
+    'Financial Services & FinTech': 'Servicios Financieros y FinTech',
+    'America/New_York (EST)': 'América/Nueva York (EST)',
+    'America/Chicago (CST)': 'América/Chicago (CST)',
+    'America/Denver (MST)': 'América/Denver (MST)',
+    'America/Los_Angeles (PST)': 'América/Los Ángeles (PST)',
+    'Europe/London (GMT)': 'Europa/Londres (GMT)',
+    'Asia/Kolkata (IST)': 'Asia/Calcuta (IST)',
+    'e.g. David Chen': 'ej. David Chen',
+    'e.g. d.chen@nergy.io': 'ej. d.chen@nergy.io',
+    'e.g. +1 (555) 382-9104': 'ej. +1 (555) 382-9104',
+    'e.g. Finance & Operations': 'ej. Finanzas y Operaciones',
   },
 };
 
-// Global WeakMaps to preserve original English content and placeholders
+// Global WeakMaps to preserve original English content, placeholders, and input values
 const originalTextMap = new WeakMap();
 const originalPlaceholderMap = new WeakMap();
+const originalValueMap = new WeakMap();
 
 function walkDOM(node, isES, dict) {
   if (!node) return;
@@ -1324,6 +1341,27 @@ function walkDOM(node, isES, dict) {
         }
       } else {
         node.placeholder = orig;
+      }
+    }
+
+    // Input & Textarea default values (only when element is not actively focused/edited by user)
+    if ((tag === 'input' || tag === 'textarea') && document.activeElement !== node && node.type !== 'password' && node.type !== 'file' && node.type !== 'hidden') {
+      const val = node.value;
+      if (val && typeof val === 'string' && val.trim()) {
+        if (!originalValueMap.has(node)) {
+          originalValueMap.set(node, val);
+        }
+        const origVal = originalValueMap.get(node);
+        const trimmedOrig = origVal.trim();
+        if (isES) {
+          if (dict[trimmedOrig] && node.value !== dict[trimmedOrig]) {
+            node.value = dict[trimmedOrig];
+          }
+        } else {
+          if (node.value !== origVal) {
+            node.value = origVal;
+          }
+        }
       }
     }
 

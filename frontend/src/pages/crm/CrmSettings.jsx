@@ -87,9 +87,10 @@ export const CrmSettings = () => {
     // Live Server Sync on Settings mount
     const fetchLiveSettings = async () => {
       try {
-        const [meRes, tenantRes] = await Promise.allSettled([
+        const [meRes, tenantRes, notifsRes] = await Promise.allSettled([
           apiClient.get('/auth/me'),
           apiClient.get('/tenants/settings'),
+          apiClient.get('/users/notifications'),
         ]);
 
         if (meRes.status === 'fulfilled' && meRes.value?.data) {
@@ -110,11 +111,80 @@ export const CrmSettings = () => {
             domain: t.domain || prev.domain,
           }));
         }
+
+        if (notifsRes.status === 'fulfilled' && notifsRes.value?.data) {
+          setNotifs(notifsRes.value.data);
+          localStorage.setItem('crm_notification_rules', JSON.stringify(notifsRes.value.data));
+        }
       } catch (_) {}
     };
 
     fetchLiveSettings();
   }, [user]);
+
+  // Dynamic bilingual translation mapping for controlled input fields
+  useEffect(() => {
+    const isSpanish = language === 'ES';
+
+    setProfileData((prev) => {
+      let currentName = prev.name;
+      let currentDept = prev.department;
+
+      if (isSpanish) {
+        if (currentName === 'Business Owner' || currentName === 'Propietarios de Negocios') {
+          currentName = 'Propietario de Negocio';
+        } else if (currentName === 'Customer') {
+          currentName = 'Cliente';
+        } else if (currentName === 'Super Admin') {
+          currentName = 'Súper Administrador';
+        }
+
+        if (currentDept === 'Finance & Operations') {
+          currentDept = 'Finanzas y Operaciones';
+        } else if (currentDept === 'Operations & Sales') {
+          currentDept = 'Operaciones y Ventas';
+        }
+      } else {
+        if (currentName === 'Propietario de Negocio' || currentName === 'Propietarios de Negocios') {
+          currentName = 'Business Owner';
+        } else if (currentName === 'Cliente') {
+          currentName = 'Customer';
+        } else if (currentName === 'Súper Administrador') {
+          currentName = 'Super Admin';
+        }
+
+        if (currentDept === 'Finanzas y Operaciones') {
+          currentDept = 'Finance & Operations';
+        } else if (currentDept === 'Operaciones y Ventas') {
+          currentDept = 'Operations & Sales';
+        }
+      }
+
+      return {
+        ...prev,
+        name: currentName,
+        department: currentDept,
+      };
+    });
+
+    setCompanyForm((prev) => {
+      let currentInd = prev.industry;
+      if (isSpanish) {
+        if (currentInd === 'Commercial Debt & Supply Chain') currentInd = 'Deuda Comercial y Cadena de Suministro';
+        else if (currentInd === 'Enterprise Software & SaaS') currentInd = 'Software Empresarial y SaaS';
+        else if (currentInd === 'Logistics & Fleet Management') currentInd = 'Logística y Gestión de Flotas';
+        else if (currentInd === 'Energy & Clean Tech') currentInd = 'Energía y Tecnología Limpia';
+        else if (currentInd === 'Financial Services & FinTech') currentInd = 'Servicios Financieros y FinTech';
+      } else {
+        if (currentInd === 'Deuda Comercial y Cadena de Suministro') currentInd = 'Commercial Debt & Supply Chain';
+        else if (currentInd === 'Software Empresarial y SaaS') currentInd = 'Enterprise Software & SaaS';
+        else if (currentInd === 'Logística y Gestión de Flotas') currentInd = 'Logistics & Fleet Management';
+        else if (currentInd === 'Energía y Tecnología Limpia') currentInd = 'Energy & Clean Tech';
+        else if (currentInd === 'Servicios Financieros y FinTech') currentInd = 'Financial Services & FinTech';
+      }
+      return { ...prev, industry: currentInd };
+    });
+  }, [language]);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -182,14 +252,21 @@ export const CrmSettings = () => {
 
   const [mfaEnabled, setMfaEnabled] = useState(true);
 
-  // Notification Toggles State
-  const [notifs, setNotifs] = useState({
-    emailDeals: true,
-    emailLeads: true,
-    taskReminders: true,
-    weeklyReport: true,
-    securityAlerts: true,
+  // Notification Toggles State with Local-First Cache
+  const [notifs, setNotifs] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_notification_rules');
+      if (cached) return JSON.parse(cached);
+    } catch (_) {}
+    return {
+      emailDeals: true,
+      emailLeads: true,
+      taskReminders: true,
+      weeklyReport: true,
+      securityAlerts: true,
+    };
   });
+  const [savingNotifs, setSavingNotifs] = useState(false);
 
   // Preferences State
   const [preferences, setPreferences] = useState({
@@ -273,9 +350,40 @@ export const CrmSettings = () => {
     addToast({ title: 'Password Changed', message: 'Your account password has been updated securely.', type: 'success' });
   };
 
-  const handleSaveNotifications = (e) => {
-    e.preventDefault();
-    addToast({ title: 'Preferences Saved', message: 'Notification delivery rules updated.', type: 'success' });
+  const handleSaveNotifications = async (e) => {
+    if (e) e.preventDefault();
+    setSavingNotifs(true);
+    try {
+      const res = await apiClient.put('/users/notifications', notifs);
+      if (res?.data) {
+        setNotifs(res.data);
+        localStorage.setItem('crm_notification_rules', JSON.stringify(res.data));
+      }
+      addToast({
+        title: isEs ? 'Reglas de Notificaciones Guardadas' : 'Preferences Saved',
+        message: isEs
+          ? 'Preferencias de entrega guardadas en la base de datos de Railway correctamente.'
+          : 'Notification delivery rules updated and saved to live database.',
+        type: 'success',
+      });
+    } catch (err) {
+      localStorage.setItem('crm_notification_rules', JSON.stringify(notifs));
+      addToast({
+        title: isEs ? 'Preferencias Guardadas' : 'Preferences Saved',
+        message: isEs
+          ? 'Reglas de notificaciones guardadas en el perfil local.'
+          : 'Notification delivery rules saved to local preferences.',
+        type: 'success',
+      });
+    } finally {
+      setSavingNotifs(false);
+    }
+  };
+
+  const handleToggleNotif = (key, val) => {
+    const next = { ...notifs, [key]: val };
+    setNotifs(next);
+    localStorage.setItem('crm_notification_rules', JSON.stringify(next));
   };
 
   const handleSavePreferences = (e) => {
@@ -419,7 +527,7 @@ export const CrmSettings = () => {
                 label={isEs ? 'Nombre Completo *' : 'Full Name *'}
                 value={profileData.name}
                 onChange={(e) => setProfileData({ ...profileData, name: e.target.value })}
-                placeholder="e.g. David Chen"
+                placeholder={isEs ? 'ej. David Chen' : 'e.g. David Chen'}
                 required
               />
               <Input
@@ -427,7 +535,7 @@ export const CrmSettings = () => {
                 type="email"
                 value={profileData.email}
                 onChange={(e) => setProfileData({ ...profileData, email: e.target.value })}
-                placeholder="e.g. d.chen@nergy.io"
+                placeholder={isEs ? 'ej. d.chen@nergy.io' : 'e.g. d.chen@nergy.io'}
                 required
               />
             </div>
@@ -437,20 +545,28 @@ export const CrmSettings = () => {
                 label={isEs ? 'Número de Teléfono' : 'Phone Number'}
                 value={profileData.phone}
                 onChange={(e) => setProfileData({ ...profileData, phone: e.target.value })}
-                placeholder="e.g. +1 (555) 382-9104"
+                placeholder={isEs ? 'ej. +1 (555) 382-9104' : 'e.g. +1 (555) 382-9104'}
               />
               <Input
                 label={isEs ? 'Departamento / Unidad' : 'Department / Unit'}
                 value={profileData.department}
                 onChange={(e) => setProfileData({ ...profileData, department: e.target.value })}
-                placeholder="e.g. Finance & Operations"
+                placeholder={isEs ? 'ej. Finanzas y Operaciones' : 'e.g. Finance & Operations'}
               />
             </div>
 
             <div className="grid-responsive-2col">
               <Input
                 label={isEs ? 'Rol Asignado en el Sistema' : 'Assigned System Role'}
-                value={profileData.role}
+                value={
+                  isEs
+                    ? (profileData.role === 'BUSINESS_OWNER'
+                        ? 'Propietario de Negocio (BUSINESS_OWNER)'
+                        : (profileData.role === 'SUPER_ADMIN'
+                            ? 'Súper Administrador (SUPER_ADMIN)'
+                            : profileData.role))
+                    : profileData.role
+                }
                 readOnly
                 disabled
                 title={isEs ? 'Rol del sistema gestionado por el administrador' : 'System role managed by Organization Administrator'}
@@ -514,13 +630,21 @@ export const CrmSettings = () => {
                 label={isEs ? 'Sector Industrial Principal' : 'Primary Industry Sector'}
                 value={companyForm.industry}
                 onChange={(e) => setCompanyForm({ ...companyForm, industry: e.target.value })}
-                options={[
-                  'Commercial Debt & Supply Chain',
-                  'Enterprise Software & SaaS',
-                  'Logistics & Fleet Management',
-                  'Biotech & Life Sciences',
-                  'Financial Technology & Banking',
-                ]}
+                options={
+                  isEs ? [
+                    'Deuda Comercial y Cadena de Suministro',
+                    'Software Empresarial y SaaS',
+                    'Logística y Gestión de Flotas',
+                    'Biotecnología y Ciencias de la Vida',
+                    'Tecnología Financiera y Banca',
+                  ] : [
+                    'Commercial Debt & Supply Chain',
+                    'Enterprise Software & SaaS',
+                    'Logistics & Fleet Management',
+                    'Biotech & Life Sciences',
+                    'Financial Technology & Banking',
+                  ]
+                }
               />
             </div>
 
@@ -707,7 +831,7 @@ export const CrmSettings = () => {
                 </div>
                 <Switch
                   checked={notifs.emailDeals}
-                  onChange={(e) => setNotifs({ ...notifs, emailDeals: e.target.checked })}
+                  onChange={(e) => handleToggleNotif('emailDeals', e.target.checked)}
                 />
               </div>
 
@@ -739,7 +863,7 @@ export const CrmSettings = () => {
                 </div>
                 <Switch
                   checked={notifs.emailLeads}
-                  onChange={(e) => setNotifs({ ...notifs, emailLeads: e.target.checked })}
+                  onChange={(e) => handleToggleNotif('emailLeads', e.target.checked)}
                 />
               </div>
 
@@ -771,7 +895,7 @@ export const CrmSettings = () => {
                 </div>
                 <Switch
                   checked={notifs.taskReminders}
-                  onChange={(e) => setNotifs({ ...notifs, taskReminders: e.target.checked })}
+                  onChange={(e) => handleToggleNotif('taskReminders', e.target.checked)}
                 />
               </div>
 
@@ -803,7 +927,7 @@ export const CrmSettings = () => {
                 </div>
                 <Switch
                   checked={notifs.weeklyReport}
-                  onChange={(e) => setNotifs({ ...notifs, weeklyReport: e.target.checked })}
+                  onChange={(e) => handleToggleNotif('weeklyReport', e.target.checked)}
                 />
               </div>
 
@@ -835,14 +959,16 @@ export const CrmSettings = () => {
                 </div>
                 <Switch
                   checked={notifs.securityAlerts}
-                  onChange={(e) => setNotifs({ ...notifs, securityAlerts: e.target.checked })}
+                  onChange={(e) => handleToggleNotif('securityAlerts', e.target.checked)}
                 />
               </div>
             </div>
 
             <div className="flex justify-end pt-3">
-              <Button variant="primary" size="sm" type="submit" icon={Save}>
-                {isEs ? 'Guardar Reglas de Notificaciones' : 'Save Notification Rules'}
+              <Button variant="primary" size="sm" type="submit" icon={Save} disabled={savingNotifs}>
+                {savingNotifs
+                  ? (isEs ? 'Guardando en BD...' : 'Saving to Database...')
+                  : (isEs ? 'Guardar Reglas de Notificaciones' : 'Save Notification Rules')}
               </Button>
             </div>
           </form>
