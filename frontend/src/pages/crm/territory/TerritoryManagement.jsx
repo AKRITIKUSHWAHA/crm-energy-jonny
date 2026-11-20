@@ -245,89 +245,78 @@ export const TerritoryManagement = () => {
           justify-content: space-between;
           align-items: center;
           flex-wrap: wrap;
-          gap: 16px;
+          gap: 14px;
           box-shadow: var(--shadow-card);
-        }
-        .territory-kpi-grid {
-          display: grid;
-          grid-template-columns: repeat(4, 1fr);
-          gap: var(--spacing-4);
+          width: 100%;
+          box-sizing: border-box;
         }
         .territory-features-grid {
           display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: var(--spacing-4);
+          grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+          gap: 14px;
+          width: 100%;
+          box-sizing: border-box;
         }
         .territory-map-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 380px;
-          gap: var(--spacing-5);
-          align-items: start;
+          grid-template-columns: minmax(0, 1fr) 350px;
+          gap: 16px;
+          align-items: stretch;
+          width: 100%;
+          box-sizing: border-box;
         }
         .territory-map-card {
-          min-height: 520px;
+          min-height: 480px;
+          display: flex;
+          flex-direction: column;
         }
 
-        /* Large tablets & small laptops (<= 1150px) - Stack Map and Inspector cleanly */
-        @media (max-width: 1150px) {
+        /* Large tablets & small laptops (<= 1024px) */
+        @media (max-width: 1024px) {
           .territory-map-grid {
             grid-template-columns: 1fr !important;
           }
           .territory-side-panel {
             width: 100% !important;
           }
-          .territory-kpi-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
-          .territory-features-grid {
-            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
-          }
         }
 
-        /* Tablets (<= 900px) */
-        @media (max-width: 900px) {
+        /* Tablets (<= 850px) */
+        @media (max-width: 850px) {
           .territory-header-card {
-            flex-direction: column !important;
-            align-items: stretch !important;
+            padding: 1rem 1.25rem !important;
           }
           .territory-header-actions {
             width: 100% !important;
             justify-content: flex-start !important;
             flex-wrap: wrap !important;
-          }
-          .territory-tab-bar {
-            overflow-x: auto !important;
+            gap: 8px !important;
           }
           .territory-tab-bar button {
             white-space: nowrap !important;
             flex-shrink: 0 !important;
-            padding: 8px 14px !important;
+            padding: 8px 12px !important;
             font-size: 12px !important;
           }
         }
 
-        /* Mobile phones (<= 600px) */
-        @media (max-width: 600px) {
+        /* Mobile phones (<= 640px) */
+        @media (max-width: 640px) {
           .territory-header-card {
             padding: 1rem !important;
-          }
-          .territory-kpi-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .territory-features-grid {
-            grid-template-columns: 1fr !important;
           }
           .territory-header-actions {
             display: flex !important;
             flex-direction: column !important;
             width: 100% !important;
+            gap: 8px !important;
           }
           .territory-header-actions button {
             width: 100% !important;
             justify-content: center !important;
           }
           .territory-map-card {
-            min-height: 440px !important;
+            min-height: 400px !important;
           }
         }
       `}</style>
@@ -339,7 +328,7 @@ export const TerritoryManagement = () => {
 
       {/* Modern Executive Page Header Card */}
       <div className="territory-header-card">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: '280px', flex: '1 1 480px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', minWidth: 0, flex: '1 1 320px' }}>
           <div
             style={{
               width: 48,
@@ -398,7 +387,7 @@ export const TerritoryManagement = () => {
       </div>
 
       {/* KPI Overview Grid - Concisely Titled to Prevent Truncation */}
-      <div className="territory-kpi-grid">
+      <div className="grid-responsive-kpi">
         <KPICard
           title={t('Active Zones')}
           value={String(interactiveZones.length)}
@@ -837,7 +826,7 @@ export const TerritoryManagement = () => {
                   zIndex: 10,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 300px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 260px' }}>
                   <Route size={15} color="#10b981" style={{ flexShrink: 0 }} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
                     <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{t('Optimized Route:')}</span>

@@ -47,9 +47,11 @@ import { isRouteAllowed, getDefaultRouteForRole } from '../../utils/rbac';
 import { AiEnergyLogo } from '../../components/common/AiEnergyLogo';
 import { LanguageToggle } from '../../components/common/LanguageToggle';
 import { useLanguage } from '../../context/LanguageContext';
+import { useResponsive } from '../../hooks/useResponsive';
 import iconLogo from '../../assets/crm_nergy_ai_icon.png';
 
 export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
+  const { isMobile, isTablet, windowWidth } = useResponsive();
   const { theme, toggleTheme } = useTheme();
   const { crmUser, oalUser, switchRole, logout } = useAuth();
   const { activities = [], contacts = [], deals = [], leads = [] } = useCrm() || {};
@@ -270,7 +272,37 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
     ];
   };
 
-  const allRecords = getSearchDatabase();
+    const dynamicDeals = (deals || []).map((d) => ({
+    id: 'live-deal-' + (d.id || Math.random()),
+    title: (d.title || d.name || 'Deal') + ' (' + (d.value || d.amount || '$0') + ')',
+    subtitle: (d.stage || 'Pipeline') + ' • ' + (d.contact || d.company || 'Enterprise Opportunity'),
+    category: 'Deals & ERP',
+    icon: Target,
+    path: '/crm/pipeline',
+    tags: [d.title, d.name, d.value, d.stage, d.contact, 'deal opportunity'].filter(Boolean).join(' ').toLowerCase(),
+  }));
+
+  const dynamicLeads = (leads || []).map((l) => ({
+    id: 'live-lead-' + (l.id || Math.random()),
+    title: (l.name || 'Lead') + ' - ' + (l.company || 'Inbound Prospect'),
+    subtitle: (l.status || 'Active') + ' • ' + (l.email || l.phone || 'Lead Directory'),
+    category: 'Pages & Modules',
+    icon: Target,
+    path: '/crm/leads',
+    tags: [l.name, l.company, l.email, l.status, 'lead prospect'].filter(Boolean).join(' ').toLowerCase(),
+  }));
+
+  const dynamicContacts = (contacts || []).map((c) => ({
+    id: 'live-contact-' + (c.id || Math.random()),
+    title: (c.name || 'Contact') + (c.company ? ' (' + c.company + ')' : ''),
+    subtitle: (c.role || c.title || 'Contact') + ' • ' + (c.email || c.phone || 'Enterprise Account'),
+    category: 'Contacts',
+    icon: Users,
+    path: '/crm/contacts',
+    tags: [c.name, c.company, c.email, c.role, 'contact person account'].filter(Boolean).join(' ').toLowerCase(),
+  }));
+
+  const allRecords = [...dynamicDeals, ...dynamicLeads, ...dynamicContacts, ...getSearchDatabase()];
 
   // Extract unique categories
   const categories = ['All', ...Array.from(new Set(allRecords.map((r) => r.category)))];
@@ -326,14 +358,16 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        padding: '0 1.25rem',
+        padding: isMobile ? '0 0.75rem' : '0 1.25rem',
         width: '100%',
+        maxWidth: '100vw',
         boxSizing: 'border-box',
         boxShadow: 'var(--shadow-sm)',
+        overflow: 'hidden',
       }}
     >
-      {/* Left: Navigation Menu Toggle + Brand Logo (Menu button at top-left corner) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+      {/* Left: Navigation Menu Toggle + Brand Logo */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.35rem' : '0.5rem', flexShrink: 0, minWidth: 0 }}>
         <Button
           variant="ghost"
           size="sm"
@@ -347,14 +381,15 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
         <div
           onClick={() => navigate(product === 'crm' ? '/crm/dashboard' : '/oal/dashboard')}
           className="flex items-center gap-2 cursor-pointer"
+          style={{ minWidth: 0 }}
         >
           {product === 'crm' ? (
-            <AiEnergyLogo size={32} showText={false} />
+            <AiEnergyLogo size={isMobile ? 28 : 32} showText={false} />
           ) : (
             <div
               style={{
-                width: '32px',
-                height: '32px',
+                width: isMobile ? '28px' : '32px',
+                height: isMobile ? '28px' : '32px',
                 borderRadius: '8px',
                 backgroundColor: '#0f766e',
                 color: '#ffffff',
@@ -362,7 +397,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontWeight: 800,
-                fontSize: '14px',
+                fontSize: isMobile ? '12px' : '14px',
                 fontFamily: 'var(--font-display)',
                 flexShrink: 0,
               }}
@@ -371,115 +406,172 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
             </div>
           )}
 
-          <div className="flex flex-col min-w-0">
+          <div className="flex flex-col min-w-0" style={{ overflow: 'hidden' }}>
             <span
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
-                fontSize: '15px',
+                fontSize: isMobile ? '13px' : '15px',
                 lineHeight: 1.1,
                 color: 'var(--text-primary)',
                 letterSpacing: '-0.02em',
                 whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               {product === 'crm' ? 'CRM nErgy AI' : 'OAL Network'}
             </span>
-            <span
-              className="hidden-mobile"
-              style={{
-                fontSize: '10px',
-                color: 'var(--text-tertiary)',
-                fontWeight: 600,
-                marginTop: '2px',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {product === 'crm' ? 'Executive Platform' : 'Lending Marketplace'}
-            </span>
+            {!isMobile && !isTablet && (
+              <span
+                style={{
+                  fontSize: '10px',
+                  color: 'var(--text-tertiary)',
+                  fontWeight: 600,
+                  marginTop: '2px',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {product === 'crm' ? 'Executive Platform' : 'Lending Marketplace'}
+              </span>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Middle: Internal Search Engine Bar */}
-      <div className="hidden-mobile flex-1" style={{ maxWidth: '480px', margin: '0 1.25rem' }}>
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(true)}
-          className="w-full flex items-center justify-between transition-all"
+      {/* Middle: Internal Search Engine Bar (Fluid, Responsive, Never Collides) */}
+      {!isMobile && (
+        <div
           style={{
-            height: '38px',
-            padding: '0 1rem',
-            cursor: 'pointer',
-            backgroundColor: 'var(--surface-secondary)',
-            border: '1px solid var(--border)',
-            borderRadius: '12px',
-            boxShadow: 'var(--shadow-sm)',
-            boxSizing: 'border-box',
+            flex: '1 1 auto',
+            maxWidth: isTablet ? '320px' : '460px',
+            minWidth: '120px',
+            margin: '0 0.75rem',
+            overflow: 'hidden',
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.borderColor = 'var(--primary-border)';
-            e.currentTarget.style.backgroundColor = 'var(--surface)';
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'var(--border)';
-            e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
-          }}
-          title="Internal Search Engine: Search docs, tasks, files and others with AI"
         >
-          <div className="flex items-center gap-2.5 overflow-hidden">
-            <Search size={15} style={{ color: '#0ea5e9', flexShrink: 0 }} />
-            <span style={{ fontSize: '12.5px', color: 'var(--text-secondary)', fontWeight: 500, whiteSpace: 'nowrap', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-              Search docs, tasks, files and others with AI...
-            </span>
-          </div>
-          <div className="flex items-center gap-1.5 flex-shrink-0">
-            <span
-              style={{
-                fontSize: '9px',
-                fontWeight: 800,
-                color: '#ffffff',
-                background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
-                padding: '2px 5px',
-                borderRadius: '4px',
-                letterSpacing: '0.04em',
-                lineHeight: 1,
-              }}
-            >
-              AI
-            </span>
-            <span
-              style={{
-                fontSize: '11px',
-                fontWeight: 600,
-                color: 'var(--text-tertiary)',
-                backgroundColor: 'var(--surface)',
-                padding: '2px 5px',
-                borderRadius: '5px',
-                border: '1px solid var(--border)',
-                fontFamily: 'var(--font-mono)',
-                lineHeight: 1,
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              ⌘K
-            </span>
-          </div>
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            className="w-full flex items-center justify-between transition-all"
+            style={{
+              height: '38px',
+              padding: '0 0.75rem',
+              cursor: 'pointer',
+              backgroundColor: 'var(--surface-secondary)',
+              border: '1px solid var(--border)',
+              borderRadius: '12px',
+              boxShadow: 'var(--shadow-sm)',
+              boxSizing: 'border-box',
+              minWidth: 0,
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.borderColor = 'var(--primary-border)';
+              e.currentTarget.style.backgroundColor = 'var(--surface)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.borderColor = 'var(--border)';
+              e.currentTarget.style.backgroundColor = 'var(--surface-secondary)';
+            }}
+            title="Internal Search Engine: Search docs, tasks, files and others with AI"
+          >
+            <div className="flex items-center gap-2 overflow-hidden" style={{ minWidth: 0, flex: '1 1 auto' }}>
+              <Search size={15} style={{ color: '#0ea5e9', flexShrink: 0 }} />
+              <span
+                style={{
+                  fontSize: '12.5px',
+                  color: 'var(--text-secondary)',
+                  fontWeight: 500,
+                  whiteSpace: 'nowrap',
+                  textOverflow: 'ellipsis',
+                  overflow: 'hidden',
+                  minWidth: 0,
+                }}
+              >
+                {windowWidth < 960 ? 'Search with AI...' : 'Search docs, tasks, files and others with AI...'}
+              </span>
+            </div>
+            {windowWidth >= 1000 && (
+              <div className="flex items-center gap-1.5 flex-shrink-0" style={{ marginLeft: '6px' }}>
+                <span
+                  style={{
+                    fontSize: '9px',
+                    fontWeight: 800,
+                    color: '#ffffff',
+                    background: 'linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%)',
+                    padding: '2px 5px',
+                    borderRadius: '4px',
+                    letterSpacing: '0.04em',
+                    lineHeight: 1,
+                  }}
+                >
+                  AI
+                </span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: 'var(--text-tertiary)',
+                    backgroundColor: 'var(--surface)',
+                    padding: '2px 5px',
+                    borderRadius: '5px',
+                    border: '1px solid var(--border)',
+                    fontFamily: 'var(--font-mono)',
+                    lineHeight: 1,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  ⌘K
+                </span>
+              </div>
+            )}
+          </button>
+        </div>
+      )}
 
-      {/* Right Actions: Bestie Quick Action, Language Toggle, Notifications, Theme Toggle, User Profile */}
-      <div className="flex items-center gap-2.5 ml-auto" style={{ marginLeft: 'auto' }}>
-        {/* Ask Zunme AI Quick Button */}
-        {product === 'crm' && (
+      {/* Right Actions: Quick Action, Language Toggle, Notifications, Theme, Profile */}
+      <div
+        className="flex items-center"
+        style={{
+          gap: isMobile ? '6px' : '10px',
+          marginLeft: 'auto',
+          flexShrink: 0,
+        }}
+      >
+        {/* Mobile Search Icon Button (< 768px) */}
+        {isMobile && (
+          <button
+            type="button"
+            onClick={() => setIsSearchOpen(true)}
+            style={{
+              width: '36px',
+              height: '36px',
+              borderRadius: '50%',
+              backgroundColor: 'var(--surface-secondary)',
+              border: '1px solid var(--border)',
+              color: 'var(--text-secondary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              cursor: 'pointer',
+              flexShrink: 0,
+            }}
+            title="Search"
+            aria-label="Search"
+          >
+            <Search size={16} />
+          </button>
+        )}
+
+        {/* Ask Zunme AI Quick Button (CRM only, visible on desktop >= 1100px) */}
+        {product === 'crm' && windowWidth >= 1100 && (
           <button
             type="button"
             onClick={() => {
               window.dispatchEvent(new CustomEvent('open-crm-ai-copilot'));
             }}
-            className="hidden-mobile"
             style={{
               display: 'inline-flex',
               flexDirection: 'row',
@@ -529,33 +621,12 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           </button>
         )}
 
-        {/* Mobile Search Button (< 768px) */}
-        <button
-          type="button"
-          onClick={() => setIsSearchOpen(true)}
-          className="visible-mobile"
-          style={{
-            width: '36px',
-            height: '36px',
-            borderRadius: '50%',
-            backgroundColor: 'var(--surface-secondary)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-secondary)',
-            display: 'none',
-            alignItems: 'center',
-            justifyContent: 'center',
-            cursor: 'pointer',
-          }}
-          title="Search"
-          aria-label="Search"
-        >
-          <Search size={16} />
-        </button>
-
-        {/* 1-Click Language Switcher (Desktop only) */}
-        <div className="hidden-mobile">
-          <LanguageToggle />
-        </div>
+        {/* 1-Click Language Switcher (Desktop >= 960px) */}
+        {windowWidth >= 960 && (
+          <div>
+            <LanguageToggle />
+          </div>
+        )}
 
         {/* Notifications Dropdown */}
         <Dropdown
@@ -570,6 +641,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                 backgroundColor: 'var(--surface-secondary)',
                 border: '1px solid var(--border)',
                 color: 'var(--text-secondary)',
+                flexShrink: 0,
               }}
               title="Notifications"
             >
@@ -580,21 +652,20 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                     position: 'absolute',
                     top: '-2px',
                     right: '-2px',
-                    backgroundColor: '#dc2626',
-                    color: '#ffffff',
-                    fontSize: '9px',
-                    fontWeight: 800,
-                    width: '16px',
-                    height: '16px',
+                    width: '18px',
+                    height: '18px',
                     borderRadius: '50%',
+                    backgroundColor: '#ef4444',
+                    color: '#ffffff',
+                    fontSize: '10px',
+                    fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    lineHeight: 1,
                     border: '2px solid var(--surface)',
                   }}
                 >
-                  {unreadNotifications.length}
+                  {unreadNotifications.length > 9 ? '9+' : unreadNotifications.length}
                 </span>
               )}
             </button>
@@ -725,7 +796,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           )}
         </Dropdown>
 
-        {/* Theme Toggle Button - Prominent & Right next to Profile */}
+        {/* Theme Toggle Button */}
         <button
           type="button"
           onClick={toggleTheme}
@@ -737,43 +808,54 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
             border: '1px solid var(--border)',
             color: 'var(--text-primary)',
             padding: 0,
+            flexShrink: 0,
           }}
           title={theme === 'light' ? t('Switch to Dark Mode') : t('Switch to Light Mode')}
         >
           {theme === 'light' ? (
-            <Moon size={20} style={{ color: 'var(--text-primary)' }} />
+            <Moon size={18} style={{ color: 'var(--text-primary)' }} />
           ) : (
-            <Sun size={20} style={{ color: '#f59e0b' }} />
+            <Sun size={18} style={{ color: '#f59e0b' }} />
           )}
         </button>
-        {/* User Profile Dropdown with Role Switcher */}
+
+        {/* User Profile Dropdown with Responsive Role Switcher */}
         <Dropdown
           trigger={
             <div
-              className="flex items-center gap-1.5 cursor-pointer px-2 sm:px-3 py-1.5 rounded-lg transition-colors hover:bg-surface-hover"
-              style={{ backgroundColor: 'var(--surface-secondary)', border: '1px solid var(--border)' }}
+              className="flex items-center gap-1.5 cursor-pointer rounded-lg transition-colors hover:bg-surface-hover"
+              style={{
+                backgroundColor: 'var(--surface-secondary)',
+                border: '1px solid var(--border)',
+                padding: isMobile || windowWidth < 1024 ? '6px' : '5px 10px',
+                flexShrink: 0,
+              }}
             >
               <div
-                className="visible-mobile items-center justify-center rounded-full font-bold text-xs"
+                className="flex items-center justify-center rounded-full font-bold text-xs"
                 style={{
                   width: '24px',
                   height: '24px',
                   background: 'linear-gradient(135deg, #0284c7, #6366f1)',
                   color: '#ffffff',
                   fontSize: '11px',
-                  display: 'none',
                   flexShrink: 0,
                 }}
               >
                 {(currentUser?.name || 'A').charAt(0).toUpperCase()}
               </div>
-              <div className="hidden-mobile flex-col text-left">
-                <span className="font-bold text-xs text-primary leading-tight">{currentUser?.name || 'Alexander Wright'}</span>
-                <span className="text-tertiary text-xs leading-none" style={{ fontSize: '10px', marginTop: '2px' }}>
-                  {t(currentUser?.role || 'Company Owner')}
-                </span>
-              </div>
-              <ChevronDown size={14} className="text-tertiary ml-0.5 sm:ml-1 flex-shrink-0" />
+
+              {windowWidth >= 1024 && (
+                <div className="flex flex-col text-left" style={{ minWidth: 0, maxWidth: '120px' }}>
+                  <span className="font-bold text-xs text-primary leading-tight truncate">
+                    {currentUser?.name || 'Alexander Wright'}
+                  </span>
+                  <span className="text-tertiary text-xs leading-none truncate" style={{ fontSize: '10px', marginTop: '2px' }}>
+                    {t(currentUser?.role || 'Company Owner')}
+                  </span>
+                </div>
+              )}
+              <ChevronDown size={14} className="text-tertiary flex-shrink-0" />
             </div>
           }
         >
@@ -787,14 +869,14 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           <DropdownItem icon={User} onClick={() => navigate(product === 'crm' ? '/crm/profile' : '/oal/borrower/profile')}>
             {t('Account Profile')}
           </DropdownItem>
-          <DropdownItem icon={Building2} onClick={() => addToast({ title: 'Tenant Vault', message: `Tenant ID: ${currentUser?.tenantId || 'TENANT-08492'}`, type: 'info' })}>
+          <DropdownItem icon={Building2} onClick={() => addToast({ title: 'Tenant Vault', message: 'Tenant ID: ' + (currentUser?.tenantId || 'TENANT-08492'), type: 'info' })}>
             {t('Workspace Vault')}
           </DropdownItem>
 
           <DropdownDivider />
 
           <DropdownItem icon={LogOut} danger onClick={handleLogout}>
-            {t(`Log Out (${product.toUpperCase()})`)}
+            {t('Log Out (' + product.toUpperCase() + ')')}
           </DropdownItem>
         </Dropdown>
       </div>
