@@ -69,7 +69,9 @@ export const CrmTasks = () => {
   }));
 
   const filteredTasks = tasks.filter((t) => {
-    const matchPriority = filterPriority === 'all' || t.priority === filterPriority;
+    // Case-insensitive priority match
+    const taskPriority = (t.priority || '').toLowerCase();
+    const matchPriority = filterPriority === 'all' || taskPriority === filterPriority.toLowerCase();
     const matchSearch =
       (t.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
       (t.contact && String(t.contact).toLowerCase().includes(searchQuery.toLowerCase()));
@@ -258,21 +260,21 @@ export const CrmTasks = () => {
         />
         <KPICard
           title={t('PENDING TASKS')}
-          value={`${tasks.filter((t) => t.status === 'Pending').length}`}
+          value={`${tasks.filter((t) => t.status === 'Pending' || t.status === 'PENDING').length}`}
           change={t("Action Required")}
           changeType="warning"
           icon={Clock}
         />
         <KPICard
           title={t('HIGH PRIORITY')}
-          value={`${tasks.filter((t) => t.priority === 'High' && t.status === 'Pending').length}`}
+          value={`${tasks.filter((t) => (t.priority === 'High' || t.priority === 'HIGH') && (t.status === 'Pending' || t.status === 'PENDING')).length}`}
           change={t("Due Soon")}
           changeType="error"
           icon={AlertCircle}
         />
         <KPICard
           title={t('COMPLETED RATE')}
-          value={`${tasks.length > 0 ? Math.round((tasks.filter((t) => t.status === 'Completed').length / tasks.length) * 100) : 0}%`}
+          value={`${tasks.length > 0 ? Math.round((tasks.filter((t) => t.status === 'Completed' || t.status === 'COMPLETED').length / tasks.length) * 100) : 0}%`}
           change={t("Sprint Progress")}
           changeType="positive"
           icon={CheckCircle2}

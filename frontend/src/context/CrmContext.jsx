@@ -109,6 +109,8 @@ export const CrmProvider = ({ children }) => {
         const mappedTasks = tasksRes.value.map((t) => ({
           ...t,
           id: t.id,
+          // Normalize ISO dueDate → YYYY-MM-DD (local date string for calendar matching)
+          dueDate: t.dueDate ? (typeof t.dueDate === 'string' && t.dueDate.includes('T') ? t.dueDate.split('T')[0] : t.dueDate) : '',
           status:
             t.status === 'COMPLETED'
               ? 'Completed'
@@ -166,22 +168,27 @@ export const CrmProvider = ({ children }) => {
     try {
       const data = await crmService.getDeals();
       if (Array.isArray(data)) {
-        const mappedDeals = data.map((d, idx) => ({
-          ...d,
-          id: d.id,
-          displayId: `DEL-${String(idx + 1).padStart(3, '0')}`,
-          value: formatCurrency(d.value),
-          owner: d.assignedUser?.name || 'Alexander Wright',
-          probability: d.probability ? `${d.probability}%` : '50%',
-          stage: typeof d.stage === 'string'
-            ? d.stage
-                .split('_')
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                .join(' ')
-            : 'Qualified',
-          contact: typeof d.contact === 'object' && d.contact !== null ? d.contact.name : (d.contact || ''),
-          contactObj: d.contact,
-        }));
+        const mappedDeals = data.map((d, idx) => {
+          // Always compute rawValue from the raw backend number before formatting
+          const rawNum = typeof d.value === 'number' ? d.value : parseFloat(String(d.value).replace(/[^0-9.-]+/g, '')) || 0;
+          return {
+            ...d,
+            id: d.id,
+            displayId: `DEL-${String(idx + 1).padStart(3, '0')}`,
+            rawValue: rawNum,
+            value: formatCurrency(rawNum),
+            owner: d.assignedUser?.name || 'Alexander Wright',
+            probability: d.probability ? `${d.probability}%` : '50%',
+            stage: typeof d.stage === 'string'
+              ? d.stage
+                  .split('_')
+                  .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
+                  .join(' ')
+              : 'Qualified',
+            contact: typeof d.contact === 'object' && d.contact !== null ? d.contact.name : (d.contact || ''),
+            contactObj: d.contact,
+          };
+        });
         setDeals(mappedDeals);
       }
     } catch (e) {
@@ -235,6 +242,8 @@ export const CrmProvider = ({ children }) => {
         const mappedTasks = data.map((t) => ({
           ...t,
           id: t.id,
+          // Normalize ISO dueDate → YYYY-MM-DD (local date string for calendar matching)
+          dueDate: t.dueDate ? (typeof t.dueDate === 'string' && t.dueDate.includes('T') ? t.dueDate.split('T')[0] : t.dueDate) : '',
           status:
             t.status === 'COMPLETED'
               ? 'Completed'
@@ -291,6 +300,7 @@ export const CrmProvider = ({ children }) => {
   const { isCrmAuthenticated, crmUser } = useAuth();
 
   // Initial load & trigger on login/auth change
+  // Also watch localStorage token directly for instant hydration on page entry
   useEffect(() => {
     fetchCrmData();
   }, [fetchCrmData, isCrmAuthenticated, crmUser?.userId, crmUser?.email]);
@@ -659,14 +669,19 @@ export const CrmProvider = ({ children }) => {
   // ============================================================================
   const addTask = async (newTask) => {
     const tempId = `TSK-${Math.floor(400 + Math.random() * 900)}`;
+    // Normalize dueDate to YYYY-MM-DD for calendar matching
+    const normalizedDueDate = newTask.dueDate
+      ? (typeof newTask.dueDate === 'string' && newTask.dueDate.includes('T') ? newTask.dueDate.split('T')[0] : newTask.dueDate)
+      : new Date().toISOString().split('T')[0];
     const item = {
       id: tempId,
       status: 'Pending',
       priority: newTask.priority || 'Medium',
-      dueDate: newTask.dueDate || new Date().toISOString().split('T')[0],
+      dueDate: normalizedDueDate,
       reminder: newTask.reminder || '9:00 AM',
       assignedTo: newTask.assignedTo || 'Alexander Wright',
       ...newTask,
+      dueDate: normalizedDueDate, // ensure override even if newTask has ISO dueDate
     };
 
     setTasks((prev) => [item, ...prev]);

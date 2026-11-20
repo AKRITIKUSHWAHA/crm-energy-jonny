@@ -73,14 +73,18 @@ export const CrmPipeline = () => {
   const [dealForErp, setDealForErp] = useState(null);
   const [isCreatingErp, setIsCreatingErp] = useState(false);
 
-  // Calculate Pipeline Metrics
+  // Calculate Pipeline Metrics — use rawValue (pure number) not formatted string
   const totalPipelineValue = deals.reduce((sum, d) => {
-    const valNum = parseInt(String(d.value || 0).replace(/[^0-9]/g, '')) || 0;
+    const valNum = d.rawValue !== undefined
+      ? d.rawValue
+      : parseFloat(String(d.value || 0).replace(/[^0-9.-]+/g, '')) || 0;
     return sum + valNum;
   }, 0);
 
   const weightedPipelineValue = deals.reduce((sum, d) => {
-    const valNum = parseInt(String(d.value || 0).replace(/[^0-9]/g, '')) || 0;
+    const valNum = d.rawValue !== undefined
+      ? d.rawValue
+      : parseFloat(String(d.value || 0).replace(/[^0-9.-]+/g, '')) || 0;
     const prob = parseInt(String(d.probability || 50).replace(/[^0-9]/g, '')) || 50;
     return sum + Math.round(valNum * (prob / 100));
   }, 0);
