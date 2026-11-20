@@ -233,7 +233,7 @@ export const TerritoryManagement = () => {
   const totalQuota = territories.reduce((acc, t) => acc + (parseFloat(t.targetQuota) || 0), 0);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)', paddingBottom: '90px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)', paddingBottom: '100px' }}>
       {/* Responsive styles for Territory Management */}
       <style>{`
         .territory-header-card {
@@ -256,32 +256,35 @@ export const TerritoryManagement = () => {
         .territory-features-grid {
           display: grid;
           grid-template-columns: repeat(3, 1fr);
-          gap: var(--spacing-3);
+          gap: var(--spacing-4);
         }
         .territory-map-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 360px;
+          grid-template-columns: minmax(0, 1fr) 380px;
           gap: var(--spacing-5);
-          align-items: stretch;
+          align-items: start;
         }
         .territory-map-card {
-          height: 540px;
+          min-height: 520px;
         }
 
-        /* Laptops with sidebar / Medium screens */
-        @media (max-width: 1200px) {
-          .territory-kpi-grid {
-            grid-template-columns: repeat(2, 1fr) !important;
-          }
+        /* Large tablets & small laptops (<= 1150px) - Stack Map and Inspector cleanly */
+        @media (max-width: 1150px) {
           .territory-map-grid {
             grid-template-columns: 1fr !important;
           }
-          .territory-map-card {
-            height: 480px !important;
+          .territory-side-panel {
+            width: 100% !important;
+          }
+          .territory-kpi-grid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .territory-features-grid {
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)) !important;
           }
         }
 
-        /* Tablets */
+        /* Tablets (<= 900px) */
         @media (max-width: 900px) {
           .territory-header-card {
             flex-direction: column !important;
@@ -291,9 +294,6 @@ export const TerritoryManagement = () => {
             width: 100% !important;
             justify-content: flex-start !important;
             flex-wrap: wrap !important;
-          }
-          .territory-features-grid {
-            grid-template-columns: 1fr !important;
           }
           .territory-tab-bar {
             overflow-x: auto !important;
@@ -306,12 +306,15 @@ export const TerritoryManagement = () => {
           }
         }
 
-        /* Mobile phones */
-        @media (max-width: 580px) {
+        /* Mobile phones (<= 600px) */
+        @media (max-width: 600px) {
           .territory-header-card {
             padding: 1rem !important;
           }
           .territory-kpi-grid {
+            grid-template-columns: 1fr !important;
+          }
+          .territory-features-grid {
             grid-template-columns: 1fr !important;
           }
           .territory-header-actions {
@@ -324,22 +327,7 @@ export const TerritoryManagement = () => {
             justify-content: center !important;
           }
           .territory-map-card {
-            height: 420px !important;
-          }
-          .territory-map-bottom-bar {
-            flex-direction: column !important;
-            align-items: stretch !important;
-          }
-          .territory-map-bottom-bar > div {
-            width: 100% !important;
-            justify-content: center !important;
-          }
-          .territory-zone-pills {
-            width: 100% !important;
-          }
-          .territory-zone-pills button {
-            font-size: 11px !important;
-            padding: 4px 8px !important;
+            min-height: 440px !important;
           }
         }
       `}</style>
@@ -451,6 +439,8 @@ export const TerritoryManagement = () => {
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
+          paddingBottom: '2px',
+          marginTop: 'var(--spacing-1)',
         }}
       >
         <button
@@ -517,38 +507,10 @@ export const TerritoryManagement = () => {
 
       {/* TAB 1: Google Maps Geographic Visualizer & Route Optimization */}
       {activeTab === 'map' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          {/* Executive Overview Highlight Banner */}
-          <Card
-            style={{
-              padding: 'var(--spacing-5) var(--spacing-6)',
-              background: 'linear-gradient(135deg, rgba(14, 165, 233, 0.08) 0%, rgba(16, 185, 129, 0.08) 100%), var(--surface)',
-              border: '1px solid rgba(14, 165, 233, 0.25)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
-              <div
-                style={{
-                  padding: 8,
-                  borderRadius: 'var(--radius-md)',
-                  backgroundColor: 'rgba(14, 165, 233, 0.15)',
-                  color: '#0ea5e9',
-                }}
-              >
-                <Compass size={20} />
-              </div>
-              <h2 style={{ fontSize: 'var(--font-lg)', fontWeight: 700, margin: 0 }}>
-                {t('Google Maps in Territory Management')}
-              </h2>
-            </div>
-            <p style={{ margin: 0, color: 'var(--text-muted)', fontSize: 'var(--font-sm)', lineHeight: 1.6 }}>
-              {t('Google Maps is used in territory management to help visualize geographic areas for sales representatives, allowing for route optimization and efficient scheduling. While standard maps lack advanced CRM layers, CRM nErgy directly bridges this with prospect counts and demographic data, delivering an all-in-one spatial field operations suite.')}
-            </p>
-          </Card>
-
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
           {/* 3 Key Google Maps Features Cards */}
           <div className="territory-features-grid">
-            <Card style={{ padding: '12px 16px', borderTop: '3px solid #0ea5e9' }}>
+            <Card style={{ padding: '14px 18px', borderTop: '3px solid #0ea5e9', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ padding: 6, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9', display: 'flex' }}>
                   <Route size={16} />
@@ -560,7 +522,7 @@ export const TerritoryManagement = () => {
               </p>
             </Card>
 
-            <Card style={{ padding: '12px 16px', borderTop: '3px solid #10b981' }}>
+            <Card style={{ padding: '14px 18px', borderTop: '3px solid #10b981', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ padding: 6, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(16, 185, 129, 0.15)', color: '#10b981', display: 'flex' }}>
                   <MapPin size={16} />
@@ -572,7 +534,7 @@ export const TerritoryManagement = () => {
               </p>
             </Card>
 
-            <Card style={{ padding: '12px 16px', borderTop: '3px solid #f59e0b' }}>
+            <Card style={{ padding: '14px 18px', borderTop: '3px solid #f59e0b', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
                 <div style={{ padding: 6, borderRadius: 'var(--radius-sm)', backgroundColor: 'rgba(245, 158, 11, 0.15)', color: '#f59e0b', display: 'flex' }}>
                   <WifiOff size={16} />
@@ -585,7 +547,7 @@ export const TerritoryManagement = () => {
             </Card>
           </div>
 
-          {/* Main Visualizer: Google Maps Interactive Canvas */}
+          {/* Main Visualizer: Google Maps Interactive Canvas + CRM Inspector */}
           <div className="territory-map-grid">
             {/* Left: Simulated Google Maps Interactive Canvas */}
             <Card
@@ -598,39 +560,34 @@ export const TerritoryManagement = () => {
                 flexDirection: 'column',
                 backgroundColor: mapViewType === 'satellite' ? '#0b1320' : '#0f172a',
                 border: '1px solid var(--border)',
+                borderRadius: '16px',
                 minWidth: 0,
               }}
             >
-              {/* Map Canvas Header Toolbar */}
+              {/* Dedicated Top Controls Bar (Never Collides with Waypoints!) */}
               <div
                 style={{
-                  position: 'absolute',
-                  top: 12,
-                  left: 12,
-                  right: 12,
-                  zIndex: 10,
+                  padding: '10px 14px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  gap: 8,
                   flexWrap: 'wrap',
+                  gap: 10,
+                  zIndex: 10,
                 }}
               >
                 {/* Territory Selector Pills */}
                 <div
-                  className="territory-zone-pills"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 5,
-                    padding: '4px 6px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'rgba(15, 23, 42, 0.88)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    gap: 6,
                     overflowX: 'auto',
-                    maxWidth: '100%',
+                    WebkitOverflowScrolling: 'touch',
                     scrollbarWidth: 'none',
+                    maxWidth: '100%',
                   }}
                 >
                   {interactiveZones.map((z) => (
@@ -638,15 +595,15 @@ export const TerritoryManagement = () => {
                       key={z.id}
                       onClick={() => setSelectedTerritory(z.name)}
                       style={{
-                        padding: '5px 10px',
-                        borderRadius: 'var(--radius-sm)',
-                        border: 'none',
-                        backgroundColor: selectedTerritory === z.name ? z.color : 'transparent',
+                        padding: '5px 12px',
+                        borderRadius: '6px',
+                        border: selectedTerritory === z.name ? `1px solid ${z.color}` : '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: selectedTerritory === z.name ? z.color : 'rgba(30, 41, 59, 0.6)',
                         color: selectedTerritory === z.name ? '#ffffff' : 'var(--text-muted)',
-                        fontSize: '11px',
+                        fontSize: '11.5px',
                         fontWeight: selectedTerritory === z.name ? 700 : 500,
                         cursor: 'pointer',
-                        transition: 'all 0.2s',
+                        transition: 'all 0.15s ease',
                         whiteSpace: 'nowrap',
                         flexShrink: 0,
                       }}
@@ -662,11 +619,10 @@ export const TerritoryManagement = () => {
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '4px 8px',
-                    borderRadius: 'var(--radius-md)',
-                    backgroundColor: 'rgba(15, 23, 42, 0.88)',
-                    backdropFilter: 'blur(8px)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    padding: '3px 8px',
+                    borderRadius: '6px',
+                    backgroundColor: 'rgba(30, 41, 59, 0.8)',
+                    border: '1px solid rgba(255, 255, 255, 0.12)',
                     flexShrink: 0,
                   }}
                 >
@@ -718,10 +674,11 @@ export const TerritoryManagement = () => {
                 </div>
               </div>
 
-              {/* Simulated Visual Vector Map Background */}
+              {/* Map Canvas Body */}
               <div
                 style={{
                   flex: 1,
+                  minHeight: '400px',
                   position: 'relative',
                   background:
                     mapViewType === 'satellite'
@@ -748,7 +705,7 @@ export const TerritoryManagement = () => {
 
                   {/* Curving Highway / Route Vectors */}
                   <path
-                    d="M 80 380 Q 220 220 360 260 T 640 180"
+                    d="M 80 340 Q 220 180 360 220 T 640 150"
                     fill="none"
                     stroke={currentZone.color}
                     strokeWidth="4"
@@ -756,39 +713,44 @@ export const TerritoryManagement = () => {
                     style={{ filter: 'drop-shadow(0 0 6px ' + currentZone.color + ')' }}
                   />
                   <path
-                    d="M 120 140 Q 300 180 480 320 T 780 380"
+                    d="M 120 120 Q 300 160 480 300 T 780 340"
                     fill="none"
                     stroke="rgba(255, 255, 255, 0.15)"
                     strokeWidth="2"
                   />
                 </svg>
 
-                {/* Territory Boundary Polygon Overlay */}
+                {/* Territory Boundary Polygon Overlay with Clean Top Label */}
                 <div
                   style={{
                     position: 'absolute',
-                    width: '68%',
-                    height: '62%',
+                    width: '74%',
+                    height: '68%',
                     borderRadius: '24px',
                     border: `2px solid ${currentZone.color}`,
-                    backgroundColor: `${currentZone.color}18`,
-                    boxShadow: `0 0 40px ${currentZone.color}25, inset 0 0 30px ${currentZone.color}15`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                    backgroundColor: `${currentZone.color}14`,
+                    boxShadow: `0 0 40px ${currentZone.color}20, inset 0 0 30px ${currentZone.color}10`,
                     pointerEvents: 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'flex-start',
+                    paddingTop: '12px',
                   }}
                 >
                   <span
                     style={{
                       fontSize: '11px',
                       textTransform: 'uppercase',
-                      letterSpacing: '0.1em',
+                      letterSpacing: '0.08em',
                       fontWeight: 800,
                       color: currentZone.color,
-                      opacity: 0.65,
+                      opacity: 0.75,
                       textAlign: 'center',
-                      padding: '0 8px',
+                      padding: '2px 10px',
+                      borderRadius: '4px',
+                      backgroundColor: 'rgba(15, 23, 42, 0.75)',
+                      border: `1px solid ${currentZone.color}40`,
                     }}
                   >
                     ZONE POLYGON: {currentZone.name} ({currentZone.states})
@@ -798,8 +760,8 @@ export const TerritoryManagement = () => {
                 {/* Waypoint Pins & Prospect Count Nodes */}
                 {[
                   { x: '24%', y: '42%', label: 'Hub A: HQ Office', count: 48, status: 'Completed' },
-                  { x: '46%', y: '36%', label: 'Hub B: Commercial Center', count: 62, status: 'Next Appt' },
-                  { x: '68%', y: '48%', label: 'Hub C: Enterprise Logistics', count: 32, status: 'Scheduled' },
+                  { x: '48%', y: '36%', label: 'Hub B: Commercial Center', count: 62, status: 'Next Appt' },
+                  { x: '72%', y: '50%', label: 'Hub C: Enterprise Logistics', count: 32, status: 'Scheduled' },
                 ].map((pin, pIdx) => (
                   <div
                     key={pIdx}
@@ -818,7 +780,7 @@ export const TerritoryManagement = () => {
                       style={{
                         padding: '4px 8px',
                         borderRadius: 'var(--radius-sm)',
-                        backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                        backgroundColor: 'rgba(15, 23, 42, 0.92)',
                         border: `1px solid ${currentZone.color}`,
                         color: '#ffffff',
                         fontSize: '11px',
@@ -859,76 +821,60 @@ export const TerritoryManagement = () => {
                     />
                   </div>
                 ))}
+              </div>
 
-                {/* Bottom Combined Toolbar: Route Tracker & Telemetry Badge */}
-                <div
-                  className="territory-map-bottom-bar"
-                  style={{
-                    position: 'absolute',
-                    bottom: 12,
-                    left: 12,
-                    right: 12,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    flexWrap: 'wrap',
-                    gap: 8,
-                    zIndex: 10,
-                    pointerEvents: 'none',
-                  }}
-                >
-                  <div
-                    style={{
-                      pointerEvents: 'auto',
-                      padding: '7px 12px',
-                      borderRadius: 'var(--radius-md)',
-                      backgroundColor: 'rgba(15, 23, 42, 0.92)',
-                      backdropFilter: 'blur(8px)',
-                      border: '1px solid rgba(255, 255, 255, 0.12)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      fontSize: '11px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.4)',
-                    }}
-                  >
-                    <Route size={15} color="#10b981" />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                      <span style={{ color: 'var(--text-muted)' }}>{t('Optimized Route:')}</span>
-                      <span style={{ fontWeight: 600, color: '#ffffff' }}>{currentZone.optimizedRoute}</span>
-                    </div>
-                    <span style={{ color: '#10b981', fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      ⚡ {currentZone.travelTimeSaved} {t('saved')}
+              {/* Dedicated Bottom Footer Bar (Zero Overlap!) */}
+              <div
+                style={{
+                  padding: '10px 14px',
+                  backgroundColor: 'rgba(15, 23, 42, 0.96)',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                  gap: 10,
+                  zIndex: 10,
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flex: '1 1 300px' }}>
+                  <Route size={15} color="#10b981" style={{ flexShrink: 0 }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0, overflow: 'hidden' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-muted)', flexShrink: 0 }}>{t('Optimized Route:')}</span>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#ffffff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {currentZone.optimizedRoute}
                     </span>
                   </div>
+                  <span style={{ fontSize: '11px', color: '#10b981', fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>
+                    ⚡ {currentZone.travelTimeSaved} {t('saved')}
+                  </span>
+                </div>
 
-                  <div
+                <div
+                  style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 6,
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    backgroundColor: isOfflineMode ? 'rgba(245, 158, 11, 0.22)' : 'rgba(16, 185, 129, 0.22)',
+                    border: `1px solid ${isOfflineMode ? '#f59e0b' : '#10b981'}`,
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: isOfflineMode ? '#f59e0b' : '#10b981',
+                    whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                  }}
+                >
+                  <span
                     style={{
-                      pointerEvents: 'auto',
-                      padding: '6px 12px',
-                      borderRadius: 'var(--radius-full)',
-                      backgroundColor: isOfflineMode ? 'rgba(245, 158, 11, 0.22)' : 'rgba(16, 185, 129, 0.22)',
-                      border: `1px solid ${isOfflineMode ? '#f59e0b' : '#10b981'}`,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: isOfflineMode ? '#f59e0b' : '#10b981',
-                      whiteSpace: 'nowrap',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.3)',
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      backgroundColor: isOfflineMode ? '#f59e0b' : '#10b981',
                     }}
-                  >
-                    <span
-                      style={{
-                        width: 6,
-                        height: 6,
-                        borderRadius: '50%',
-                        backgroundColor: isOfflineMode ? '#f59e0b' : '#10b981',
-                      }}
-                    />
-                    {isOfflineMode ? t('Offline Cache Active') : t('Live Telemetry Connected')}
-                  </div>
+                  />
+                  {isOfflineMode ? t('Offline Cache Active') : t('Live Telemetry Connected')}
                 </div>
               </div>
             </Card>
@@ -939,17 +885,20 @@ export const TerritoryManagement = () => {
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 'var(--spacing-3)',
-                padding: 'var(--spacing-5)',
+                gap: 'var(--spacing-4)',
+                padding: '1.25rem',
                 boxSizing: 'border-box',
                 border: '1px solid var(--border)',
+                borderRadius: '16px',
+                backgroundColor: 'var(--surface)',
+                boxShadow: 'var(--shadow-card)',
               }}
             >
               <div>
                 <Badge variant="primary" style={{ backgroundColor: `${currentZone.color}20`, color: currentZone.color, marginBottom: 6 }}>
                   {currentZone.code}
                 </Badge>
-                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '2px 0 0 0' }}>{t(currentZone.name)}</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: 700, margin: '2px 0 0 0', color: 'var(--text-primary)' }}>{t(currentZone.name)}</h3>
                 <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0 0' }}>{t('Coverage')}: {currentZone.states}</p>
               </div>
 
@@ -957,28 +906,29 @@ export const TerritoryManagement = () => {
 
               {/* Assigned Rep Details */}
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 4 }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, marginBottom: 6 }}>
                   {t('Assigned Field Representative')}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div
                     style={{
-                      width: 36,
-                      height: 36,
-                      borderRadius: '50%',
+                      width: 38,
+                      height: 38,
+                      borderRadius: '10px',
                       backgroundColor: `${currentZone.color}25`,
                       color: currentZone.color,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontWeight: 700,
-                      fontSize: '12px',
+                      fontSize: '13px',
+                      flexShrink: 0,
                     }}
                   >
                     {currentZone.rep.split(' ').map((n) => n[0]).join('')}
                   </div>
-                  <div>
-                    <div style={{ fontSize: '13px', fontWeight: 600 }}>{currentZone.rep}</div>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentZone.rep}</div>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t(currentZone.repRole) || currentZone.repRole}</div>
                   </div>
                 </div>
@@ -988,12 +938,12 @@ export const TerritoryManagement = () => {
               <div
                 style={{
                   padding: '12px',
-                  borderRadius: 'var(--radius-md)',
+                  borderRadius: '10px',
                   backgroundColor: 'var(--surface-hover)',
                   border: '1px solid var(--border)',
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 8,
+                  gap: 10,
                 }}
               >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1002,11 +952,11 @@ export const TerritoryManagement = () => {
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('Avg Deal Value:')}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600 }}>{currentZone.avgDealSize}</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentZone.avgDealSize}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{t('Revenue Quota:')}</span>
-                  <span style={{ fontSize: '13px', fontWeight: 600 }}>{currentZone.quota} ({currentZone.attainment})</span>
+                  <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-primary)' }}>{currentZone.quota} ({currentZone.attainment})</span>
                 </div>
               </div>
 
@@ -1020,7 +970,8 @@ export const TerritoryManagement = () => {
                 </p>
               </div>
 
-              <div style={{ marginTop: 'auto', paddingTop: '10px' }}>
+              {/* Dispatch Action Button with Ample Breathing Room */}
+              <div style={{ paddingTop: '8px' }}>
                 <Button
                   variant="primary"
                   onClick={() =>
@@ -1030,7 +981,18 @@ export const TerritoryManagement = () => {
                       type: 'success',
                     })
                   }
-                  style={{ width: '100%', fontSize: '13px', fontWeight: 700, height: '40px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                  style={{
+                    width: '100%',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    height: '42px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    borderRadius: '8px',
+                    boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+                  }}
                 >
                   <Navigation size={15} />
                   {t('Dispatch Optimized Route')}
