@@ -200,23 +200,66 @@ export const CrmCommunication = () => {
               subtitle={t("All persisted messages in this company workspace")}
             />
             <CardBody className="p-4 flex flex-col gap-3">
-              {/* Channel Switcher */}
-              <div className="flex bg-slate-900 p-1 rounded-xl border border-slate-800 gap-1">
+              {/* Channel Switcher - Proper high contrast & theme visible */}
+              <div
+                style={{
+                  display: 'flex',
+                  backgroundColor: 'var(--surface-secondary)',
+                  padding: '4px',
+                  borderRadius: '12px',
+                  border: '1px solid var(--border)',
+                  gap: '6px',
+                  width: '100%',
+                  boxSizing: 'border-box',
+                }}
+              >
                 <button
+                  type="button"
                   onClick={() => setActiveChannel('EMAIL')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    activeChannel === 'EMAIL' ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-white'
-                  }`}
+                  style={{
+                    flex: 1,
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    backgroundColor: activeChannel === 'EMAIL' ? 'var(--primary)' : 'transparent',
+                    color: activeChannel === 'EMAIL' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: activeChannel === 'EMAIL' ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                    border: 'none',
+                  }}
                 >
-                  <Mail className="w-3.5 h-3.5" /> {t('Email')}
+                  <Mail size={15} style={{ color: activeChannel === 'EMAIL' ? '#ffffff' : 'var(--text-secondary)', flexShrink: 0 }} />
+                  <span>{t('Email')}</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setActiveChannel('SMS')}
-                  className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-2 ${
-                    activeChannel === 'SMS' ? 'bg-sky-600 text-white shadow' : 'text-slate-400 hover:text-white'
-                  }`}
+                  style={{
+                    flex: 1,
+                    padding: '8px 14px',
+                    borderRadius: '8px',
+                    fontSize: '12.5px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer',
+                    transition: 'all 0.15s ease',
+                    backgroundColor: activeChannel === 'SMS' ? 'var(--primary)' : 'transparent',
+                    color: activeChannel === 'SMS' ? '#ffffff' : 'var(--text-secondary)',
+                    boxShadow: activeChannel === 'SMS' ? '0 1px 3px rgba(0,0,0,0.2)' : 'none',
+                    border: 'none',
+                  }}
                 >
-                  <MessageSquare className="w-3.5 h-3.5" /> {t('SMS Text')}
+                  <MessageSquare size={15} style={{ color: activeChannel === 'SMS' ? '#ffffff' : 'var(--text-secondary)', flexShrink: 0 }} />
+                  <span>{t('SMS Text')}</span>
                 </button>
               </div>
 
@@ -290,7 +333,7 @@ export const CrmCommunication = () => {
               {activeMessage ? (
                 <div className="flex flex-col gap-4 flex-1">
                   {/* Message Metadata Header */}
-                  <div className="p-3 bg-slate-900 rounded-xl border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div style={{ padding: "12px", backgroundColor: "var(--surface-secondary)", borderRadius: "12px", border: "1px solid var(--border)", display: "flex", flexWrap: "wrap", alignItems: "center", justifyContent: "space-between", gap: "8px", fontSize: "12px" }}>
                     <div>
                       <span className="text-secondary">Channel: </span>
                       <strong className="text-primary uppercase">{activeMessage.channel}</strong>
@@ -315,7 +358,7 @@ export const CrmCommunication = () => {
                   )}
 
                   {/* Message Body Content */}
-                  <div className="p-4 bg-slate-900/60 rounded-xl border border-slate-800 text-sm text-slate-200 whitespace-pre-line leading-relaxed flex-1">
+                  <div style={{ padding: "16px", backgroundColor: "var(--surface-secondary)", borderRadius: "12px", border: "1px solid var(--border)", fontSize: "13px", color: "var(--text-primary)", whiteSpace: "pre-line", lineHeight: 1.6, flex: 1 }}>
                     {activeMessage.body}
                   </div>
 
