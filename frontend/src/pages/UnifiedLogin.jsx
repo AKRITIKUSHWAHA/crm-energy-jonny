@@ -27,7 +27,10 @@ import {
   Briefcase,
   UserCheck,
   Zap,
-  Globe
+  Globe,
+  X,
+  KeyRound,
+  Send,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
@@ -35,6 +38,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { SHOW_OAL } from '../config/features';
 import { AiEnergyLogo } from '../components/common/AiEnergyLogo';
+import apiClient from '../services/apiClient';
 
 // 12 CRM Roles matching client specification and 2-column layout
 const crmRoles = [
@@ -314,6 +318,13 @@ export const UnifiedLogin = ({ mode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuperAdminHidden, setIsSuperAdminHidden] = useState(false);
 
+  // Forgot Password Modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotSent, setForgotSent] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+
   useEffect(() => {
     const list = currentPlatform === 'crm' ? crmRoles : oalRoles;
     setSelectedRole(list[0]);
@@ -392,6 +403,33 @@ export const UnifiedLogin = ({ mode }) => {
   const handleLoginSubmit = (e) => {
     e.preventDefault();
     executeLogin(selectedRole);
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your business email address.');
+      return;
+    }
+    setForgotLoading(true);
+    setForgotError('');
+    try {
+      await apiClient.post('/v1/auth/forgot-password', { email: forgotEmail.trim() });
+      setForgotSent(true);
+    } catch (err) {
+      // Even on error, show success for security (don't reveal if email exists)
+      setForgotSent(true);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleCloseForgotModal = () => {
+    setShowForgotModal(false);
+    setForgotEmail('');
+    setForgotSent(false);
+    setForgotError('');
+    setForgotLoading(false);
   };
 
   // Group CRM roles into Column 1 and Column 2
@@ -769,6 +807,32 @@ export const UnifiedLogin = ({ mode }) => {
                 <span>{isLoading ? t('Signing In...') : `${t('Sign in with Selected Role')}: ${t(selectedRole.title)}`}</span>
                 {!isLoading && <ArrowRight size={15} />}
               </button>
+
+              {/* Forgot Password Link */}
+              <div style={{ textAlign: 'center', marginTop: '0.25rem' }}>
+                <button
+                  type="button"
+                  onClick={() => { setForgotEmail(email || ''); setShowForgotModal(true); }}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: isDark ? '#38bdf8' : '#0284c7',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: '4px 8px',
+                    borderRadius: '4px',
+                    textDecoration: 'underline',
+                    textDecorationStyle: 'dotted',
+                    textUnderlineOffset: '3px',
+                    transition: 'opacity 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => { e.currentTarget.style.opacity = '0.75'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.opacity = '1'; }}
+                >
+                  {t('Forgot password?')}
+                </button>
+              </div>
             </form>
 
             {/* Security Footer */}
@@ -1030,6 +1094,235 @@ export const UnifiedLogin = ({ mode }) => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal Overlay */}
+      {showForgotModal && (
+        <div
+          onClick={(e) => { if (e.target === e.currentTarget) handleCloseForgotModal(); }}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            backgroundColor: 'rgba(0, 0, 0, 0.65)',
+            backdropFilter: 'blur(6px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            style={{
+              width: '100%',
+              maxWidth: '420px',
+              backgroundColor: isDark ? '#0f172a' : '#ffffff',
+              borderRadius: '16px',
+              border: isDark ? '1px solid rgba(56, 189, 248, 0.2)' : '1px solid #e2e8f0',
+              boxShadow: isDark
+                ? '0 25px 50px rgba(0,0,0,0.8), 0 0 30px rgba(14,165,233,0.1)'
+                : '0 25px 50px rgba(15,23,42,0.15)',
+              padding: '1.75rem',
+              position: 'relative',
+            }}
+          >
+            {/* Close Button */}
+            <button
+              type="button"
+              onClick={handleCloseForgotModal}
+              style={{
+                position: 'absolute',
+                top: '1rem',
+                right: '1rem',
+                background: isDark ? 'rgba(30, 41, 59, 0.8)' : '#f1f5f9',
+                border: isDark ? '1px solid rgba(148, 163, 184, 0.2)' : '1px solid #e2e8f0',
+                borderRadius: '8px',
+                color: isDark ? '#94a3b8' : '#64748b',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: '30px',
+                height: '30px',
+                transition: 'all 0.2s ease',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.color = '#ef4444'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.color = isDark ? '#94a3b8' : '#64748b'; }}
+            >
+              <X size={16} />
+            </button>
+
+            {!forgotSent ? (
+              <>
+                {/* Header */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '1.25rem' }}>
+                  <div
+                    style={{
+                      width: 42,
+                      height: 42,
+                      borderRadius: '10px',
+                      background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      boxShadow: '0 4px 14px rgba(2, 132, 199, 0.4)',
+                      flexShrink: 0,
+                    }}
+                  >
+                    <KeyRound size={20} color="#ffffff" />
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: isDark ? '#f8fafc' : '#0f172a' }}>
+                      {t('Reset Password')}
+                    </h3>
+                    <p style={{ fontSize: '12px', color: isDark ? '#94a3b8' : '#64748b', margin: '2px 0 0 0' }}>
+                      {t("Enter your business email and we'll send a reset link.")}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Form */}
+                <form onSubmit={handleForgotPassword} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: isDark ? '#e2e8f0' : '#334155' }}>
+                      {t('Business Email')}
+                    </label>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                      <Mail
+                        size={14}
+                        style={{
+                          position: 'absolute',
+                          left: '12px',
+                          color: '#38bdf8',
+                          pointerEvents: 'none',
+                        }}
+                      />
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={(e) => { setForgotEmail(e.target.value); setForgotError(''); }}
+                        required
+                        placeholder={t('your@business.email')}
+                        autoFocus
+                        style={{
+                          width: '100%',
+                          height: '40px',
+                          paddingLeft: '34px',
+                          paddingRight: '12px',
+                          borderRadius: '8px',
+                          border: forgotError
+                            ? '1px solid #ef4444'
+                            : (isDark ? '1px solid rgba(56, 189, 248, 0.28)' : '1px solid #cbd5e1'),
+                          backgroundColor: isDark ? 'rgba(30, 41, 59, 0.7)' : '#f8fafc',
+                          color: isDark ? '#f8fafc' : '#0f172a',
+                          fontSize: '13px',
+                          outline: 'none',
+                          boxSizing: 'border-box',
+                          transition: 'border-color 0.2s ease',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#0284c7'; }}
+                        onBlur={(e) => { e.target.style.borderColor = forgotError ? '#ef4444' : (isDark ? 'rgba(56, 189, 248, 0.28)' : '#cbd5e1'); }}
+                      />
+                    </div>
+                    {forgotError && (
+                      <span style={{ fontSize: '11px', color: '#ef4444', marginTop: '2px' }}>{forgotError}</span>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={forgotLoading}
+                    style={{
+                      width: '100%',
+                      height: '42px',
+                      borderRadius: '8px',
+                      background: forgotLoading
+                        ? (isDark ? 'rgba(30, 41, 59, 0.6)' : '#e2e8f0')
+                        : 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+                      boxShadow: forgotLoading ? 'none' : '0 4px 14px rgba(2, 132, 199, 0.4)',
+                      color: forgotLoading ? (isDark ? '#94a3b8' : '#64748b') : '#ffffff',
+                      border: 'none',
+                      fontSize: '13px',
+                      fontWeight: 700,
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '0.4rem',
+                      cursor: forgotLoading ? 'not-allowed' : 'pointer',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <Send size={14} />
+                    {forgotLoading ? t('Sending...') : t('Send Reset Link')}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCloseForgotModal}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: isDark ? '#64748b' : '#94a3b8',
+                      fontSize: '12px',
+                      cursor: 'pointer',
+                      padding: '4px',
+                      textAlign: 'center',
+                      transition: 'color 0.2s ease',
+                    }}
+                  >
+                    {t('Back to Sign In')}
+                  </button>
+                </form>
+              </>
+            ) : (
+              /* Success State */
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', gap: '1rem', padding: '0.5rem 0' }}>
+                <div
+                  style={{
+                    width: 60,
+                    height: 60,
+                    borderRadius: '50%',
+                    background: 'rgba(16, 185, 129, 0.15)',
+                    border: '2px solid rgba(16, 185, 129, 0.4)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <CheckCircle2 size={30} color="#10b981" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: '16px', fontWeight: 800, margin: '0 0 6px 0', color: isDark ? '#f8fafc' : '#0f172a' }}>
+                    {t('Reset Link Sent!')}
+                  </h3>
+                  <p style={{ fontSize: '13px', color: isDark ? '#94a3b8' : '#64748b', margin: 0, lineHeight: 1.6 }}>
+                    {t('If an account exists for')} <strong style={{ color: isDark ? '#38bdf8' : '#0284c7' }}>{forgotEmail}</strong>
+                    {', '}{t('a password reset link has been sent. Please check your inbox.')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCloseForgotModal}
+                  style={{
+                    width: '100%',
+                    height: '40px',
+                    borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    marginTop: '0.5rem',
+                    transition: 'all 0.2s ease',
+                  }}
+                >
+                  {t('Back to Sign In')}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

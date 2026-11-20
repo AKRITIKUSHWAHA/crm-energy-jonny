@@ -238,6 +238,7 @@ export const TerritoryManagement = () => {
       <div>
         <Breadcrumb items={[{ label: 'Dashboard', path: '/crm/dashboard' }, { label: 'Core Modules' }, { label: 'Territory Management', active: true }]} />
         <div
+          className="territory-header-row"
           style={{
             display: 'flex',
             justifyContent: 'space-between',
@@ -247,8 +248,8 @@ export const TerritoryManagement = () => {
             gap: 'var(--spacing-4)',
           }}
         >
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+          <div style={{ flex: '1 1 auto', minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--spacing-3)', flexWrap: 'wrap' }}>
               <div
                 style={{
                   width: 44,
@@ -259,25 +260,26 @@ export const TerritoryManagement = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   boxShadow: '0 0 20px rgba(14, 165, 233, 0.4)',
+                  flexShrink: 0,
                 }}
               >
                 <Compass size={24} color="#ffffff" />
               </div>
-              <div>
-                <h1 style={{ fontSize: 'var(--font-2xl)', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)' }}>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <h1 style={{ fontSize: 'clamp(16px, 3vw, var(--font-2xl))', fontWeight: 700, margin: 0, display: 'flex', alignItems: 'center', gap: 'var(--spacing-2)', flexWrap: 'wrap' }}>
                   {t('Territory Management & Field Optimization')}
-                  <Badge variant="primary" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  <Badge variant="primary" style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.05em', flexShrink: 0 }}>
                     {t('Google Maps Powered')}
                   </Badge>
                 </h1>
-                <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-sm)' }}>
+                <p style={{ margin: '4px 0 0 0', color: 'var(--text-muted)', fontSize: 'var(--font-sm)', wordBreak: 'break-word' }}>
                   {t('Geographic sales mapping, route optimization, field rep scheduling, and prospect demographics intelligence.')}
                 </p>
               </div>
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--spacing-3)', flexShrink: 0, flexWrap: 'wrap' }}>
             <Button
               variant="outline"
               onClick={() => {
@@ -288,7 +290,7 @@ export const TerritoryManagement = () => {
                   type: 'info',
                 });
               }}
-              style={{ display: 'flex', alignItems: 'center', gap: 6 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
             >
               <WifiOff size={15} />
               {isOfflineMode ? t('Disable Offline') : t('Offline Field Mode')}
@@ -297,7 +299,7 @@ export const TerritoryManagement = () => {
             <Button
               variant="primary"
               onClick={() => setIsModalOpen(true)}
-              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600 }}
+              style={{ display: 'flex', alignItems: 'center', gap: 6, fontWeight: 600, whiteSpace: 'nowrap' }}
             >
               <Plus size={16} /> {t('Define New Territory')}
             </Button>
@@ -306,7 +308,7 @@ export const TerritoryManagement = () => {
       </div>
 
       {/* KPI Overview */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--spacing-4)' }}>
+      <div className="territory-kpi-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
         <KPICard
           title={t('Active Operating Zones')}
           value={String(interactiveZones.length)}
@@ -337,12 +339,39 @@ export const TerritoryManagement = () => {
         />
       </div>
 
+      {/* Responsive styles for Territory Management */}
+      <style>{`
+        @media (max-width: 1024px) {
+          .territory-map-grid { grid-template-columns: 1fr !important; }
+          .territory-map-card { height: 420px !important; }
+          .territory-side-panel { max-height: 400px; overflow-y: auto; }
+        }
+        @media (max-width: 768px) {
+          .territory-header-row { flex-direction: column !important; align-items: flex-start !important; }
+          .territory-header-row > div:last-child { width: 100%; justify-content: flex-start !important; flex-wrap: wrap; }
+          .territory-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+          .territory-tab-bar { overflow-x: auto !important; }
+          .territory-tab-bar button { white-space: nowrap; flex-shrink: 0; padding: 8px 12px !important; font-size: 12px !important; }
+          .territory-features-grid { grid-template-columns: 1fr !important; }
+          .territory-modal-grid { grid-template-columns: 1fr !important; }
+        }
+        @media (max-width: 480px) {
+          .territory-kpi-grid { grid-template-columns: 1fr !important; }
+          .territory-zone-pills { flex-wrap: wrap !important; }
+          .territory-zone-pills button { font-size: 11px !important; padding: 4px 8px !important; }
+        }
+      `}</style>
+
       {/* Navigation Tabs */}
       <div
+        className="territory-tab-bar"
         style={{
           display: 'flex',
           borderBottom: '1px solid var(--border)',
           gap: 'var(--spacing-2)',
+          overflowX: 'auto',
+          WebkitOverflowScrolling: 'touch',
+          scrollbarWidth: 'none',
         }}
       >
         <button
@@ -359,6 +388,8 @@ export const TerritoryManagement = () => {
             alignItems: 'center',
             gap: 8,
             fontSize: 'var(--font-sm)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <Map size={16} /> {t('Google Maps Geographic Visualizer & Routes')}
@@ -377,6 +408,8 @@ export const TerritoryManagement = () => {
             alignItems: 'center',
             gap: 8,
             fontSize: 'var(--font-sm)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <FileText size={16} /> {t('Summary Table of Benefits & CRM Features')}
@@ -395,6 +428,8 @@ export const TerritoryManagement = () => {
             alignItems: 'center',
             gap: 8,
             fontSize: 'var(--font-sm)',
+            whiteSpace: 'nowrap',
+            flexShrink: 0,
           }}
         >
           <Layers size={16} /> {t('Defined Territories Database')} ({territories.length || 4})
@@ -433,7 +468,7 @@ export const TerritoryManagement = () => {
           </Card>
 
           {/* 3 Key Google Maps Features Cards */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 'var(--spacing-4)' }}>
+          <div className="territory-features-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--spacing-4)' }}>
             <Card style={{ padding: 'var(--spacing-5)', borderTop: '4px solid #0ea5e9' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
                 <div style={{ padding: 8, borderRadius: 'var(--radius-md)', backgroundColor: 'rgba(14, 165, 233, 0.15)', color: '#0ea5e9' }}>
@@ -472,9 +507,10 @@ export const TerritoryManagement = () => {
           </div>
 
           {/* Main Visualizer: Google Maps Interactive Canvas */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--spacing-6)' }}>
+          <div className="territory-map-grid" style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) 340px', gap: 'var(--spacing-6)', alignItems: 'start' }}>
             {/* Left: Simulated Google Maps Interactive Canvas */}
             <Card
+              className="territory-map-card"
               style={{
                 height: '520px',
                 position: 'relative',
@@ -503,6 +539,7 @@ export const TerritoryManagement = () => {
               >
                 {/* Territory Selector Pills */}
                 <div
+                  className="territory-zone-pills"
                   style={{
                     display: 'flex',
                     alignItems: 'center',
@@ -512,6 +549,7 @@ export const TerritoryManagement = () => {
                     backgroundColor: 'rgba(15, 23, 42, 0.85)',
                     backdropFilter: 'blur(8px)',
                     border: '1px solid rgba(255, 255, 255, 0.1)',
+                    flexWrap: 'wrap',
                   }}
                 >
                   {interactiveZones.map((z) => (
@@ -799,7 +837,7 @@ export const TerritoryManagement = () => {
             </Card>
 
             {/* Right: Selected Zone & Demographic CRM Inspector */}
-            <Card style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', padding: 'var(--spacing-5)' }}>
+            <Card className="territory-side-panel" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-4)', padding: 'var(--spacing-5)' }}>
               <div>
                 <Badge variant="primary" style={{ backgroundColor: `${currentZone.color}20`, color: currentZone.color, marginBottom: 6 }}>
                   {currentZone.code}
@@ -1065,7 +1103,7 @@ export const TerritoryManagement = () => {
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             required
           />
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)' }}>
+          <div className="territory-modal-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--spacing-4)' }}>
             <Input
               label="Region *"
               placeholder="e.g. West Coast"
