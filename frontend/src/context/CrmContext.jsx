@@ -7,161 +7,114 @@ const CrmContext = createContext();
 
 export const CrmProvider = ({ children }) => {
   const { currency, formatCurrency } = useCurrency();
-  const [contacts, setContacts] = useState([]);
-  const [leads, setLeads] = useState([]);
-  const [deals, setDeals] = useState([]);
-  const [tasks, setTasks] = useState([]);
+  // Instant SWR Hydration: Initialize from localStorage cache if available, eliminating blank/0 state
+  const [contacts, setContacts] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_contacts');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [leads, setLeads] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_leads');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [deals, setDeals] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_deals');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [tasks, setTasks] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_tasks');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
   const [messages, setMessages] = useState([]);
 
   // Live Notes and Activities State (Source of truth: MySQL via REST API)
-  const [notes, setNotes] = useState([]);
-  const [activities, setActivities] = useState([]);
+  const [notes, setNotes] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_notes');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [activities, setActivities] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_activities');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return [];
+  });
+
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch live CRM data from backend
-  const fetchCrmData = useCallback(async () => {
-    const token = localStorage.getItem('crm_token');
-    if (!token) {
-      setContacts([]);
-      setLeads([]);
-      setDeals([]);
-      setTasks([]);
-      setNotes([]);
-      setActivities([]);
-      return;
+  // Auto-sync state to localStorage whenever modified
+  useEffect(() => {
+    if (leads.length > 0) {
+      try { localStorage.setItem('crm_leads', JSON.stringify(leads)); } catch (_) {}
     }
+  }, [leads]);
 
-    try {
-      setIsLoading(true);
-      const [leadsRes, contactsRes, dealsRes, tasksRes, notesRes, activitiesRes] = await Promise.allSettled([
-        crmService.getLeads(),
-        crmService.getContacts(),
-        crmService.getDeals(),
-        crmService.getTasks(),
-        crmService.getNotes(),
-        crmService.getActivities(),
-      ]);
-
-      if (leadsRes.status === 'fulfilled' && Array.isArray(leadsRes.value)) {
-        const mappedLeads = leadsRes.value.map((l, idx) => {
-          const rawNum = typeof l.estimatedValue === 'number' ? l.estimatedValue : parseFloat(String(l.estimatedValue).replace(/[^0-9.-]+/g, '')) || 0;
-          return {
-            ...l,
-            id: l.id,
-            displayId: `LED-${String(idx + 1).padStart(3, '0')}`,
-            rawEstimatedValue: rawNum,
-            value: formatCurrency(rawNum),
-            status: typeof l.status === 'string' ? l.status.charAt(0) + l.status.slice(1).toLowerCase() : 'New',
-            owner: l.assignedUser?.name || 'Alexander Wright',
-          };
-        });
-        setLeads(mappedLeads);
-      } else {
-        setLeads([]);
-      }
-
-      if (contactsRes.status === 'fulfilled' && Array.isArray(contactsRes.value)) {
-        const mappedContacts = contactsRes.value.map((c, idx) => {
-          const rawNum = typeof c.totalValue === 'number' ? c.totalValue : parseFloat(String(c.totalValue).replace(/[^0-9.-]+/g, '')) || 0;
-          return {
-            ...c,
-            id: c.id,
-            displayId: `CNT-${String(idx + 1).padStart(3, '0')}`,
-            rawTotalValue: rawNum,
-            totalValue: formatCurrency(rawNum),
-            owner: c.assignedUser?.name || 'Alexander Wright',
-            dealsCount: c._count?.deals || 0,
-            notesCount: c._count?.notes || 0,
-          };
-        });
-        setContacts(mappedContacts);
-      } else {
-        setContacts([]);
-      }
-
-      if (dealsRes.status === 'fulfilled' && Array.isArray(dealsRes.value)) {
-        const mappedDeals = dealsRes.value.map((d, idx) => {
-          const rawNum = typeof d.value === 'number' ? d.value : parseFloat(String(d.value).replace(/[^0-9.-]+/g, '')) || 0;
-          return {
-            ...d,
-            id: d.id,
-            displayId: `DEL-${String(idx + 1).padStart(3, '0')}`,
-            rawValue: rawNum,
-            value: formatCurrency(rawNum),
-            owner: d.assignedUser?.name || 'Alexander Wright',
-            probability: d.probability ? `${d.probability}%` : '50%',
-            stage: typeof d.stage === 'string'
-              ? d.stage
-                .split('_')
-                .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
-                .join(' ')
-              : 'Qualified',
-            contact: typeof d.contact === 'object' && d.contact !== null ? d.contact.name : (d.contact || ''),
-            contactObj: d.contact,
-          };
-        });
-        setDeals(mappedDeals);
-      } else {
-        setDeals([]);
-      }
-
-      if (tasksRes.status === 'fulfilled' && Array.isArray(tasksRes.value)) {
-        const mappedTasks = tasksRes.value.map((t) => ({
-          ...t,
-          id: t.id,
-          // Normalize ISO dueDate → YYYY-MM-DD (local date string for calendar matching)
-          dueDate: t.dueDate ? (typeof t.dueDate === 'string' && t.dueDate.includes('T') ? t.dueDate.split('T')[0] : t.dueDate) : '',
-          status:
-            t.status === 'COMPLETED'
-              ? 'Completed'
-              : t.status === 'IN_PROGRESS'
-              ? 'In Progress'
-              : t.status === 'CANCELLED'
-              ? 'Cancelled'
-              : 'Pending',
-          priority: typeof t.priority === 'string' ? t.priority.charAt(0) + t.priority.slice(1).toLowerCase() : 'Medium',
-          assignedTo: t.assignedUser?.name || 'Alexander Wright',
-          contact: typeof t.contact === 'object' && t.contact !== null ? t.contact.name : (t.contact || ''),
-          lead: typeof t.lead === 'object' && t.lead !== null ? t.lead.name : (t.lead || ''),
-          deal: typeof t.deal === 'object' && t.deal !== null ? t.deal.title : (t.deal || ''),
-          contactObj: t.contact,
-          leadObj: t.lead,
-          dealObj: t.deal,
-        }));
-        setTasks(mappedTasks);
-      } else {
-        setTasks([]);
-      }
-
-      if (notesRes.status === 'fulfilled' && Array.isArray(notesRes.value)) {
-        setNotes(notesRes.value);
-      } else {
-        setNotes([]);
-      }
-
-      if (activitiesRes.status === 'fulfilled' && Array.isArray(activitiesRes.value)) {
-        const mappedActivities = activitiesRes.value.map((a) => ({
-          ...a,
-          userName: a.user?.name || 'Alexander Wright',
-          leadName: a.lead?.name || '',
-          contactName: a.contact?.name || '',
-          dealTitle: a.deal?.title || '',
-        }));
-        setActivities(mappedActivities);
-      } else {
-        setActivities([]);
-      }
-    } catch (_) {
-      setContacts([]);
-      setLeads([]);
-      setDeals([]);
-      setTasks([]);
-      setNotes([]);
-      setActivities([]);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (deals.length > 0) {
+      try { localStorage.setItem('crm_deals', JSON.stringify(deals)); } catch (_) {}
     }
-  }, []);
+  }, [deals]);
+
+  useEffect(() => {
+    if (contacts.length > 0) {
+      try { localStorage.setItem('crm_contacts', JSON.stringify(contacts)); } catch (_) {}
+    }
+  }, [contacts]);
+
+  useEffect(() => {
+    if (tasks.length > 0) {
+      try { localStorage.setItem('crm_tasks', JSON.stringify(tasks)); } catch (_) {}
+    }
+  }, [tasks]);
+
+  useEffect(() => {
+    if (notes.length > 0) {
+      try { localStorage.setItem('crm_notes', JSON.stringify(notes)); } catch (_) {}
+    }
+  }, [notes]);
+
+  useEffect(() => {
+    if (activities.length > 0) {
+      try { localStorage.setItem('crm_activities', JSON.stringify(activities)); } catch (_) {}
+    }
+  }, [activities]);
 
   // Granular route-level refresh methods for real-time SWR on-mount sync
   const refreshDeals = useCallback(async () => {
@@ -190,6 +143,7 @@ export const CrmProvider = ({ children }) => {
           };
         });
         setDeals(mappedDeals);
+        try { localStorage.setItem('crm_deals', JSON.stringify(mappedDeals)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh deals error:', e);
@@ -210,6 +164,7 @@ export const CrmProvider = ({ children }) => {
           notesCount: c._count?.notes || 0,
         }));
         setContacts(mappedContacts);
+        try { localStorage.setItem('crm_contacts', JSON.stringify(mappedContacts)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh contacts error:', e);
@@ -229,6 +184,7 @@ export const CrmProvider = ({ children }) => {
           owner: l.assignedUser?.name || 'Alexander Wright',
         }));
         setLeads(mappedLeads);
+        try { localStorage.setItem('crm_leads', JSON.stringify(mappedLeads)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh leads error:', e);
@@ -262,6 +218,7 @@ export const CrmProvider = ({ children }) => {
           dealObj: t.deal,
         }));
         setTasks(mappedTasks);
+        try { localStorage.setItem('crm_tasks', JSON.stringify(mappedTasks)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh tasks error:', e);
@@ -280,6 +237,7 @@ export const CrmProvider = ({ children }) => {
           dealTitle: a.deal?.title || '',
         }));
         setActivities(mappedActivities);
+        try { localStorage.setItem('crm_activities', JSON.stringify(mappedActivities)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh activities error:', e);
@@ -291,11 +249,36 @@ export const CrmProvider = ({ children }) => {
       const data = await crmService.getNotes();
       if (Array.isArray(data)) {
         setNotes(data);
+        try { localStorage.setItem('crm_notes', JSON.stringify(data)); } catch (_) {}
       }
     } catch (e) {
       console.warn('Live refresh notes error:', e);
     }
   }, []);
+
+  
+
+  // Unified live CRM data sync method that runs all granular refreshes
+  const fetchCrmData = useCallback(async () => {
+    const token = localStorage.getItem('crm_token');
+    if (!token) return;
+
+    try {
+      setIsLoading(true);
+      await Promise.allSettled([
+        refreshLeads(),
+        refreshContacts(),
+        refreshDeals(),
+        refreshTasks(),
+        refreshNotes(),
+        refreshActivities(),
+      ]);
+    } catch (e) {
+      console.warn('Live fetchCrmData sync error:', e);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [refreshLeads, refreshContacts, refreshDeals, refreshTasks, refreshNotes, refreshActivities]);
 
   const { isCrmAuthenticated, crmUser } = useAuth();
 
@@ -677,7 +660,6 @@ export const CrmProvider = ({ children }) => {
       id: tempId,
       status: 'Pending',
       priority: newTask.priority || 'Medium',
-      dueDate: normalizedDueDate,
       reminder: newTask.reminder || '9:00 AM',
       assignedTo: newTask.assignedTo || 'Alexander Wright',
       ...newTask,

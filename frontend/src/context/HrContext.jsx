@@ -5,18 +5,48 @@ import { useAuth } from './AuthContext';
 const HrContext = createContext();
 
 export const HrProvider = ({ children }) => {
-  const [employees, setEmployees] = useState([]);
-  const [candidates, setCandidates] = useState([]);
+  // Instant SWR Hydration: Initialize from localStorage cache if available
+  const [employees, setEmployees] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_hr_employees');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [candidates, setCandidates] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_hr_candidates');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
   const [isLoading, setIsLoading] = useState(false);
   const { isCrmAuthenticated } = useAuth();
 
+  // Auto-persist to localStorage
+  useEffect(() => {
+    if (employees.length > 0) {
+      try { localStorage.setItem('crm_hr_employees', JSON.stringify(employees)); } catch (_) {}
+    }
+  }, [employees]);
+
+  useEffect(() => {
+    if (candidates.length > 0) {
+      try { localStorage.setItem('crm_hr_candidates', JSON.stringify(candidates)); } catch (_) {}
+    }
+  }, [candidates]);
+
   const fetchHrData = useCallback(async () => {
     const token = localStorage.getItem('crm_token');
-    if (!token) {
-      setEmployees([]);
-      setCandidates([]);
-      return;
-    }
+    if (!token) return;
 
     try {
       setIsLoading(true);
@@ -27,17 +57,15 @@ export const HrProvider = ({ children }) => {
 
       if (empRes.status === 'fulfilled' && Array.isArray(empRes.value)) {
         setEmployees(empRes.value);
-      } else {
-        setEmployees([]);
+        try { localStorage.setItem('crm_hr_employees', JSON.stringify(empRes.value)); } catch (_) {}
       }
 
       if (candRes.status === 'fulfilled' && Array.isArray(candRes.value)) {
         setCandidates(candRes.value);
-      } else {
-        setCandidates([]);
+        try { localStorage.setItem('crm_hr_candidates', JSON.stringify(candRes.value)); } catch (_) {}
       }
     } catch (error) {
-      console.error('Failed to load HR data:', error);
+      console.warn('Failed to load HR data:', error);
     } finally {
       setIsLoading(false);
     }

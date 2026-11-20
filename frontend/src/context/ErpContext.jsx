@@ -12,11 +12,77 @@ const formatCurrency = (val) => {
 };
 
 export const ErpProvider = ({ children }) => {
-  const [projects, setProjects] = useState([]);
-  const [purchaseOrders, setPurchaseOrders] = useState([]);
-  const [inventory, setInventory] = useState([]);
-  const [salesOrders, setSalesOrders] = useState([]);
+  // Instant SWR Hydration: Initialize from localStorage cache if available
+  const [projects, setProjects] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_erp_projects');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [purchaseOrders, setPurchaseOrders] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_erp_pos');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [inventory, setInventory] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_erp_inventory');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
+  const [salesOrders, setSalesOrders] = useState(() => {
+    try {
+      const cached = localStorage.getItem('crm_erp_sos');
+      if (cached) {
+        const p = JSON.parse(cached);
+        if (Array.isArray(p) && p.length > 0) return p;
+      }
+    } catch (_) {}
+    return [];
+  });
+
   const [isLoading, setIsLoading] = useState(false);
+
+  // Auto-persist to localStorage whenever state changes
+  useEffect(() => {
+    if (projects.length > 0) {
+      try { localStorage.setItem('crm_erp_projects', JSON.stringify(projects)); } catch (_) {}
+    }
+  }, [projects]);
+
+  useEffect(() => {
+    if (salesOrders.length > 0) {
+      try { localStorage.setItem('crm_erp_sos', JSON.stringify(salesOrders)); } catch (_) {}
+    }
+  }, [salesOrders]);
+
+  useEffect(() => {
+    if (purchaseOrders.length > 0) {
+      try { localStorage.setItem('crm_erp_pos', JSON.stringify(purchaseOrders)); } catch (_) {}
+    }
+  }, [purchaseOrders]);
+
+  useEffect(() => {
+    if (inventory.length > 0) {
+      try { localStorage.setItem('crm_erp_inventory', JSON.stringify(inventory)); } catch (_) {}
+    }
+  }, [inventory]);
 
   const { isCrmAuthenticated } = useAuth();
 
