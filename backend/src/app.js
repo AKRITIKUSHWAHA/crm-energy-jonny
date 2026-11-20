@@ -42,11 +42,14 @@ const parseOrigins = (raw) => {
 
 const defaultAllowedOrigins = [
   'http://localhost:3000',
+  'http://localhost:3001',
   'http://localhost:5173',
   'http://127.0.0.1:3000',
+  'http://127.0.0.1:3001',
   'http://127.0.0.1:5173',
   'https://crm-energy.netlify.app',
   'https://crm-energy-backend-production.up.railway.app',
+  'https://crm-energy-backend-production-59b6.up.railway.app',
   ...parseOrigins(process.env.CORS_ORIGIN),
 ];
 
@@ -74,7 +77,26 @@ const corsOptions = {
   },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin', 'X-Platform-Api-Key', 'X-Api-Key', 'X-SWMTP-Signature'],
+  allowedHeaders: [
+    'Content-Type',
+    'Authorization',
+    'X-Requested-With',
+    'Accept',
+    'Origin',
+    'X-Platform-Api-Key',
+    'X-Api-Key',
+    'X-SWMTP-Signature',
+    'x-user-role-id',
+    'x-user-role',
+    'x-user-id',
+    'x-user-name',
+    'x-tenant-id',
+    'X-User-Role-Id',
+    'X-User-Role',
+    'X-User-Id',
+    'X-User-Name',
+    'X-Tenant-Id',
+  ],
   optionsSuccessStatus: 200,
 };
 

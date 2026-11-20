@@ -5,24 +5,13 @@
 
 // Automatic environment-aware API URL:
 // 1. If explicit env variable is set and valid, use it.
-// 2. If running in browser on localhost/127.0.0.1, use localhost:5000/api.
-// 3. If deployed on Netlify or production domain, use live Railway backend.
-function resolveApiBaseUrl() {
+// 2. If deployed on Netlify or production domain, use live Railway backend.
+export function resolveApiBaseUrl() {
   const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
   const envUrl = metaEnv.VITE_API_BASE_URL || metaEnv.VITE_API_URL || (typeof process !== 'undefined' ? process.env?.VITE_API_BASE_URL : null);
 
-  const isLocalhost =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname === '[::1]');
-
-  let url;
-  if (isLocalhost) {
-    url = envUrl || 'http://localhost:5002/api';
-  } else if (envUrl && !envUrl.includes('localhost') && !envUrl.includes('127.0.0.1')) {
-    url = envUrl;
-  } else {
+  let url = envUrl;
+  if (!url) {
     url = 'https://crm-energy-backend-production-59b6.up.railway.app/api';
   }
 
@@ -34,7 +23,19 @@ function resolveApiBaseUrl() {
   return url;
 }
 
-const API_BASE_URL = resolveApiBaseUrl();
+export function getSocketBaseUrl() {
+  const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
+  const envSocketUrl = metaEnv.VITE_SOCKET_URL || (typeof process !== 'undefined' ? process.env?.VITE_SOCKET_URL : null);
+  if (envSocketUrl) {
+    return envSocketUrl.replace(/\/+$/, '');
+  }
+
+  const apiUrl = resolveApiBaseUrl();
+  return apiUrl.replace(/\/api\/?$/, '');
+}
+
+export const API_BASE_URL = resolveApiBaseUrl();
+export const SOCKET_BASE_URL = getSocketBaseUrl();
 
 class ApiClient {
   constructor(baseUrl) {
@@ -62,23 +63,6 @@ class ApiClient {
     const token = this.getToken();
     if (token) {
       headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    // Attach active CRM user session headers so backend services (e.g. eBox) know the caller role dynamically
-    if (typeof localStorage !== 'undefined') {
-      try {
-        const savedUserStr = localStorage.getItem('crm_user');
-        if (savedUserStr) {
-          const u = JSON.parse(savedUserStr);
-          if (u?.id) headers['x-user-role-id'] = u.id;
-          if (u?.role) headers['x-user-role'] = u.role;
-          if (u?.userId || u?.id) headers['x-user-id'] = u.userId || u.id;
-          if (u?.name) headers['x-user-name'] = u.name;
-          if (u?.tenantId) headers['x-tenant-id'] = u.tenantId;
-        }
-      } catch (e) {
-        // Safe json parse ignore
-      }
     }
 
     return headers;

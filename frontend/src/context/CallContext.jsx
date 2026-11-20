@@ -6,6 +6,7 @@
  */
 import React, { createContext, useContext, useState, useEffect, useRef, useCallback } from 'react';
 import { io } from 'socket.io-client';
+import apiClient, { getSocketBaseUrl } from '../services/apiClient';
 
 const CallContext = createContext(null);
 
@@ -158,15 +159,9 @@ export function CallProvider({ children }) {
 
   const fetchIceServers = useCallback(async () => {
     try {
-      const token = localStorage.getItem('crm_token');
-      const res = await fetch('http://localhost:5002/api/v1/internal-staff/calls/ice-servers', {
-        headers: token ? { Authorization: `Bearer ${token}` } : {}
-      });
-      if (res.ok) {
-        const data = await res.json();
-        if (data.iceServers) {
-          iceServersRef.current = data.iceServers;
-        }
+      const data = await apiClient.get('/v1/internal-staff/calls/ice-servers');
+      if (data && data.iceServers) {
+        iceServersRef.current = data.iceServers;
       }
     } catch (e) {
       console.warn('[CRM CallContext] Using STUN default:', e.message);
@@ -179,7 +174,8 @@ export function CallProvider({ children }) {
     const getAuthToken = () =>
       localStorage.getItem('crm_token') || sessionStorage.getItem('crm_token');
 
-    const socket = io('http://localhost:5002', {
+    const socketUrl = getSocketBaseUrl();
+    const socket = io(socketUrl, {
       auth: (cb) => cb({ token: getAuthToken() }),
       transports: ['websocket', 'polling'],
       reconnectionAttempts: 15,

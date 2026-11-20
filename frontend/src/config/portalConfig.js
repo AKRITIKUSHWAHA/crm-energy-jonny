@@ -50,15 +50,5 @@ export function getApiBaseUrl() {
     return envApi;
   }
 
-  const isLocalhost =
-    typeof window !== 'undefined' &&
-    (window.location.hostname === 'localhost' ||
-      window.location.hostname === '127.0.0.1' ||
-      window.location.hostname === '[::1]');
-
-  if (isLocalhost) {
-    return 'http://localhost:5000/api';
-  }
-
   return 'https://crm-energy-backend-production-59b6.up.railway.app/api';
 }
