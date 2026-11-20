@@ -41,6 +41,7 @@ import {
   KPICard,
   Modal,
   Input,
+  Tabs,
   Table,
   TableHeader,
   TableBody,
@@ -245,7 +246,7 @@ export const TerritoryManagement = () => {
           justify-content: space-between;
           align-items: center;
           flex-wrap: wrap;
-          gap: 14px;
+          gap: 16px;
           box-shadow: var(--shadow-card);
           width: 100%;
           box-sizing: border-box;
@@ -253,31 +254,43 @@ export const TerritoryManagement = () => {
         .territory-features-grid {
           display: grid;
           grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-          gap: 14px;
+          gap: 16px;
           width: 100%;
           box-sizing: border-box;
         }
         .territory-map-grid {
           display: grid;
-          grid-template-columns: minmax(0, 1fr) 350px;
+          grid-template-columns: minmax(0, 1fr) 360px;
           gap: 16px;
           align-items: stretch;
           width: 100%;
           box-sizing: border-box;
         }
         .territory-map-card {
-          min-height: 480px;
+          min-height: 520px;
           display: flex;
           flex-direction: column;
+          height: 100%;
+        }
+        .territory-side-panel {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          height: 100%;
+          min-width: 0;
+          box-sizing: border-box;
         }
 
-        /* Large tablets & small laptops (<= 1024px) */
-        @media (max-width: 1024px) {
+        /* Large tablets & small laptops (<= 1080px) */
+        @media (max-width: 1080px) {
           .territory-map-grid {
             grid-template-columns: 1fr !important;
           }
           .territory-side-panel {
             width: 100% !important;
+          }
+          .territory-map-card {
+            min-height: 460px;
           }
         }
 
@@ -291,12 +304,6 @@ export const TerritoryManagement = () => {
             justify-content: flex-start !important;
             flex-wrap: wrap !important;
             gap: 8px !important;
-          }
-          .territory-tab-bar button {
-            white-space: nowrap !important;
-            flex-shrink: 0 !important;
-            padding: 8px 12px !important;
-            font-size: 12px !important;
           }
         }
 
@@ -418,85 +425,22 @@ export const TerritoryManagement = () => {
         />
       </div>
 
-      {/* Navigation Tabs */}
-      <div
-        className="territory-tab-bar"
-        style={{
-          display: 'flex',
-          borderBottom: '1px solid var(--border)',
-          gap: 'var(--spacing-2)',
-          overflowX: 'auto',
-          WebkitOverflowScrolling: 'touch',
-          scrollbarWidth: 'none',
-          paddingBottom: '2px',
-          marginTop: 'var(--spacing-1)',
-        }}
-      >
-        <button
-          onClick={() => setActiveTab('map')}
-          style={{
-            padding: '10px 18px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'map' ? '2px solid #0ea5e9' : '2px solid transparent',
-            color: activeTab === 'map' ? '#0ea5e9' : 'var(--text-muted)',
-            fontWeight: activeTab === 'map' ? 600 : 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 'var(--font-sm)',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          <Map size={16} /> {t('Google Maps Geographic Visualizer & Routes')}
-        </button>
-        <button
-          onClick={() => setActiveTab('benefits')}
-          style={{
-            padding: '10px 18px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'benefits' ? '2px solid #0ea5e9' : '2px solid transparent',
-            color: activeTab === 'benefits' ? '#0ea5e9' : 'var(--text-muted)',
-            fontWeight: activeTab === 'benefits' ? 600 : 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 'var(--font-sm)',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          <FileText size={16} /> {t('Summary Table of Benefits & CRM Features')}
-        </button>
-        <button
-          onClick={() => setActiveTab('territories')}
-          style={{
-            padding: '10px 18px',
-            background: 'none',
-            border: 'none',
-            borderBottom: activeTab === 'territories' ? '2px solid #0ea5e9' : '2px solid transparent',
-            color: activeTab === 'territories' ? '#0ea5e9' : 'var(--text-muted)',
-            fontWeight: activeTab === 'territories' ? 600 : 500,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 8,
-            fontSize: 'var(--font-sm)',
-            whiteSpace: 'nowrap',
-            flexShrink: 0,
-          }}
-        >
-          <Layers size={16} /> {t('Defined Territories Database')} ({territories.length || 4})
-        </button>
+      {/* Navigation Tabs with clean spacing */}
+      <div style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>
+        <Tabs
+          tabs={[
+            { id: 'map', label: t('Google Maps Geographic Visualizer & Routes'), icon: Map },
+            { id: 'benefits', label: t('Summary Table of Benefits & CRM Features'), icon: FileText },
+            { id: 'territories', label: t('Defined Territories Database'), icon: Layers, badge: territories.length || 4 },
+          ]}
+          activeTab={activeTab}
+          onChange={setActiveTab}
+        />
       </div>
 
       {/* TAB 1: Google Maps Geographic Visualizer & Route Optimization */}
       {activeTab === 'map' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-5)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
           {/* 3 Key Google Maps Features Cards */}
           <div className="territory-features-grid">
             <Card style={{ padding: '14px 18px', borderTop: '3px solid #0ea5e9', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
@@ -587,8 +531,9 @@ export const TerritoryManagement = () => {
                         padding: '5px 12px',
                         borderRadius: '6px',
                         border: selectedTerritory === z.name ? `1px solid ${z.color}` : '1px solid rgba(255, 255, 255, 0.1)',
-                        backgroundColor: selectedTerritory === z.name ? z.color : 'rgba(30, 41, 59, 0.6)',
-                        color: selectedTerritory === z.name ? '#ffffff' : 'var(--text-muted)',
+                        backgroundColor: selectedTerritory === z.name ? z.color : 'rgba(255, 255, 255, 0.08)',
+                        color: selectedTerritory === z.name ? '#ffffff' : '#cbd5e1',
+                        borderColor: selectedTerritory === z.name ? z.color : 'rgba(255, 255, 255, 0.15)',
                         fontSize: '11.5px',
                         fontWeight: selectedTerritory === z.name ? 700 : 500,
                         cursor: 'pointer',
@@ -994,8 +939,8 @@ export const TerritoryManagement = () => {
 
       {/* TAB 2: Summary Table of Benefits */}
       {activeTab === 'benefits' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-6)' }}>
-          <Card style={{ padding: 0, overflow: 'hidden' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', marginTop: '1rem' }}>
+          <Card style={{ padding: 0, overflow: 'hidden', border: '1px solid var(--border)', borderRadius: '16px' }}>
             <div
               style={{
                 padding: 'var(--spacing-4) var(--spacing-6)',
@@ -1020,7 +965,7 @@ export const TerritoryManagement = () => {
             </div>
 
             <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <table style={{ width: '100%', minWidth: '680px', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
                 <thead>
                   <tr style={{ borderBottom: '1px solid var(--border)', backgroundColor: 'var(--surface)' }}>
                     <th style={{ padding: '14px 20px', fontWeight: 600, color: 'var(--text-muted)', width: '22%' }}>Benefit</th>
@@ -1095,7 +1040,8 @@ export const TerritoryManagement = () => {
 
       {/* TAB 3: Defined Territories Database */}
       {activeTab === 'territories' && (
-        <Card style={{ border: '1px solid var(--border)', padding: 0, overflow: 'hidden' }}>
+        <div style={{ marginTop: '1rem' }}>
+          <Card style={{ border: '1px solid var(--border)', padding: 0, overflow: 'hidden', borderRadius: '16px' }}>
           <CardHeader
             title="Defined Sales Territories"
             subtitle="All geographic territories managed under this company tenant"
@@ -1117,7 +1063,7 @@ export const TerritoryManagement = () => {
                 </Button>
               </div>
             ) : (
-              <Table>
+              <Table style={{ minWidth: '650px' }}>
                 <TableHeader>
                   <TableRow>
                     <TableCell header>Code</TableCell>
@@ -1146,6 +1092,7 @@ export const TerritoryManagement = () => {
             )}
           </CardBody>
         </Card>
+        </div>
       )}
 
       {/* Create Territory Modal */}
