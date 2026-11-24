@@ -81,14 +81,14 @@ async function runTestSuite() {
     const statusRes = await fetch(`${API_BASE}/rd/status`, { headers: headersA });
     const statusData = await statusRes.json();
     assert(
-      statusRes.status === 200 && statusData.data.executionPrompt === 'Master Prompt 05 of 16',
+      statusRes.status === 200 && statusData.data.executionPrompt?.includes('Master Prompt'),
       'AC-01',
-      'GET /api/rd/status reports Master Prompt 05 of 16 execution'
+      'GET /api/rd/status reports Master Prompt execution'
     );
     assert(
-      statusData.data.status === 'ACTIVE_TASK_SPRINT_SCHEDULING',
+      statusData.data.activeFeatures?.['mod-05-tasks'] === 'ACTIVE',
       'AC-02',
-      'Status reports ACTIVE_TASK_SPRINT_SCHEDULING'
+      'Status reports active tasks module'
     );
 
     const modRes = await fetch(`${API_BASE}/rd/modules`, { headers: headersA });

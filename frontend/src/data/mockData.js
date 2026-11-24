@@ -34,7 +34,10 @@ import {
   Compass,
   Lightbulb,
   Award,
-  Workflow
+  Workflow,
+  BarChart2,
+  TestTube,
+  Scale
 } from 'lucide-react';
 
 export const crmNavigation = [
@@ -52,6 +55,11 @@ export const crmNavigation = [
 
   // EgoLytics R&D Management Division
   { id: 'rd-workspace', label: 'EgoLytics R&D Hub', icon: FlaskConical, path: '/crm/rd', section: 'EgoLytics R&D' },
+  { id: 'rd-resources', label: 'Resources & Lab Ops', icon: Users, path: '/crm/rd/resources', section: 'EgoLytics R&D' },
+  { id: 'rd-governance', label: 'Decisions & Risk Ops', icon: Scale, path: '/crm/rd/governance', section: 'EgoLytics R&D' },
+  { id: 'rd-eln', label: 'Electronic Lab Notebook', icon: BookOpen, path: '/crm/rd/eln', section: 'EgoLytics R&D' },
+  { id: 'rd-experiments', label: 'Experiment Studio', icon: TestTube, path: '/crm/rd/experiments', section: 'EgoLytics R&D' },
+  { id: 'rd-gantt', label: 'Gantt & Roadmap', icon: BarChart2, path: '/crm/rd/gantt', section: 'EgoLytics R&D' },
   { id: 'rd-tasks', label: 'R&D Tasks & Sprints', icon: CheckSquare, path: '/crm/rd/tasks', section: 'EgoLytics R&D' },
   { id: 'rd-stagegate', label: 'Stage-Gate Governance', icon: Workflow, path: '/crm/rd/stagegate', section: 'EgoLytics R&D' },
   { id: 'rd-ideas', label: 'Idea Management', icon: Lightbulb, path: '/crm/rd/ideas', section: 'EgoLytics R&D' },
