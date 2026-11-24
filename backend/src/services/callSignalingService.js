@@ -8,6 +8,7 @@ const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const prisma = require('../config/prisma');
+const collaborationSocketRelay = require('./collaborationSocketRelay');
 
 class CallSignalingService {
   constructor() {
@@ -42,6 +43,9 @@ class CallSignalingService {
       pingTimeout: 20000,
       pingInterval: 10000
     });
+
+    // Register IO for Master Prompt 11 Collaboration & Notification Relaying
+    collaborationSocketRelay.setIO(this.io);
 
     // JWT Authentication & Staff Role Authorization Middleware
     this.io.use(async (socket, next) => {
@@ -102,6 +106,24 @@ class CallSignalingService {
       });
 
       socket.join(`tenant:${socket.tenantId}`);
+
+      // Master Prompt 11: Real-time conversation rooms & typing indicator
+      socket.on('rd:join_conversation', (convId) => {
+        if (convId) socket.join(`conversation:${convId}`);
+      });
+      socket.on('rd:leave_conversation', (convId) => {
+        if (convId) socket.leave(`conversation:${convId}`);
+      });
+      socket.on('rd:typing', (data) => {
+        if (data?.conversationId) {
+          socket.to(`conversation:${data.conversationId}`).emit('rd:typing', {
+            conversationId: data.conversationId,
+            userId: socket.staffId,
+            userName: socket.displayName,
+            isTyping: Boolean(data.isTyping),
+          });
+        }
+      });
 
       console.log(`[CRM CallSignaling] Staff connected: ${socket.displayName} (${staffId}) [Socket ${socket.id}]`);
 

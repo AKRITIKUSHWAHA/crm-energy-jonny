@@ -24,6 +24,9 @@ const swmtpRoutes = require('./routes/swmtpRoutes');
 const aiRoutes = require('./routes/aiRoutes');
 const rolePermissionRoutes = require('./routes/rolePermissionRoutes');
 const rdRoutes = require('./routes/rdRoutes');
+const gisRoutes = require('./routes/gisRoutes');
+const bfovRoutes = require('./routes/bfovRoutes');
+const rdEnterpriseRoutes = require('./routes/rdEnterpriseRoutes');
 
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
 
@@ -178,8 +181,20 @@ app.use('/zbox', eboxRoutes);
 app.use('/api/roles-permissions', rolePermissionRoutes);
 app.use('/roles-permissions', rolePermissionRoutes);
 
+app.use('/api/rd/enterprise', rdEnterpriseRoutes);
+app.use('/rd/enterprise', rdEnterpriseRoutes);
+app.use('/api/enterprise', rdEnterpriseRoutes);
+app.use('/enterprise', rdEnterpriseRoutes);
+
 app.use('/api/rd', rdRoutes);
 app.use('/rd', rdRoutes);
+
+app.use('/api/gis', gisRoutes);
+app.use('/gis', gisRoutes);
+
+app.use('/api/diagrams', bfovRoutes);
+app.use('/diagrams', bfovRoutes);
+app.use('/api/bfov', bfovRoutes);
 
 app.use('/api/v1/internal-staff', swmtpRoutes);
 app.use('/v1/internal-staff', swmtpRoutes);

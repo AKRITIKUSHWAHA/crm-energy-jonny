@@ -148,6 +148,41 @@ model Tenant {
   rdTaskBaselines           RdTaskScheduleBaseline[]
   rdScheduleAlerts          RdScheduleAlert[]
 
+  // EgoLytics Collaboration & External Integrations (Master Prompt 11)
+  rdConversations           RdConversation[]
+  rdMessages                RdMessage[]
+  rdContextComments         RdContextComment[]
+  rdNotifications           RdNotification[]
+  rdCalendarEvents          RdCalendarEvent[]
+  rdIntegrations            RdIntegrationConfig[]
+
+  // EgoLytics Dashboard, Reporting & Analytics Engine (Master Prompt 12)
+  rdKpis                    RdKpi[]
+  rdDashboardPreferences    RdDashboardPreference[]
+
+  // Maplytics GIS & Territory Management (Master Prompt 13)
+  gisRegions                GisRegion[]
+  gisTerritories            GisTerritory[]
+  gisLayers                 GisLayer[]
+  gisFeatures               GisFeature[]
+  gisUploadedFiles          GisUploadedFile[]
+  gisRealignments           GisRealignment[]
+  gisArcgisConfigs          GisArcgisConfig[]
+  gisAuditLogs              GisAuditLog[]
+
+  // BFOV Charts & Core Diagramming Engine (Master Prompt 14 & 15)
+  bfovDiagrams              BfovDiagram[]
+  bfovDiagramVersions       BfovDiagramVersion[]
+  bfovDiagramComments       BfovDiagramComment[]
+  bfovDiagramShares         BfovDiagramShare[]
+  bfovAiGenerations         BfovAiGeneration[]
+
+  // Enterprise Governance, IP, Compliance, Audit & API (Master Prompt 16)
+  rdIpAssets                RdIpAsset[]
+  rdComplianceSops          RdComplianceSop[]
+  rdEnterpriseAuditLogs     RdEnterpriseAuditLog[]
+  rdApiKeys                 RdApiKey[]
+
   @@map("tenants")
 }
 
@@ -198,6 +233,40 @@ model User {
 
   // EgoLytics Master Prompt 05 Relations
   createdSprints         RdSprint[]             @relation("CreatedSprints")
+
+  // EgoLytics Master Prompt 11 Relations
+  rdSentMessages         RdMessage[]            @relation("UserSentMessages")
+  rdContextComments      RdContextComment[]     @relation("UserContextComments")
+  rdNotifications        RdNotification[]       @relation("UserNotifications")
+  rdCalendarEventsCreated RdCalendarEvent[]     @relation("UserCreatedEvents")
+  rdCalendarParticipations RdCalendarParticipant[] @relation("UserCalendarParticipations")
+  rdConversationParticipations RdConversationParticipant[] @relation("UserConversationParticipations")
+  rdNotificationPreferences RdNotificationPreference?
+
+  // EgoLytics Master Prompt 12 Relations
+  rdOwnedKpis            RdKpi[]                @relation("UserOwnedKpis")
+  rdDashboardPreferences RdDashboardPreference[]
+
+  // Maplytics GIS Master Prompt 13 Relations
+  gisManagedTerritories     GisTerritory[]         @relation("GisTerritoryManager")
+  gisUploadedFiles          GisUploadedFile[]      @relation("GisUserUploadedFiles")
+  gisProposedRealignments   GisRealignment[]       @relation("GisProposedRealignments")
+  gisApprovedRealignments   GisRealignment[]       @relation("GisApprovedRealignments")
+  gisAuditLogs              GisAuditLog[]          @relation("GisUserAuditLogs")
+
+  // BFOV Charts Master Prompt 14 & 15 Relations
+  bfovAuthoredDiagrams      BfovDiagram[]          @relation("BfovDiagramAuthor")
+  bfovCreatedVersions       BfovDiagramVersion[]   @relation("BfovVersionAuthor")
+  bfovCommentsAuthored      BfovDiagramComment[]   @relation("BfovCommentAuthor")
+  bfovDiagramSharesReceived BfovDiagramShare[]     @relation("BfovSharedWithUser")
+  bfovAiGenerations         BfovAiGeneration[]     @relation("BfovAiUser")
+
+  // Enterprise Governance Master Prompt 16 Relations
+  createdIpAssets           RdIpAsset[]            @relation("CreatedIpAssets")
+  ownedComplianceSops       RdComplianceSop[]      @relation("SopOwner")
+  approvedComplianceSops    RdComplianceSop[]      @relation("SopApprover")
+  enterpriseAuditLogs       RdEnterpriseAuditLog[] @relation("EnterpriseAuditUser")
+  createdApiKeys            RdApiKey[]             @relation("ApiKeyCreator")
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -468,6 +537,16 @@ model ErpProject {
   sprints             RdSprint[]
   scheduleBaselines   RdTaskScheduleBaseline[]
   scheduleAlerts      RdScheduleAlert[]
+
+  // Master Prompt 11 Relations
+  conversations       RdConversation[]            @relation("ProjectConversations")
+  calendarEvents      RdCalendarEvent[]           @relation("ProjectCalendarEvents")
+
+  // Master Prompt 14 Relations
+  bfovDiagrams        BfovDiagram[]
+
+  // Master Prompt 16 Relations
+  ipAssets            RdIpAsset[]
 
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
@@ -1562,6 +1641,858 @@ model RdScheduleAlert {
   @@index([taskId])
   @@map("rd_schedule_alerts")
 }
+
+// ==============================================================================
+// EGOLYTICS MASTER PROMPT 11: COLLABORATION, COMMUNICATION & EXTERNAL INTEGRATIONS
+// ==============================================================================
+
+/// Project Discussions & Direct/Group Messaging Channels
+model RdConversation {
+  id          String   @id @default(cuid())
+  tenantId    String
+  projectId   String?
+  type        String   @default("PROJECT_CHANNEL") // PROJECT_CHANNEL, DIRECT_MESSAGE, GROUP_CHAT
+  title       String
+  topic       String?  @db.Text
+  isPrivate   Boolean  @default(false)
+  isArchived  Boolean  @default(false)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant       Tenant                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project      ErpProject?                 @relation("ProjectConversations", fields: [projectId], references: [id], onDelete: Cascade)
+  participants RdConversationParticipant[]
+  messages     RdMessage[]
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([type])
+  @@map("rd_conversations")
+}
+
+/// Participants in a Conversation with Role & Read Pointer
+model RdConversationParticipant {
+  id             String    @id @default(cuid())
+  tenantId       String
+  conversationId String
+  userId         String
+  role           String    @default("MEMBER") // OWNER, ADMIN, MEMBER
+  isMuted        Boolean   @default(false)
+  lastReadAt     DateTime?
+  joinedAt       DateTime  @default(now())
+
+  conversation RdConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User           @relation("UserConversationParticipations", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([conversationId, userId])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("rd_conversation_participants")
+}
+
+/// Real-time Messages & Discussion Threads with Record Linking
+model RdMessage {
+  id               String    @id @default(cuid())
+  tenantId         String
+  conversationId   String
+  senderId         String
+  content          String    @db.Text
+  messageType      String    @default("TEXT") // TEXT, FILE, SYSTEM
+  parentMessageId  String?
+  isPinned         Boolean   @default(false)
+  isEdited         Boolean   @default(false)
+  editedAt         DateTime?
+  isDeleted        Boolean   @default(false)
+  linkedRecordType String?  // PROJECT, TASK, EXPERIMENT, DECISION, RISK, DOCUMENT
+  linkedRecordId   String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  conversation RdConversation        @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User                  @relation("UserSentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  parent       RdMessage?            @relation("MessageThread", fields: [parentMessageId], references: [id], onDelete: SetNull)
+  replies      RdMessage[]           @relation("MessageThread")
+  attachments  RdMessageAttachment[]
+
+  @@index([tenantId])
+  @@index([conversationId])
+  @@index([senderId])
+  @@index([parentMessageId])
+  @@index([linkedRecordType, linkedRecordId])
+  @@map("rd_messages")
+}
+
+/// File and Document Attachments for Messages
+model RdMessageAttachment {
+  id         String   @id @default(cuid())
+  tenantId   String
+  messageId  String
+  fileName   String
+  fileUrl    String   @db.Text
+  fileType   String   @default("application/octet-stream")
+  fileSize   Int      @default(0)
+  uploadedAt DateTime @default(now())
+
+  message RdMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([messageId])
+  @@map("rd_message_attachments")
+}
+
+/// Contextual Comments attached to any R&D entity (Project, Task, Milestone, Decision, Risk, Document, etc.)
+model RdContextComment {
+  id              String    @id @default(cuid())
+  tenantId        String
+  recordType      String    // PROJECT, TASK, MILESTONE, EXPERIMENT, RESEARCH_RECORD, DECISION, RISK, DOCUMENT
+  recordId        String
+  authorId        String
+  content         String    @db.Text
+  parentCommentId String?
+  isEdited        Boolean   @default(false)
+  isDeleted       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  tenant  Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author  User               @relation("UserContextComments", fields: [authorId], references: [id], onDelete: Cascade)
+  parent  RdContextComment?  @relation("CommentThread", fields: [parentCommentId], references: [id], onDelete: SetNull)
+  replies RdContextComment[] @relation("CommentThread")
+
+  @@index([tenantId])
+  @@index([recordType, recordId])
+  @@index([authorId])
+  @@map("rd_context_comments")
+}
+
+/// User @mentions in Messages and Comments
+model RdMention {
+  id              String   @id @default(cuid())
+  tenantId        String
+  sourceType      String   // MESSAGE, COMMENT
+  sourceId        String
+  mentionedUserId String
+  createdById     String
+  isRead          Boolean  @default(false)
+  createdAt       DateTime @default(now())
+
+  @@index([tenantId])
+  @@index([mentionedUserId])
+  @@index([sourceType, sourceId])
+  @@map("rd_mentions")
+}
+
+/// In-App Notifications with deep navigation linking
+model RdNotification {
+  id         String    @id @default(cuid())
+  tenantId   String
+  userId     String
+  type       String    // MENTION, REPLY, CALENDAR_INVITE, TASK_ASSIGNED, INTEGRATION_ALERT, SYSTEM
+  title      String
+  message    String    @db.Text
+  linkUrl    String?
+  recordType String?
+  recordId   String?
+  isRead     Boolean   @default(false)
+  readAt     DateTime?
+  createdAt  DateTime  @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation("UserNotifications", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId, isRead])
+  @@index([createdAt])
+  @@map("rd_notifications")
+}
+
+/// User Notification Preferences
+model RdNotificationPreference {
+  id                    String  @id @default(cuid())
+  tenantId              String
+  userId                String  @unique
+  emailNotifications    Boolean @default(true)
+  inAppNotifications    Boolean @default(true)
+  mentionNotifications  Boolean @default(true)
+  calendarNotifications Boolean @default(true)
+  slackSync             Boolean @default(false)
+  teamsSync             Boolean @default(false)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("rd_notification_preferences")
+}
+
+/// Collaborative Shared Calendars & Project Events
+model RdCalendarEvent {
+  id             String    @id @default(cuid())
+  tenantId       String
+  projectId      String?
+  createdById    String
+  title          String
+  description    String?   @db.Text
+  eventType      String    @default("PROJECT_MEETING") // PROJECT_MEETING, RESEARCH_REVIEW, STAGE_GATE_MEETING, TASK_DEADLINE, PROJECT_MILESTONE, EXPERIMENT_SCHEDULE, RESOURCE_RESERVATION
+  location       String?
+  meetingUrl     String?
+  startTime      DateTime
+  endTime        DateTime
+  allDay         Boolean   @default(false)
+  isRecurring    Boolean   @default(false)
+  recurrenceRule String?
+  status         String    @default("CONFIRMED") // CONFIRMED, CANCELLED, TENTATIVE
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project      ErpProject?             @relation("ProjectCalendarEvents", fields: [projectId], references: [id], onDelete: SetNull)
+  creator      User                    @relation("UserCreatedEvents", fields: [createdById], references: [id], onDelete: Cascade)
+  participants RdCalendarParticipant[]
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([startTime, endTime])
+  @@index([eventType])
+  @@map("rd_calendar_events")
+}
+
+/// Calendar Event Participants & Attendance Status
+model RdCalendarParticipant {
+  id       String  @id @default(cuid())
+  tenantId String
+  eventId  String
+  userId   String?
+  email    String?
+  status   String  @default("PENDING") // ACCEPTED, DECLINED, TENTATIVE, PENDING
+  isHost   Boolean @default(false)
+
+  event RdCalendarEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  user  User?           @relation("UserCalendarParticipations", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([eventId])
+  @@index([userId])
+  @@map("rd_calendar_participants")
+}
+
+/// External Integration Configurations (Slack, Microsoft Teams, Webhooks)
+model RdIntegrationConfig {
+  id             String    @id @default(cuid())
+  tenantId       String
+  provider       String    // SLACK, TEAMS, GENERIC_WEBHOOK
+  name           String
+  status         String    @default("INACTIVE") // ACTIVE, INACTIVE, ERROR, DISCONNECTED
+  webhookUrl     String?   @db.Text
+  channelMapping Json?
+  eventsConfig   Json?
+  lastSyncAt     DateTime?
+  errorMessage   String?   @db.Text
+  createdById    String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  tenant Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  logs   RdIntegrationLog[]
+
+  @@index([tenantId])
+  @@index([provider, status])
+  @@map("rd_integration_configs")
+}
+
+/// External Integration Activity & Audit Logs
+model RdIntegrationLog {
+  id             String   @id @default(cuid())
+  tenantId       String
+  configId       String
+  provider       String
+  event          String   // NOTIFICATION_SENT, CHANNEL_MESSAGE, SYNC_EVENT, CONNECTION_TEST
+  status         String   @default("SUCCESS") // SUCCESS, FAILED
+  payloadSummary String?  @db.Text
+  errorDetails   String?  @db.Text
+  createdAt      DateTime @default(now())
+
+  config RdIntegrationConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([configId])
+  @@index([createdAt])
+  @@map("rd_integration_logs")
+}
+
+// ==============================================================================
+// EGOLYTICS MASTER PROMPT 12: R&D DASHBOARD, REPORTING & ANALYTICS ENGINE
+// ==============================================================================
+
+/// Configurable KPI Framework
+model RdKpi {
+  id                 String          @id @default(cuid())
+  tenantId           String
+  code               String
+  name               String
+  description        String?         @db.Text
+  calculationFormula String?         @db.Text
+  category           String          @default("PORTFOLIO") // PORTFOLIO, DELIVERY, INNOVATION, FINANCIAL, RESOURCE, QUALITY
+  targetValue        Float           @default(0.0)
+  currentValue       Float           @default(0.0)
+  unit               String          @default("PERCENT") // PERCENT, CURRENCY, COUNT, DAYS, HOURS, RATIO
+  measurementPeriod  String          @default("MONTHLY") // MONTHLY, QUARTERLY, ANNUAL, WEEKLY
+  status             String          @default("ON_TRACK") // ON_TRACK, AT_RISK, CRITICAL, EXCEEDED
+  trend              String          @default("STABLE") // UP, DOWN, STABLE
+  ownerId            String?
+  createdAt          DateTime        @default(now())
+  updatedAt          DateTime        @updatedAt
+
+  tenant  Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner   User?          @relation("UserOwnedKpis", fields: [ownerId], references: [id], onDelete: SetNull)
+  history RdKpiHistory[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([category])
+  @@index([status])
+  @@map("rd_kpis")
+}
+
+/// Historical Track of KPI Values over Measurement Periods
+model RdKpiHistory {
+  id          String   @id @default(cuid())
+  tenantId    String
+  kpiId       String
+  period      String
+  targetValue Float
+  actualValue Float
+  variance    Float    @default(0.0)
+  notes       String?  @db.Text
+  recordedAt  DateTime @default(now())
+
+  kpi RdKpi @relation(fields: [kpiId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([kpiId])
+  @@index([recordedAt])
+  @@map("rd_kpi_history")
+}
+
+/// User Custom Dashboard Layout and Widget Preferences
+model RdDashboardPreference {
+  id            String   @id @default(cuid())
+  tenantId      String
+  userId        String
+  dashboardType String   @default("EXECUTIVE") // EXECUTIVE, PORTFOLIO, EXECUTION, FINANCIAL, RESOURCES
+  layoutConfig  Json
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, userId, dashboardType])
+  @@index([tenantId])
+  @@index([userId])
+  @@map("rd_dashboard_preferences")
+}
+
+// ==============================================================================
+// MASTER PROMPT 13: MAPLYTICS – GIS & TERRITORY MANAGEMENT
+// ==============================================================================
+
+/// Hierarchical Administrative & Geographic Regions
+model GisRegion {
+  id              String         @id @default(cuid())
+  tenantId        String
+  code            String
+  name            String
+  type            String         @default("METRO") // COUNTRY, STATE, METRO, DISTRICT
+  parentRegionId  String?
+  boundaryGeoJson String?        @db.LongText
+  centerLat       Float?
+  centerLng       Float?
+  status          String         @default("ACTIVE")
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  tenant          Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentRegion    GisRegion?     @relation("RegionHierarchy", fields: [parentRegionId], references: [id], onDelete: SetNull)
+  subRegions      GisRegion[]    @relation("RegionHierarchy")
+  territories     GisTerritory[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([type])
+  @@map("gis_regions")
+}
+
+/// Operational Geographic Sales & Research Territories with GeoJSON Boundaries
+model GisTerritory {
+  id              String                 @id @default(cuid())
+  tenantId        String
+  territoryId     String?
+  code            String
+  name            String
+  regionId        String?
+  assignedUserId  String?
+  boundaryGeoJson String                 @db.LongText
+  centerLat       Float                  @default(37.7749)
+  centerLng       Float                  @default(-122.4194)
+  areaSqKm        Float                  @default(0.0)
+  status          String                 @default("ACTIVE") // ACTIVE, DRAFT, REALIGNMENT_PROPOSED, ARCHIVED
+  color           String                 @default("#0ea5e9")
+  targetQuota     Float                  @default(0.0)
+  metadata        Json?
+  createdAt       DateTime               @default(now())
+  updatedAt       DateTime               @updatedAt
+
+  tenant          Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  region          GisRegion?             @relation(fields: [regionId], references: [id], onDelete: SetNull)
+  assignedUser    User?                  @relation("GisTerritoryManager", fields: [assignedUserId], references: [id], onDelete: SetNull)
+  features        GisFeature[]
+  realignments    GisRealignment[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([regionId])
+  @@index([assignedUserId])
+  @@index([status])
+  @@map("gis_territories")
+}
+
+/// Dynamic Map Visualizer Layers (Territory, Leads, Accounts, Uploaded, Drawn, Heatmap)
+model GisLayer {
+  id           String        @id @default(cuid())
+  tenantId     String
+  code         String
+  name         String
+  layerType    String        @default("ACCOUNTS") // TERRITORY_BOUNDARIES, LEADS, ACCOUNTS, UPLOADED_FILE, DRAWING, ARCGIS
+  isVisible    Boolean       @default(true)
+  opacity      Float         @default(1.0)
+  displayOrder Int           @default(1)
+  color        String        @default("#3b82f6")
+  config       Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  features     GisFeature[]
+  files        GisUploadedFile[]
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+  @@index([layerType])
+  @@map("gis_layers")
+}
+
+/// Spatial Features (Points, Lines, Polygons) with Properties & Coordinates
+model GisFeature {
+  id           String        @id @default(cuid())
+  tenantId     String
+  layerId      String?
+  territoryId  String?
+  name         String
+  featureType  String        @default("ACCOUNT") // LEAD, PROSPECT, ACCOUNT, ASSET, WAYPOINT, DRAWN
+  geometryType String        @default("POINT") // POINT, LINESTRING, POLYGON
+  latitude     Float?
+  longitude    Float?
+  coordinates  Json
+  properties   Json?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  layer        GisLayer?     @relation(fields: [layerId], references: [id], onDelete: SetNull)
+  territory    GisTerritory? @relation(fields: [territoryId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([layerId])
+  @@index([territoryId])
+  @@index([featureType])
+  @@map("gis_features")
+}
+
+/// Uploaded Geographic Shapefile, GeoJSON & KML Files
+model GisUploadedFile {
+  id            String    @id @default(cuid())
+  tenantId      String
+  uploadedById  String?
+  filename      String
+  fileType      String    @default("GEOJSON") // GEOJSON, KML, SHAPEFILE
+  fileSizeBytes Int       @default(0)
+  featureCount  Int       @default(0)
+  status        String    @default("PARSED") // PARSED, FAILED
+  errorMessage  String?   @db.Text
+  layerId       String?
+  rawContent    String?   @db.LongText
+  createdAt     DateTime  @default(now())
+
+  tenant        Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploadedBy    User?     @relation("GisUserUploadedFiles", fields: [uploadedById], references: [id], onDelete: SetNull)
+  layer         GisLayer? @relation(fields: [layerId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([uploadedById])
+  @@map("gis_uploaded_files")
+}
+
+/// Territory Realignment Proposals & Boundary Delta Comparison
+model GisRealignment {
+  id                     String       @id @default(cuid())
+  tenantId               String
+  territoryId            String
+  proposalName           String
+  status                 String       @default("DRAFT") // DRAFT, SUBMITTED, APPROVED, REJECTED
+  proposedByUserId       String?
+  approvedByUserId       String?
+  currentBoundary        String       @db.LongText
+  proposedBoundary       String       @db.LongText
+  currentAreaSqKm        Float        @default(0.0)
+  proposedAreaSqKm       Float        @default(0.0)
+  currentAssignedUserId  String?
+  proposedAssignedUserId String?
+  impactSummary          Json?
+  justification          String?      @db.Text
+  decidedAt              DateTime?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  tenant                 Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  territory              GisTerritory @relation(fields: [territoryId], references: [id], onDelete: Cascade)
+  proposedBy             User?        @relation("GisProposedRealignments", fields: [proposedByUserId], references: [id], onDelete: SetNull)
+  approvedBy             User?        @relation("GisApprovedRealignments", fields: [approvedByUserId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([territoryId])
+  @@index([status])
+  @@map("gis_realignments")
+}
+
+/// ArcGIS Feature Service & WebMap Secure Configuration
+model GisArcgisConfig {
+  id                     String    @id @default(cuid())
+  tenantId               String
+  serviceName            String
+  serviceUrl             String    @db.VarChar(512)
+  authType               String    @default("API_KEY") // API_KEY, TOKEN, PUBLIC, OAUTH2
+  apiKeyMasked           String?
+  apiKeyEncrypted        String?   @db.Text
+  clientId               String?
+  clientSecretEncrypted  String?   @db.Text
+  status                 String    @default("DISCONNECTED") // CONNECTED, DISCONNECTED, ERROR
+  layerCount             Int       @default(0)
+  lastTestedAt           DateTime?
+  lastError              String?   @db.Text
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  tenant                 Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, serviceName])
+  @@index([tenantId])
+  @@map("gis_arcgis_configs")
+}
+
+/// GIS Spatial Audit Logs for Boundary Alterations and Approvals
+model GisAuditLog {
+  id         String   @id @default(cuid())
+  tenantId   String
+  userId     String?
+  action     String // CREATE_TERRITORY, UPDATE_BOUNDARY, UPLOAD_FILE, PROPOSE_REALIGNMENT, APPROVE_REALIGNMENT
+  entityType String // TERRITORY, LAYER, REALIGNMENT, ARCGIS
+  entityId   String
+  details    Json?
+  createdAt  DateTime @default(now())
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User?    @relation("GisUserAuditLogs", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("gis_audit_logs")
+}
+
+// ==============================================================================
+// MASTER PROMPT 14: BFOV CHARTS – CORE DIAGRAMMING ENGINE
+// ==============================================================================
+
+/// Core BFOV Visual Canvas Diagram with Structured Graph Content
+model BfovDiagram {
+  id           String    @id @default(cuid())
+  tenantId     String
+  userId       String?
+  projectId    String?
+  title        String    @db.VarChar(255)
+  description  String?   @db.Text
+  diagramType  String    @default("FLOWCHART") // FLOWCHART, UML, ERD, NETWORK, GENERAL, SEQUENCE
+  category     String    @default("General") // Architecture, Process, Data Model, Network, R&D
+  tags         Json?     // Array of string tags e.g. ["api", "auth", "flow"]
+  isPublic     Boolean   @default(false)
+  isTemplate   Boolean   @default(false)
+  version      Int       @default(1)
+  nodeCount    Int       @default(0)
+  edgeCount    Int       @default(0)
+  graphData    Json      // Structured { nodes: [], edges: [], viewport: { x, y, zoom } }
+  thumbnail    String?   @db.MediumText // SVG thumbnail or encoded preview
+  metadata     Json?     // Layout settings, grid snap, canvas size
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author       User?     @relation("BfovDiagramAuthor", fields: [userId], references: [id], onDelete: SetNull)
+  project      ErpProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  versions     BfovDiagramVersion[]
+  comments     BfovDiagramComment[]
+  shares       BfovDiagramShare[]
+  aiGenerations BfovAiGeneration[]
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([projectId])
+  @@index([diagramType])
+  @@index([category])
+  @@map("bfov_diagrams")
+}
+
+/// Version History Snapshot for BFOV Diagrams
+model BfovDiagramVersion {
+  id            String       @id @default(cuid())
+  diagramId     String
+  tenantId      String
+  version       Int
+  title         String
+  changeSummary String?      @db.Text
+  graphData     Json
+  nodeCount     Int          @default(0)
+  edgeCount     Int          @default(0)
+  createdById   String?
+  createdAt     DateTime     @default(now())
+
+  diagram       BfovDiagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  tenant        Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  createdBy     User?        @relation("BfovVersionAuthor", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([diagramId, version])
+  @@index([tenantId])
+  @@index([diagramId])
+  @@map("bfov_diagram_versions")
+}
+
+/// Built-in and Custom Diagram Templates
+model BfovDiagramTemplate {
+  id               String    @id @default(cuid())
+  templateKey      String    @unique
+  title            String
+  description      String?   @db.Text
+  category         String    // Flowchart, UML, ERD, Network
+  diagramType      String    // FLOWCHART, UML, ERD, NETWORK
+  defaultGraphData Json
+  icon             String?
+  isSystem         Boolean   @default(true)
+  createdAt        DateTime  @default(now())
+
+  @@index([category])
+  @@index([diagramType])
+  @@map("bfov_diagram_templates")
+}
+
+/// Contextual Comments & Collaboration Feedback on BFOV Diagrams
+model BfovDiagramComment {
+  id           String       @id @default(cuid())
+  diagramId    String
+  tenantId     String
+  userId       String
+  content      String       @db.Text
+  nodeId       String?
+  isResolved   Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  diagram      BfovDiagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  author       User         @relation("BfovCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([diagramId])
+  @@index([tenantId])
+  @@index([userId])
+  @@index([nodeId])
+  @@map("bfov_diagram_comments")
+}
+
+/// Sharing and Granular RBAC Permissions for Diagrams (VIEWER / EDITOR)
+model BfovDiagramShare {
+  id               String       @id @default(cuid())
+  diagramId        String
+  tenantId         String
+  sharedWithUserId String?
+  sharedWithEmail  String?
+  role             String       @default("VIEWER") // VIEWER, EDITOR
+  createdAt        DateTime     @default(now())
+
+  diagram          BfovDiagram  @relation(fields: [diagramId], references: [id], onDelete: Cascade)
+  tenant           Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sharedWithUser   User?        @relation("BfovSharedWithUser", fields: [sharedWithUserId], references: [id], onDelete: SetNull)
+
+  @@index([diagramId])
+  @@index([tenantId])
+  @@index([sharedWithUserId])
+  @@map("bfov_diagram_shares")
+}
+
+/// AI Text-to-Diagram & AI-Assisted Editing Audit Log
+model BfovAiGeneration {
+  id           String       @id @default(cuid())
+  tenantId     String
+  userId       String?
+  diagramId    String?
+  prompt       String       @db.Text
+  diagramType  String
+  engine       String       @default("NATIVE_SYNTHESIS") // GEMINI, OLLAMA, NATIVE_SYNTHESIS
+  rawResponse  String?      @db.MediumText
+  status       String       @default("SUCCESS") // SUCCESS, FAILED
+  createdAt    DateTime     @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user         User?        @relation("BfovAiUser", fields: [userId], references: [id], onDelete: SetNull)
+  diagram      BfovDiagram? @relation(fields: [diagramId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([diagramId])
+  @@map("bfov_ai_generations")
+}
+
+// ==============================================================================
+// MASTER PROMPT 16: IP, COMPLIANCE, ENTERPRISE AUDIT & API ACCESS
+// ==============================================================================
+
+/// Intellectual Property & Patent Registry
+model RdIpAsset {
+  id                String       @id @default(cuid())
+  tenantId          String
+  projectId         String?
+  title             String       @db.VarChar(255)
+  description       String?      @db.Text
+  category          String       @default("PATENT") // PATENT, TRADEMARK, COPYRIGHT, INDUSTRIAL_DESIGN, TRADE_SECRET
+  ipType            String       @default("PATENT")
+  status            String       @default("INVENTION_DISCLOSURE") // INVENTION_DISCLOSURE, INITIAL_REVIEW, FILING_PREP, APPLICATION_SUBMITTED, EXAMINATION, GRANTED, REJECTED, EXPIRED, ABANDONED
+  jurisdiction      String       @default("US") // US, EP, WO, IN, JP, CN, UK
+  applicationNumber String?      @db.VarChar(128)
+  patentNumber      String?      @db.VarChar(128)
+  filingDate        DateTime?
+  grantDate         DateTime?
+  expiryDate        DateTime?
+  priorityDate      DateTime?
+  claimsCount       Int          @default(1)
+  inventors         Json?        // Array of strings
+  ownerEntity       String?      @default("EgoLytics R&D Division")
+  supportingDocs    Json?        // Metadata of uploaded disclosures/attachments
+  notes             String?      @db.Text
+  createdById       String?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  tenant            Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  project           ErpProject?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  creator           User?        @relation("CreatedIpAssets", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([projectId])
+  @@index([category])
+  @@index([status])
+  @@index([jurisdiction])
+  @@index([createdById])
+  @@map("rd_ip_assets")
+}
+
+/// Regulatory Compliance & Standard Operating Procedures (SOP)
+model RdComplianceSop {
+  id                    String       @id @default(cuid())
+  tenantId              String
+  sopIdentifier         String       @db.VarChar(64) // e.g. "SOP-RD-042"
+  title                 String       @db.VarChar(255)
+  description           String?      @db.Text
+  version               String       @default("1.0") @db.VarChar(32)
+  category              String       @default("LAB_SAFETY") // LAB_SAFETY, DATA_INTEGRITY, REGULATORY, CLINICAL, QUALITY
+  regulatoryStandard    String?      @default("ISO 9001 / GLP") @db.VarChar(128)
+  approvalStatus        String       @default("DRAFT") // DRAFT, UNDER_REVIEW, APPROVED, OBSOLETE
+  effectiveDate         DateTime?
+  reviewDate            DateTime?
+  ownerId               String?
+  approvedById          String?
+  approvedAt            DateTime?
+  checklists            Json?        // Verification steps
+  nonComplianceRecords  Json?        // Incidents and corrective action tracking
+  supportingDocs        Json?
+  createdAt             DateTime     @default(now())
+  updatedAt             DateTime     @updatedAt
+
+  tenant                Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  owner                 User?        @relation("SopOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  approver              User?        @relation("SopApprover", fields: [approvedById], references: [id], onDelete: SetNull)
+
+  @@unique([tenantId, sopIdentifier])
+  @@index([tenantId])
+  @@index([category])
+  @@index([approvalStatus])
+  @@index([ownerId])
+  @@index([approvedById])
+  @@map("rd_compliance_sops")
+}
+
+/// Universal Enterprise Audit Trail (Immutable governance history)
+model RdEnterpriseAuditLog {
+  id         String       @id @default(cuid())
+  tenantId   String
+  userId     String?
+  actorName  String?      @db.VarChar(191)
+  action     String       @db.VarChar(64)
+  entityType String       @db.VarChar(64)
+  entityId   String       @db.VarChar(191)
+  details    Json?
+  ipAddress  String?      @db.VarChar(64)
+  userAgent  String?      @db.VarChar(255)
+  createdAt  DateTime     @default(now())
+
+  tenant     Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user       User?        @relation("EnterpriseAuditUser", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([userId])
+  @@index([action])
+  @@index([entityType])
+  @@index([createdAt])
+  @@map("rd_enterprise_audit_logs")
+}
+
+/// Scoped Enterprise API Key Management
+model RdApiKey {
+  id              String       @id @default(cuid())
+  tenantId        String
+  createdById     String?
+  name            String       @db.VarChar(191)
+  keyPrefix       String       @db.VarChar(64) // e.g. "egokey_live_8f3a..."
+  keyHash         String       @db.VarChar(255) // SHA-256 hash
+  scopes          Json         // Array of string permissions
+  rateLimitPerMin Int          @default(60)
+  status          String       @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+  expiresAt       DateTime?
+  lastUsedAt      DateTime?
+  usageCount      Int          @default(0)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tenant          Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  creator         User?        @relation("ApiKeyCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([tenantId])
+  @@index([createdById])
+  @@index([keyPrefix])
+  @@index([status])
+  @@map("rd_api_keys")
+}
+
+
+
 
 
 

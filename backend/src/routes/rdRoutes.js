@@ -9,6 +9,11 @@ const rdIdeaController = require('../controllers/rdIdeaController');
 const rdScoringController = require('../controllers/rdScoringController');
 const rdGovernanceController = require('../controllers/rdGovernanceController');
 const rdTaskController = require('../controllers/rdTaskController');
+const rdCollaborationController = require('../controllers/rdCollaborationController');
+const rdCalendarController = require('../controllers/rdCalendarController');
+const rdIntegrationController = require('../controllers/rdIntegrationController');
+const rdAnalyticsController = require('../controllers/rdAnalyticsController');
+const rdEnterpriseRoutes = require('./rdEnterpriseRoutes');
 const { authenticateToken } = require('../middleware/auth');
 const { validateTenantScope } = require('../middleware/tenantIsolation');
 
@@ -208,5 +213,83 @@ router.post('/schedule/alerts/:id/resolve', (req, res, next) => rdTaskController
 router.get('/governance/schedule/alerts', (req, res, next) => rdTaskController.getAlerts(req, res, next));
 router.post('/governance/schedule/alerts/scan', (req, res, next) => rdTaskController.scanAlerts(req, res, next));
 router.post('/governance/schedule/alerts/:id/resolve', (req, res, next) => rdTaskController.resolveAlert(req, res, next));
+
+// ==============================================================================
+// MASTER PROMPT 11: COLLABORATION, COMMUNICATION & EXTERNAL INTEGRATIONS
+// ==============================================================================
+
+// Conversations (Project Channels, Direct Messages, Group Chats)
+router.get('/collaboration/conversations', (req, res, next) => rdCollaborationController.getConversations(req, res, next));
+router.post('/collaboration/conversations', (req, res, next) => rdCollaborationController.createConversation(req, res, next));
+router.get('/collaboration/conversations/:id', (req, res, next) => rdCollaborationController.getConversationById(req, res, next));
+router.put('/collaboration/conversations/:id', (req, res, next) => rdCollaborationController.updateConversation(req, res, next));
+router.post('/collaboration/conversations/:id/participants', (req, res, next) => rdCollaborationController.addParticipant(req, res, next));
+router.delete('/collaboration/conversations/:id/participants/:userId', (req, res, next) => rdCollaborationController.removeParticipant(req, res, next));
+
+// Messages & Threads
+router.get('/collaboration/conversations/:conversationId/messages', (req, res, next) => rdCollaborationController.getMessages(req, res, next));
+router.post('/collaboration/conversations/:conversationId/messages', (req, res, next) => rdCollaborationController.sendMessage(req, res, next));
+router.put('/collaboration/messages/:id', (req, res, next) => rdCollaborationController.editMessage(req, res, next));
+router.delete('/collaboration/messages/:id', (req, res, next) => rdCollaborationController.deleteMessage(req, res, next));
+router.post('/collaboration/messages/:id/pin', (req, res, next) => rdCollaborationController.pinMessage(req, res, next));
+router.get('/collaboration/search', (req, res, next) => rdCollaborationController.searchMessages(req, res, next));
+
+// Contextual Comments
+router.get('/collaboration/comments', (req, res, next) => rdCollaborationController.getComments(req, res, next));
+router.post('/collaboration/comments', (req, res, next) => rdCollaborationController.createComment(req, res, next));
+router.put('/collaboration/comments/:id', (req, res, next) => rdCollaborationController.editComment(req, res, next));
+router.delete('/collaboration/comments/:id', (req, res, next) => rdCollaborationController.deleteComment(req, res, next));
+
+// Notifications & Preferences
+router.get('/collaboration/notifications', (req, res, next) => rdCollaborationController.getNotifications(req, res, next));
+router.post('/collaboration/notifications/:id/read', (req, res, next) => rdCollaborationController.markNotificationRead(req, res, next));
+router.post('/collaboration/notifications/read-all', (req, res, next) => rdCollaborationController.markAllNotificationsRead(req, res, next));
+router.get('/collaboration/preferences', (req, res, next) => rdCollaborationController.getPreferences(req, res, next));
+router.put('/collaboration/preferences', (req, res, next) => rdCollaborationController.updatePreferences(req, res, next));
+
+// Shared Calendars & Events
+router.get('/collaboration/calendar/events', (req, res, next) => rdCalendarController.getEvents(req, res, next));
+router.post('/collaboration/calendar/events', (req, res, next) => rdCalendarController.createEvent(req, res, next));
+router.put('/collaboration/calendar/events/:id', (req, res, next) => rdCalendarController.updateEvent(req, res, next));
+router.delete('/collaboration/calendar/events/:id', (req, res, next) => rdCalendarController.deleteEvent(req, res, next));
+router.post('/collaboration/calendar/events/:id/respond', (req, res, next) => rdCalendarController.respondInvitation(req, res, next));
+router.post('/collaboration/calendar/conflicts', (req, res, next) => rdCalendarController.checkConflicts(req, res, next));
+
+// External Integrations (Slack, Teams, Webhooks)
+router.get('/collaboration/integrations', (req, res, next) => rdIntegrationController.getIntegrations(req, res, next));
+router.post('/collaboration/integrations/:provider', (req, res, next) => rdIntegrationController.saveConfig(req, res, next));
+router.post('/collaboration/integrations/:id/test', (req, res, next) => rdIntegrationController.testConnection(req, res, next));
+router.post('/collaboration/integrations/:id/disconnect', (req, res, next) => rdIntegrationController.disconnect(req, res, next));
+router.get('/collaboration/integrations/logs', (req, res, next) => rdIntegrationController.getLogs(req, res, next));
+router.post('/collaboration/integrations/logs/:id/retry', (req, res, next) => rdIntegrationController.retryLog(req, res, next));
+
+// ==============================================================================
+// MASTER PROMPT 12: R&D DASHBOARD, REPORTING & ANALYTICS ENGINE
+// ==============================================================================
+
+// Multi-Dimensional Analytics Aggregation
+router.get('/analytics/executive', (req, res, next) => rdAnalyticsController.getExecutiveOverview(req, res, next));
+router.get('/analytics/portfolio', (req, res, next) => rdAnalyticsController.getPortfolioAnalytics(req, res, next));
+router.get('/analytics/innovation', (req, res, next) => rdAnalyticsController.getInnovationAnalytics(req, res, next));
+router.get('/analytics/execution', (req, res, next) => rdAnalyticsController.getExecutionAnalytics(req, res, next));
+router.get('/analytics/financial', (req, res, next) => rdAnalyticsController.getFinancialAnalytics(req, res, next));
+router.get('/analytics/resources', (req, res, next) => rdAnalyticsController.getResourceAnalytics(req, res, next));
+router.get('/analytics/risks-decisions', (req, res, next) => rdAnalyticsController.getRiskDecisionAnalytics(req, res, next));
+
+// KPI Framework & Recalculation
+router.get('/analytics/kpis', (req, res, next) => rdAnalyticsController.getKpis(req, res, next));
+router.post('/analytics/kpis/recalculate', (req, res, next) => rdAnalyticsController.recalculateKpis(req, res, next));
+router.put('/analytics/kpis/:id/target', (req, res, next) => rdAnalyticsController.updateKpiTarget(req, res, next));
+router.get('/analytics/kpis/:id/history', (req, res, next) => rdAnalyticsController.getKpiHistory(req, res, next));
+
+// Reporting Engine & Exports
+router.get('/analytics/reports', (req, res, next) => rdAnalyticsController.generateReport(req, res, next));
+router.get('/analytics/export/csv', (req, res, next) => rdAnalyticsController.exportCsv(req, res, next));
+router.get('/analytics/export/json', (req, res, next) => rdAnalyticsController.exportJson(req, res, next));
+
+// Dashboard Layout Customization & Preferences
+router.get('/analytics/preferences', (req, res, next) => rdAnalyticsController.getPreferences(req, res, next));
+router.put('/analytics/preferences', (req, res, next) => rdAnalyticsController.savePreferences(req, res, next));
+router.delete('/analytics/preferences', (req, res, next) => rdAnalyticsController.resetPreferences(req, res, next));
 
 module.exports = router;
