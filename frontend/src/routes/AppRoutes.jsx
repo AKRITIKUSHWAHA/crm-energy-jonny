@@ -83,6 +83,7 @@ import { MyFavApps } from '../pages/crm/myapps/MyFavApps';
 import { InternalAiSearch } from '../pages/crm/search/InternalAiSearch';
 import { KnowledgeBase } from '../pages/crm/support/KnowledgeBase';
 import { EgolyticsHub } from '../pages/rd/EgolyticsHub';
+import { RdBfovCharts } from '../pages/rd/RdBfovCharts';
 
 import { CrmAnalytics } from '../pages/crm/CrmAnalytics';
 import { CrmReports } from '../pages/crm/CrmReports';
@@ -258,8 +259,16 @@ export const AppRoutes = () => {
           <Route path="/crm/ai-video" element={<AiVideoAgent />} />
           <Route path="/crm/marketing" element={<AiMarketing />} />
           <Route path="/crm/territory" element={<TerritoryManagement />} />
+          <Route path="/crm/maplytics" element={<TerritoryManagement />} />
           <Route path="/crm/rd" element={<EgolyticsHub />} />
           <Route path="/crm/rd/*" element={<EgolyticsHub />} />
+          <Route path="/crm/governance" element={<EgolyticsHub />} />
+          <Route path="/crm/compliance" element={<EgolyticsHub />} />
+          <Route path="/crm/ip" element={<EgolyticsHub />} />
+          <Route path="/crm/diagrams" element={<RdBfovCharts />} />
+          <Route path="/crm/bfov" element={<RdBfovCharts />} />
+          <Route path="/rd/diagrams" element={<RdBfovCharts />} />
+          <Route path="/rd/bfov" element={<RdBfovCharts />} />
           <Route path="/crm/my-apps" element={<MyFavApps />} />
           <Route path="/crm/search" element={<InternalAiSearch />} />
           <Route path="/crm/knowledge-base" element={<KnowledgeBase />} />

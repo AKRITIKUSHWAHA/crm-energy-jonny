@@ -28,7 +28,9 @@ import {
   Lightbulb,
   Award,
   Filter,
-  CheckSquare
+  CheckSquare,
+  MessageSquare,
+  BarChart3
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -60,6 +62,10 @@ import { RdIdeaRanking } from './RdIdeaRanking';
 import { RdInnovationPipeline } from './RdInnovationPipeline';
 import { RdStageGate } from './RdStageGate';
 import { RdTasks } from './RdTasks';
+import { RdCollaboration } from './RdCollaboration';
+import { RdAnalytics } from './RdAnalytics';
+import { RdBfovCharts } from './RdBfovCharts';
+import { RdEnterpriseGovernance } from './RdEnterpriseGovernance';
 
 export const EgolyticsHub = () => {
   const { t } = useLanguage();
@@ -69,6 +75,10 @@ export const EgolyticsHub = () => {
   const navigate = useNavigate();
 
   const getTabFromPath = (pathname) => {
+    if (pathname.includes('/governance') || pathname.includes('/enterprise') || pathname.includes('/compliance') || pathname.includes('/patents')) return 'governance';
+    if (pathname.includes('/bfov') || pathname.includes('/diagrams')) return 'bfov';
+    if (pathname.includes('/analytics') || pathname.includes('/reports') || pathname.includes('/dashboard')) return 'analytics';
+    if (pathname.includes('/collaboration') || pathname.includes('/messages') || pathname.includes('/calendar')) return 'collaboration';
     if (pathname.includes('/tasks') || pathname.includes('/sprints') || pathname.includes('/backlog') || pathname.includes('/schedule')) return 'tasks';
     if (pathname.includes('/stagegate') || pathname.includes('/gates')) return 'stagegate';
     if (pathname.includes('/ideas')) return 'ideas';
@@ -92,7 +102,11 @@ export const EgolyticsHub = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'tasks') navigate('/crm/rd/tasks');
+    if (tabId === 'governance') navigate('/crm/rd/governance');
+    else if (tabId === 'bfov') navigate('/crm/rd/bfov');
+    else if (tabId === 'analytics') navigate('/crm/rd/analytics');
+    else if (tabId === 'collaboration') navigate('/crm/rd/collaboration');
+    else if (tabId === 'tasks') navigate('/crm/rd/tasks');
     else if (tabId === 'stagegate') navigate('/crm/rd/stagegate');
     else if (tabId === 'ideas') navigate('/crm/rd/ideas');
     else if (tabId === 'ranking') navigate('/crm/rd/ranking');
@@ -265,6 +279,10 @@ export const EgolyticsHub = () => {
           <div style={{ borderBottom: '1px solid var(--border)', padding: '0 1rem' }}>
             <Tabs
               tabs={[
+                { id: 'governance', label: 'IP, Compliance & Enterprise QA', icon: ShieldCheck },
+                { id: 'bfov', label: 'BFOV Diagramming Studio', icon: Workflow },
+                { id: 'analytics', label: 'Analytics & Dashboards', icon: BarChart3 },
+                { id: 'collaboration', label: 'Collaboration & Integrations', icon: MessageSquare },
                 { id: 'tasks', label: 'Tasks & Sprints', icon: CheckSquare },
                 { id: 'stagegate', label: 'Stage-Gate Governance', icon: Workflow },
                 { id: 'ideas', label: 'Idea Management', icon: Lightbulb },
@@ -285,6 +303,18 @@ export const EgolyticsHub = () => {
           </div>
 
           <div style={{ padding: '1.5rem' }}>
+            {/* TAB: ENTERPRISE GOVERNANCE, IP & COMPLIANCE (MASTER PROMPT 16) */}
+            {activeTab === 'governance' && <RdEnterpriseGovernance />}
+
+            {/* TAB: BFOV CHARTS & DIAGRAMMING ENGINE (MASTER PROMPT 14) */}
+            {activeTab === 'bfov' && <RdBfovCharts />}
+
+            {/* TAB: R&D DASHBOARDS, ANALYTICS & REPORTING (MASTER PROMPT 12) */}
+            {activeTab === 'analytics' && <RdAnalytics />}
+
+            {/* TAB: COLLABORATION, COMMUNICATION & INTEGRATIONS (MASTER PROMPT 11) */}
+            {activeTab === 'collaboration' && <RdCollaboration />}
+
             {/* TAB: TASKS, SPRINTS & SCHEDULING (REQ 11-20) */}
             {activeTab === 'tasks' && <RdTasks />}
 

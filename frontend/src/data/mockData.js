@@ -34,7 +34,8 @@ import {
   Compass,
   Lightbulb,
   Award,
-  Workflow
+  Workflow,
+  BarChart3
 } from 'lucide-react';
 
 export const crmNavigation = [
@@ -45,13 +46,16 @@ export const crmNavigation = [
   { id: 'pipeline', label: 'Sales Pipeline', icon: Kanban, path: '/crm/pipeline', section: 'Core CRM' },
   { id: 'tasks', label: 'Tasks & Reminders', icon: CheckSquare, path: '/crm/tasks', section: 'Core CRM' },
   { id: 'communication', label: 'Communication Hub', icon: MessageSquare, path: '/crm/communication', section: 'Core CRM' },
-  { id: 'territory', label: 'Territory Management', icon: MapPin, path: '/crm/territory', section: 'Core CRM' },
+  { id: 'territory', label: 'Maplytics GIS & Territories', icon: Compass, path: '/crm/territory', section: 'Core CRM' },
 
   // Enterprise ERP
   { id: 'erp', label: 'ERP & Operations', icon: Boxes, path: '/crm/erp', section: 'Enterprise ERP' },
 
   // EgoLytics R&D Management Division
   { id: 'rd-workspace', label: 'EgoLytics R&D Hub', icon: FlaskConical, path: '/crm/rd', section: 'EgoLytics R&D' },
+  { id: 'rd-diagrams', label: 'BFOV Diagramming Studio', icon: Workflow, path: '/crm/diagrams', section: 'EgoLytics R&D' },
+  { id: 'rd-analytics', label: 'R&D Analytics & Reports', icon: BarChart3, path: '/crm/rd/analytics', section: 'EgoLytics R&D' },
+  { id: 'rd-collaboration', label: 'Collaboration & Integrations', icon: MessageSquare, path: '/crm/rd/collaboration', section: 'EgoLytics R&D' },
   { id: 'rd-tasks', label: 'R&D Tasks & Sprints', icon: CheckSquare, path: '/crm/rd/tasks', section: 'EgoLytics R&D' },
   { id: 'rd-stagegate', label: 'Stage-Gate Governance', icon: Workflow, path: '/crm/rd/stagegate', section: 'EgoLytics R&D' },
   { id: 'rd-ideas', label: 'Idea Management', icon: Lightbulb, path: '/crm/rd/ideas', section: 'EgoLytics R&D' },

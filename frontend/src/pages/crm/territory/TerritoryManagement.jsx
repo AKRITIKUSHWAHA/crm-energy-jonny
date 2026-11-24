@@ -51,11 +51,12 @@ import {
 import { useToast } from '../../../context/ToastContext';
 import { useLanguage } from '../../../context/LanguageContext';
 import territoryService from '../../../services/territoryService';
+import { MaplyticsWorkspace } from './MaplyticsWorkspace';
 
 export const TerritoryManagement = () => {
   const { t } = useLanguage();
   const { addToast } = useToast();
-  const [activeTab, setActiveTab] = useState('map'); // 'map' | 'benefits' | 'territories'
+  const [activeTab, setActiveTab] = useState('maplytics'); // 'maplytics' | 'map' | 'benefits' | 'territories'
   const [territories, setTerritories] = useState([]);
   const [selectedRegion, setSelectedRegion] = useState('All Regions');
   const [isLoading, setIsLoading] = useState(false);
@@ -429,6 +430,7 @@ export const TerritoryManagement = () => {
       <div style={{ marginTop: '0.5rem', marginBottom: '0.25rem' }}>
         <Tabs
           tabs={[
+            { id: 'maplytics', label: t('Maplytics GIS & 7-Search Workspace'), icon: Compass, badge: 'PRO' },
             { id: 'map', label: t('Google Maps Geographic Visualizer & Routes'), icon: Map },
             { id: 'benefits', label: t('Summary Table of Benefits & CRM Features'), icon: FileText },
             { id: 'territories', label: t('Defined Territories Database'), icon: Layers, badge: territories.length || 4 },
@@ -437,6 +439,13 @@ export const TerritoryManagement = () => {
           onChange={setActiveTab}
         />
       </div>
+
+      {/* TAB 0: MAPLYTICS GIS WORKSPACE & 7-SEARCH (MASTER PROMPT 13) */}
+      {activeTab === 'maplytics' && (
+        <div style={{ marginTop: '1rem' }}>
+          <MaplyticsWorkspace />
+        </div>
+      )}
 
       {/* TAB 1: Google Maps Geographic Visualizer & Route Optimization */}
       {activeTab === 'map' && (
