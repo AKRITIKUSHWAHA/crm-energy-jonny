@@ -8,7 +8,14 @@
 // 2. If deployed on Netlify or production domain, use live Railway backend.
 export function resolveApiBaseUrl() {
   const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
-  const envUrl = metaEnv.VITE_API_BASE_URL || metaEnv.VITE_API_URL || (typeof process !== 'undefined' ? process.env?.VITE_API_BASE_URL : null);
+  let envUrl = metaEnv.VITE_API_BASE_URL || metaEnv.VITE_API_URL || (typeof process !== 'undefined' ? process.env?.VITE_API_BASE_URL : null);
+
+  // If running locally in browser on localhost/127.0.0.1, prioritize local backend if envUrl is missing or points to railway
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    if (!envUrl || envUrl.includes('railway.app')) {
+      envUrl = 'http://localhost:5002/api';
+    }
+  }
 
   let url = envUrl;
   if (!url) {
@@ -25,7 +32,14 @@ export function resolveApiBaseUrl() {
 
 export function getSocketBaseUrl() {
   const metaEnv = (typeof import.meta !== 'undefined' && import.meta && import.meta.env) ? import.meta.env : {};
-  const envSocketUrl = metaEnv.VITE_SOCKET_URL || (typeof process !== 'undefined' ? process.env?.VITE_SOCKET_URL : null);
+  let envSocketUrl = metaEnv.VITE_SOCKET_URL || (typeof process !== 'undefined' ? process.env?.VITE_SOCKET_URL : null);
+
+  if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
+    if (!envSocketUrl || envSocketUrl.includes('railway.app')) {
+      envSocketUrl = 'http://localhost:5002';
+    }
+  }
+
   if (envSocketUrl) {
     return envSocketUrl.replace(/\/+$/, '');
   }

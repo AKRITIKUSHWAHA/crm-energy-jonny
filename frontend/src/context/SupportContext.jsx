@@ -94,6 +94,7 @@ export const SupportProvider = ({ children }) => {
   const { isCrmAuthenticated } = useAuth();
 
   const fetchSupportData = useCallback(async () => {
+    if (!isCrmAuthenticated) return;
     try {
       setIsLoading(true);
       const [tckRes, artRes] = await Promise.allSettled([
@@ -125,6 +126,7 @@ export const SupportProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
+    if (!isCrmAuthenticated) return;
     fetchSupportData();
   }, [fetchSupportData, isCrmAuthenticated]);
 
