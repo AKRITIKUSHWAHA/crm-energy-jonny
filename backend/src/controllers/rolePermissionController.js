@@ -43,7 +43,7 @@ const ALL_CRM_ROLES = [
 const DEFAULT_PERMISSIONS = {
   business_owner: [
     'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication',
-    'territory', 'erp', 'bestie', 'ai-voice', 'ai', 'ai-video', 'marketing',
+    'territory', 'erp', 'rd-workspace', 'bestie', 'ai-voice', 'ai', 'ai-video', 'marketing',
     'hr', 'support', 'knowledge-base', 'my-apps', 'search', 'reports',
     'admin', 'roles-permissions', 'ebox', 'settings'
   ],
@@ -69,17 +69,17 @@ const DEFAULT_PERMISSIONS = {
     'dashboard', 'hr', 'tasks', 'communication', 'reports', 'settings'
   ],
   admin_1: [
-    'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'territory', 'erp', 'reports', 'settings'
+    'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'territory', 'erp', 'rd-workspace', 'reports', 'settings'
   ],
   admin_2: [
     'dashboard', 'contacts', 'pipeline', 'tasks', 'erp', 'search', 'reports', 'settings'
   ],
   crm_pro: [
-    'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'support', 'knowledge-base', 'reports', 'settings'
+    'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'rd-workspace', 'support', 'knowledge-base', 'reports', 'settings'
   ],
   super_admin: [
     'dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication',
-    'territory', 'erp', 'bestie', 'ai-voice', 'ai', 'ai-video', 'marketing',
+    'territory', 'erp', 'rd-workspace', 'bestie', 'ai-voice', 'ai', 'ai-video', 'marketing',
     'hr', 'support', 'knowledge-base', 'my-apps', 'search', 'reports',
     'admin', 'roles-permissions', 'ebox', 'settings'
   ]

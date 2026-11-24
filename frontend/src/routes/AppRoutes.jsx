@@ -82,6 +82,7 @@ import { TerritoryManagement } from '../pages/crm/territory/TerritoryManagement'
 import { MyFavApps } from '../pages/crm/myapps/MyFavApps';
 import { InternalAiSearch } from '../pages/crm/search/InternalAiSearch';
 import { KnowledgeBase } from '../pages/crm/support/KnowledgeBase';
+import { EgolyticsHub } from '../pages/rd/EgolyticsHub';
 
 import { CrmAnalytics } from '../pages/crm/CrmAnalytics';
 import { CrmReports } from '../pages/crm/CrmReports';
@@ -257,6 +258,8 @@ export const AppRoutes = () => {
           <Route path="/crm/ai-video" element={<AiVideoAgent />} />
           <Route path="/crm/marketing" element={<AiMarketing />} />
           <Route path="/crm/territory" element={<TerritoryManagement />} />
+          <Route path="/crm/rd" element={<EgolyticsHub />} />
+          <Route path="/crm/rd/*" element={<EgolyticsHub />} />
           <Route path="/crm/my-apps" element={<MyFavApps />} />
           <Route path="/crm/search" element={<InternalAiSearch />} />
           <Route path="/crm/knowledge-base" element={<KnowledgeBase />} />

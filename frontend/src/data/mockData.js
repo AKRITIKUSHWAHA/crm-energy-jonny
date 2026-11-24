@@ -28,7 +28,13 @@ import {
   Search,
   Car,
   Lock,
-  ShieldAlert
+  ShieldAlert,
+  FlaskConical,
+  Layers,
+  Compass,
+  Lightbulb,
+  Award,
+  Workflow
 } from 'lucide-react';
 
 export const crmNavigation = [
@@ -43,6 +49,18 @@ export const crmNavigation = [
 
   // Enterprise ERP
   { id: 'erp', label: 'ERP & Operations', icon: Boxes, path: '/crm/erp', section: 'Enterprise ERP' },
+
+  // EgoLytics R&D Management Division
+  { id: 'rd-workspace', label: 'EgoLytics R&D Hub', icon: FlaskConical, path: '/crm/rd', section: 'EgoLytics R&D' },
+  { id: 'rd-tasks', label: 'R&D Tasks & Sprints', icon: CheckSquare, path: '/crm/rd/tasks', section: 'EgoLytics R&D' },
+  { id: 'rd-stagegate', label: 'Stage-Gate Governance', icon: Workflow, path: '/crm/rd/stagegate', section: 'EgoLytics R&D' },
+  { id: 'rd-ideas', label: 'Idea Management', icon: Lightbulb, path: '/crm/rd/ideas', section: 'EgoLytics R&D' },
+  { id: 'rd-ranking', label: 'Idea Leaderboard', icon: Award, path: '/crm/rd/ranking', section: 'EgoLytics R&D' },
+  { id: 'rd-pipeline', label: 'Innovation Pipeline', icon: TrendingUp, path: '/crm/rd/pipeline', section: 'EgoLytics R&D' },
+  { id: 'rd-portfolio', label: 'R&D Portfolio', icon: Layers, path: '/crm/rd/portfolio', section: 'EgoLytics R&D' },
+  { id: 'rd-intake', label: 'Project Intake', icon: Boxes, path: '/crm/rd/intake', section: 'EgoLytics R&D' },
+  { id: 'rd-strategy', label: 'Strategic Alignment', icon: Compass, path: '/crm/rd/strategy', section: 'EgoLytics R&D' },
+  { id: 'rd-prioritization', label: 'Prioritization Engine', icon: Sparkles, path: '/crm/rd/prioritization', section: 'EgoLytics R&D' },
 
   // AI SuperHouse
   { id: 'bestie', label: 'Zunme AI Agent', icon: Bot, path: '/crm/bestie', section: 'AI SuperHouse' },
