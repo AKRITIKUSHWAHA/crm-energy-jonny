@@ -508,7 +508,7 @@ export const MaplyticsWorkspace = () => {
       {activeWorkspaceTab === 'map' && (
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Main Map Canvas Area */}
-          <div className="flex-1 flex flex-col gap-3">
+          <div className="flex-1 flex flex-col gap-3" style={{ minWidth: 0, width: '100%' }}>
             {/* Top Canvas Controls Bar */}
             <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 bg-secondary/80 rounded-lg border border-border text-xs">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
@@ -557,6 +557,20 @@ export const MaplyticsWorkspace = () => {
                   ? 'bg-neutral-900'
                   : 'bg-slate-900'
               }`}
+              style={{
+                position: 'relative',
+                width: '100%',
+                minHeight: '480px',
+                height: '520px',
+                backgroundColor:
+                  basemap === 'satellite'
+                    ? '#020617'
+                    : basemap === 'dark'
+                    ? '#0a0a0a'
+                    : basemap === 'terrain'
+                    ? '#13231b'
+                    : '#0f172a',
+              }}
               onClick={handleCanvasClick}
             >
               {/* Coordinate Grid Pattern */}
@@ -682,7 +696,17 @@ export const MaplyticsWorkspace = () => {
               })}
 
               {/* Drawing Toolbar Overlay */}
-              <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap items-center gap-1.5 sm:gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-border shadow-md z-30 max-w-[calc(100%-20px)]">
+              <div
+                className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap items-center gap-1.5 sm:gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-border shadow-md z-30 max-w-[calc(100%-20px)]"
+                style={{
+                  position: 'absolute',
+                  top: '12px',
+                  left: '12px',
+                  zIndex: 30,
+                  backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                  maxWidth: 'calc(100% - 24px)',
+                }}
+              >
                 <Button
                   variant={isDrawingActive ? 'primary' : 'outline'}
                   size="sm"
@@ -706,14 +730,25 @@ export const MaplyticsWorkspace = () => {
               </div>
 
               {/* Bottom Scale Indicator */}
-              <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 bg-slate-900/80 px-2 sm:px-2.5 py-1 rounded text-[10px] text-muted-foreground border border-border max-w-[calc(100%-20px)] truncate select-none pointer-events-none">
+              <div
+                className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 bg-slate-900/80 px-2 sm:px-2.5 py-1 rounded text-[10px] text-muted-foreground border border-border max-w-[calc(100%-20px)] truncate select-none pointer-events-none"
+                style={{
+                  position: 'absolute',
+                  bottom: '12px',
+                  left: '12px',
+                  zIndex: 20,
+                  backgroundColor: 'rgba(15, 23, 42, 0.88)',
+                  color: '#94a3b8',
+                  maxWidth: 'calc(100% - 24px)',
+                }}
+              >
                 GIS Projection: WGS-84 / Web Mercator | Scale: ~10 km
               </div>
             </div>
           </div>
 
           {/* Right Inspector & Layers Sidebar */}
-          <div className="w-full lg:w-80 flex flex-col gap-4">
+          <div className="w-full lg:w-80 flex flex-col gap-4" style={{ flexShrink: 0 }}>
             {/* 1. Layers Panel */}
             <Card>
               <CardHeader title="Map Layers & Overlays" subtitle="Toggle visibility and z-order" />

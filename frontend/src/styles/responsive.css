@@ -1879,13 +1879,19 @@ pre, code {
 .maplytics-container {
   width: 100% !important;
   max-width: 100% !important;
-  min-height: 380px !important;
+  min-height: 480px !important;
   box-sizing: border-box !important;
+}
+
+@media (max-width: 1024px) {
+  .maplytics-container {
+    min-height: 400px !important;
+  }
 }
 
 @media (max-width: 640px) {
   .maplytics-container {
-    min-height: 300px !important;
+    min-height: 320px !important;
   }
 }
 
