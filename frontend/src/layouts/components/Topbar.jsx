@@ -363,7 +363,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
         maxWidth: '100vw',
         boxSizing: 'border-box',
         boxShadow: 'var(--shadow-sm)',
-        overflow: 'hidden',
+        overflow: 'visible',
       }}
     >
       {/* Left: Navigation Menu Toggle + Brand Logo */}
