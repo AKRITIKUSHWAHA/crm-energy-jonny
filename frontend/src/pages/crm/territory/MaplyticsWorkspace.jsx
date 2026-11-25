@@ -510,36 +510,38 @@ export const MaplyticsWorkspace = () => {
           {/* Main Map Canvas Area */}
           <div className="flex-1 flex flex-col gap-3">
             {/* Top Canvas Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-secondary/80 rounded-lg border border-border text-xs">
+            <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 sm:p-2.5 bg-secondary/80 rounded-lg border border-border text-xs">
               <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
-                <span className="font-semibold text-muted-foreground">Basemap:</span>
-                {['roadmap', 'satellite', 'dark', 'terrain'].map((b) => (
-                  <button
-                    key={b}
-                    onClick={() => setBasemap(b)}
-                    className={`px-2.5 py-1 rounded capitalize font-medium transition-colors ${
-                      basemap === b
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-background hover:bg-secondary text-foreground'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
+                <span className="font-semibold text-muted-foreground mr-0.5">Basemap:</span>
+                <div className="inline-flex flex-wrap items-center gap-1">
+                  {['roadmap', 'satellite', 'dark', 'terrain'].map((b) => (
+                    <button
+                      key={b}
+                      onClick={() => setBasemap(b)}
+                      className={`px-2 sm:px-2.5 py-1 rounded capitalize font-medium text-[11px] sm:text-xs transition-colors ${
+                        basemap === b
+                          ? 'bg-primary text-primary-foreground shadow-xs'
+                          : 'bg-background hover:bg-secondary text-foreground'
+                      }`}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                </div>
               </div>
 
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-mono text-muted-foreground text-[10.5px] sm:text-xs">
-                  Center: {viewport.centerLat.toFixed(4)}, {viewport.centerLng.toFixed(4)} | Zoom: {viewport.zoom}x
+              <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 w-full sm:w-auto pt-1 sm:pt-0 border-t sm:border-t-0 border-border/50">
+                <span className="font-mono text-muted-foreground text-[10px] sm:text-xs truncate max-w-[210px] sm:max-w-none">
+                  Center: {viewport.centerLat.toFixed(3)}, {viewport.centerLng.toFixed(3)} | Zoom: {viewport.zoom}x
                 </span>
-                <div className="flex items-center gap-1 border-l border-border pl-2">
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleZoomIn}>
+                <div className="flex items-center gap-1 border-l border-border pl-2 shrink-0">
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleZoomIn} title="Zoom In">
                     <ZoomIn className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleZoomOut}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleZoomOut} title="Zoom Out">
                     <ZoomOut className="w-3.5 h-3.5" />
                   </Button>
-                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleResetView}>
+                  <Button variant="ghost" size="sm" className="h-7 w-7 p-0" onClick={handleResetView} title="Reset View">
                     <RotateCcw className="w-3.5 h-3.5" />
                   </Button>
                 </div>
@@ -548,7 +550,7 @@ export const MaplyticsWorkspace = () => {
 
             {/* Interactive SVG Canvas */}
             <div
-              className={`maplytics-container relative w-full h-[360px] sm:h-[450px] lg:h-[520px] rounded-xl overflow-hidden border border-border select-none ${
+              className={`maplytics-container relative w-full h-[340px] sm:h-[450px] lg:h-[520px] rounded-xl overflow-hidden border border-border select-none touch-manipulation ${
                 basemap === 'satellite'
                   ? 'bg-slate-950'
                   : basemap === 'dark'
@@ -680,31 +682,31 @@ export const MaplyticsWorkspace = () => {
               })}
 
               {/* Drawing Toolbar Overlay */}
-              <div className="absolute top-3 left-3 flex items-center gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-border shadow-md z-30">
+              <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap items-center gap-1.5 sm:gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-border shadow-md z-30 max-w-[calc(100%-20px)]">
                 <Button
                   variant={isDrawingActive ? 'primary' : 'outline'}
                   size="sm"
-                  className="h-7 text-xs"
+                  className="h-7 text-xs shrink-0"
                   onClick={() => setIsDrawingActive(!isDrawingActive)}
                 >
                   <Edit2 className="w-3 h-3 mr-1" />
                   {isDrawingActive ? 'Cancel Drawing' : 'Draw Polygon'}
                 </Button>
                 {isDrawingActive && drawnVertices.length >= 3 && (
-                  <Button variant="success" size="sm" className="h-7 text-xs" onClick={handleSaveDrawnPolygon}>
+                  <Button variant="success" size="sm" className="h-7 text-xs shrink-0" onClick={handleSaveDrawnPolygon}>
                     <Check className="w-3 h-3 mr-1" />
-                    Save Polygon ({drawnVertices.length} pts)
+                    Save ({drawnVertices.length} pts)
                   </Button>
                 )}
                 {isDrawingActive && (
-                  <span className="text-[11px] text-muted-foreground px-2">
+                  <span className="text-[10.5px] text-muted-foreground px-1 hidden sm:inline">
                     Click canvas to add vertices
                   </span>
                 )}
               </div>
 
               {/* Bottom Scale Indicator */}
-              <div className="absolute bottom-3 left-3 bg-slate-900/80 px-2.5 py-1 rounded text-[10px] text-muted-foreground border border-border">
+              <div className="absolute bottom-2.5 left-2.5 sm:bottom-3 sm:left-3 bg-slate-900/80 px-2 sm:px-2.5 py-1 rounded text-[10px] text-muted-foreground border border-border max-w-[calc(100%-20px)] truncate select-none pointer-events-none">
                 GIS Projection: WGS-84 / Web Mercator | Scale: ~10 km
               </div>
             </div>
@@ -951,7 +953,7 @@ export const MaplyticsWorkspace = () => {
                 )}
 
                 {searchMode === 'DRAWING' && (
-                  <div className="col-span-3 text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg border border-border">
+                  <div className="col-span-1 md:col-span-3 text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg border border-border">
                     <p className="font-semibold text-foreground mb-1">Custom Drawn Polygon Search:</p>
                     Uses mathematical ray-casting containment to find all accounts located within your drawn map boundary ({drawnVertices.length} vertices currently drawn on canvas).
                   </div>
@@ -959,7 +961,7 @@ export const MaplyticsWorkspace = () => {
 
                 {searchMode === 'ARCGIS' && (
                   <>
-                    <div className="col-span-2">
+                    <div className="col-span-1 md:col-span-2">
                       <label className="text-xs font-semibold text-muted-foreground mb-1 block">
                         ArcGIS FeatureServer URL
                       </label>
@@ -999,8 +1001,8 @@ export const MaplyticsWorkspace = () => {
                     <Badge variant="primary">{searchResults.searchMode}</Badge>
                   </div>
 
-                  <div className="overflow-x-auto border border-border rounded-lg">
-                    <table className="w-full text-xs text-left border-collapse">
+                  <div className="overflow-x-auto border border-border rounded-lg" style={{ WebkitOverflowScrolling: 'touch' }}>
+                    <table className="w-full min-w-[650px] text-xs text-left border-collapse">
                       <thead className="bg-secondary/70 border-b border-border">
                         <tr>
                           <th className="py-2.5 px-3">Feature Name</th>
@@ -1082,8 +1084,8 @@ export const MaplyticsWorkspace = () => {
               {/* Uploaded Files Table */}
               <div className="mt-4">
                 <h3 className="text-sm font-bold mb-2">Ingested Files History ({uploadedFiles.length})</h3>
-                <div className="overflow-x-auto border border-border rounded-lg">
-                  <table className="w-full text-xs text-left border-collapse">
+                <div className="overflow-x-auto border border-border rounded-lg" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table className="w-full min-w-[600px] text-xs text-left border-collapse">
                     <thead className="bg-secondary/70 border-b border-border">
                       <tr>
                         <th className="py-2.5 px-3">Filename</th>
@@ -1119,7 +1121,7 @@ export const MaplyticsWorkspace = () => {
       {/* ==================================================================== */}
       {activeWorkspaceTab === 'realignment' && (
         <div className="flex flex-col gap-6">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <h2 className="text-lg font-bold">Territory Boundary Realignment & Staging</h2>
               <p className="text-xs text-muted-foreground">
@@ -1261,8 +1263,8 @@ export const MaplyticsWorkspace = () => {
       {activeWorkspaceTab === 'audit' && (
         <Card>
           <CardHeader title="Geographic Spatial Audit Logs" subtitle="Audit records for all territory changes and realignments" />
-          <CardBody className="pt-0 overflow-x-auto">
-            <table className="w-full text-xs text-left border-collapse">
+          <CardBody className="pt-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[620px] text-xs text-left border-collapse">
               <thead className="bg-secondary/70 border-b border-border">
                 <tr>
                   <th className="py-2.5 px-3">Action</th>

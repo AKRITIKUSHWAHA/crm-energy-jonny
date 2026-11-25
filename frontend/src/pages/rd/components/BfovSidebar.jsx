@@ -15,7 +15,8 @@ import {
   ChevronDown,
   ChevronRight,
   Boxes,
-  Network
+  Network,
+  X
 } from 'lucide-react';
 
 const SHAPE_CATEGORIES = [
@@ -71,7 +72,7 @@ const SHAPE_CATEGORIES = [
   }
 ];
 
-export const BfovSidebar = ({ onAddShape }) => {
+export const BfovSidebar = ({ onAddShape, onClose }) => {
   const [openCategories, setOpenCategories] = useState({
     basic: true,
     flowchart: true,
@@ -95,7 +96,19 @@ export const BfovSidebar = ({ onAddShape }) => {
           <Workflow className="w-4 h-4 text-sky-400" />
           <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Shape Library</h2>
         </div>
-        <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded">Drag & Drop</span>
+        <div className="flex items-center space-x-1.5">
+          <span className="text-[10px] text-slate-500 bg-slate-800 px-1.5 py-0.5 rounded hidden sm:inline">Drag & Drop</span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              title="Close Panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-2">

@@ -921,11 +921,12 @@ export const RdResourceWorkspace = () => {
 
           {/* 2D Grid Matrix */}
           <Card>
-            <CardBody className="p-0 overflow-x-auto">
+            <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
               {skillMatrix?.employees && skillMatrix?.skills && (
                 <table
                   style={{
                     width: '100%',
+                    minWidth: '650px',
                     borderCollapse: 'collapse',
                     fontSize: '11px',
                     textAlign: 'left',

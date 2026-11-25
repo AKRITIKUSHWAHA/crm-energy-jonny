@@ -26,7 +26,9 @@ import {
   Users,
   Upload,
   ChevronDown,
-  Bookmark
+  Bookmark,
+  Boxes,
+  Sliders
 } from 'lucide-react';
 
 export const BfovToolbar = ({
@@ -61,7 +63,9 @@ export const BfovToolbar = ({
   onOpenVersionModal,
   onOpenShareModal,
   onSaveAsTemplate,
-  onBackToList
+  onBackToList,
+  mobilePanel = 'none',
+  onToggleMobilePanel
 }) => {
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
@@ -102,6 +106,32 @@ export const BfovToolbar = ({
         {hasUnsavedChanges && (
           <span className="w-2 h-2 rounded-full bg-amber-400" title="Unsaved changes" />
         )}
+
+        {/* Mobile / Tablet Panel Toggles */}
+        <div className="flex items-center lg:hidden bg-slate-800/80 rounded p-0.5 border border-slate-700/60 shrink-0 space-x-0.5">
+          <button
+            type="button"
+            onClick={() => onToggleMobilePanel && onToggleMobilePanel(mobilePanel === 'shapes' ? 'none' : 'shapes')}
+            title="Toggle Shape Library"
+            className={`flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+              mobilePanel === 'shapes' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <Boxes className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline sm:inline">Shapes</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => onToggleMobilePanel && onToggleMobilePanel(mobilePanel === 'properties' ? 'none' : 'properties')}
+            title="Toggle Properties Panel"
+            className={`flex items-center space-x-1 px-2 py-1 rounded text-xs font-medium transition-colors ${
+              mobilePanel === 'properties' ? 'bg-sky-500 text-white' : 'text-slate-300 hover:bg-slate-700'
+            }`}
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="hidden xs:inline sm:inline">Props</span>
+          </button>
+        </div>
       </div>
 
       {/* Center: Canvas Controls, Tools, Alignment */}

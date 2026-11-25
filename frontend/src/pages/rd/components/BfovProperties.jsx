@@ -8,7 +8,8 @@ import {
   FileCode,
   Tag,
   Hash,
-  RotateCw
+  RotateCw,
+  X
 } from 'lucide-react';
 
 const PRESET_COLORS = [
@@ -26,16 +27,29 @@ export const BfovProperties = ({
   onUpdateNodeText,
   onUpdateNodeBounds,
   onUpdateEdge,
-  onUpdateMeta
+  onUpdateMeta,
+  onClose
 }) => {
   if (selectedNode) {
     const style = selectedNode.style || {};
 
     return (
       <aside className="w-64 border-l border-slate-800 bg-slate-900/90 flex flex-col h-full select-none overflow-y-auto">
-        <div className="p-3 border-b border-slate-800 flex items-center space-x-2">
-          <Square className="w-4 h-4 text-sky-400" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Shape Properties</h3>
+        <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Square className="w-4 h-4 text-sky-400" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Shape Properties</h3>
+          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              title="Close Panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <div className="p-3 space-y-4">
@@ -196,9 +210,21 @@ export const BfovProperties = ({
 
     return (
       <aside className="w-64 border-l border-slate-800 bg-slate-900/90 flex flex-col h-full select-none overflow-y-auto">
-        <div className="p-3 border-b border-slate-800 flex items-center space-x-2">
-          <Share2 className="w-4 h-4 text-sky-400" />
-          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Connector Line</h3>
+        <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+          <div className="flex items-center space-x-2">
+            <Share2 className="w-4 h-4 text-sky-400" />
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Connector Line</h3>
+          </div>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              title="Close Panel"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
         <div className="p-3 space-y-4">
@@ -266,9 +292,21 @@ export const BfovProperties = ({
   // Fallback: Diagram Global Metadata
   return (
     <aside className="w-64 border-l border-slate-800 bg-slate-900/90 flex flex-col h-full select-none overflow-y-auto">
-      <div className="p-3 border-b border-slate-800 flex items-center space-x-2">
-        <Sliders className="w-4 h-4 text-sky-400" />
-        <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Diagram Settings</h3>
+      <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+        <div className="flex items-center space-x-2">
+          <Sliders className="w-4 h-4 text-sky-400" />
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-slate-300">Diagram Settings</h3>
+        </div>
+        {onClose && (
+          <button
+            type="button"
+            onClick={onClose}
+            className="p-1 rounded hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            title="Close Panel"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
       </div>
 
       <div className="p-3 space-y-4">

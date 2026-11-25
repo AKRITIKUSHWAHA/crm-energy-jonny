@@ -592,8 +592,8 @@ export const RdEnterpriseGovernance = () => {
           </div>
 
           {/* IP Table */}
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[700px] text-left text-xs">
               <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3 px-4">Title & Description</th>
@@ -907,8 +907,8 @@ export const RdEnterpriseGovernance = () => {
             </select>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[650px] text-left text-xs">
               <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3 px-4">Timestamp</th>
@@ -971,8 +971,8 @@ export const RdEnterpriseGovernance = () => {
             </button>
           </div>
 
-          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto">
-            <table className="w-full text-left text-xs">
+          <div className="bg-slate-900/60 border border-slate-800 rounded-xl overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+            <table className="w-full min-w-[650px] text-left text-xs">
               <thead className="bg-slate-900/80 border-b border-slate-800 text-slate-400 uppercase tracking-wider font-semibold">
                 <tr>
                   <th className="py-3 px-4">Key Name</th>

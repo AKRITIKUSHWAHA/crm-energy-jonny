@@ -721,8 +721,8 @@ export const RdAnalytics = () => {
               title={`Project Comparison Portfolio (${portfolioData?.comparisons?.length || 0} Projects)`}
               subtitle="Side-by-side comparison of budget, actual cost, variance, and delivery status"
             />
-            <CardBody className="pt-0 overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
+            <CardBody className="pt-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full min-w-[700px] text-sm text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="py-2.5 px-3 font-semibold">Project Name</th>
@@ -823,8 +823,8 @@ export const RdAnalytics = () => {
               title={`Sprint Velocity & Execution Iterations (${executionData?.sprints?.length || 0} Sprints)`}
               subtitle="Sprint capacity allocation, completion status, and velocity metrics"
             />
-            <CardBody className="pt-0 overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
+            <CardBody className="pt-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full min-w-[700px] text-sm text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="py-2.5 px-3 font-semibold">Sprint Name</th>
@@ -940,8 +940,8 @@ export const RdAnalytics = () => {
                 title="Critical Capital Overrun Notifications"
                 subtitle="Projects where actual logged expenditures have exceeded approved caps"
               />
-              <CardBody className="pt-0 overflow-x-auto">
-                <table className="w-full text-sm text-left border-collapse">
+              <CardBody className="pt-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <table className="w-full min-w-[550px] text-sm text-left border-collapse">
                   <thead>
                     <tr className="border-b border-rose-500/20 text-rose-600 dark:text-rose-400">
                       <th className="py-2 px-3 font-semibold">Project</th>
@@ -977,8 +977,8 @@ export const RdAnalytics = () => {
               title={`Researcher Workload & Capacity Distribution (${resourceData?.workloads?.length || 0} Staff)`}
               subtitle="Monthly task hours against standard capacity (160h/month baseline)"
             />
-            <CardBody className="pt-0 overflow-x-auto">
-              <table className="w-full text-sm text-left border-collapse">
+            <CardBody className="pt-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full min-w-[700px] text-sm text-left border-collapse">
                 <thead>
                   <tr className="border-b border-border text-muted-foreground">
                     <th className="py-2.5 px-3 font-semibold">Member</th>
@@ -1306,8 +1306,8 @@ export const RdAnalytics = () => {
                   </span>
                 </div>
 
-                <div className="overflow-x-auto border border-border rounded-md">
-                  <table className="w-full text-xs text-left border-collapse">
+                <div className="overflow-x-auto border border-border rounded-md" style={{ WebkitOverflowScrolling: 'touch' }}>
+                  <table className="w-full min-w-[600px] text-xs text-left border-collapse">
                     <thead className="bg-secondary/70 border-b border-border">
                       <tr>
                         {reportData?.columns?.map((col, idx) => (
@@ -1397,8 +1397,8 @@ export const RdAnalytics = () => {
               Historical track of target adjustments and telemetry snapshots over measurement periods
             </p>
 
-            <div className="overflow-x-auto border border-border rounded-md">
-              <table className="w-full text-xs text-left border-collapse">
+            <div className="overflow-x-auto border border-border rounded-md" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="w-full min-w-[500px] text-xs text-left border-collapse">
                 <thead className="bg-secondary/70 border-b border-border">
                   <tr>
                     <th className="py-2 px-3">Period</th>

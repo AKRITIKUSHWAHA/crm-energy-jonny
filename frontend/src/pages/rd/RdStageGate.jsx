@@ -531,7 +531,7 @@ export const RdStageGate = () => {
               </CardHeader>
               <CardBody>
                 {/* Horizontal Flow */}
-                <div className="overflow-x-auto pb-4">
+                <div className="overflow-x-auto pb-4" style={{ WebkitOverflowScrolling: 'touch' }}>
                   <div className="flex items-stretch gap-4 min-w-[900px]">
                     {selectedGovernance.template?.stages?.map((stage, idx) => {
                       const isCurrent = stage.id === selectedGovernance.currentStageId;

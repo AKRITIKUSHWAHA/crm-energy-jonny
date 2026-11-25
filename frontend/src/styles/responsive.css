@@ -1883,6 +1883,12 @@ pre, code {
   box-sizing: border-box !important;
 }
 
+@media (max-width: 640px) {
+  .maplytics-container {
+    min-height: 300px !important;
+  }
+}
+
 
 
 

@@ -67,6 +67,7 @@ export const RdBfovCharts = () => {
   const [gridSettings, setGridSettings] = useState({ showGrid: true, snapToGrid: true, gridSize: 10 });
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [mobilePanel, setMobilePanel] = useState('none'); // 'none' | 'shapes' | 'properties'
 
   // Advanced Master 15 Modals
   const [isMermaidModalOpen, setIsMermaidModalOpen] = useState(false);
@@ -644,15 +645,19 @@ export const RdBfovCharts = () => {
             setViewMode('gallery');
             loadGalleryData();
           }}
+          mobilePanel={mobilePanel}
+          onToggleMobilePanel={setMobilePanel}
         />
 
         {/* 3-Column Studio Layout */}
         <div className="flex-1 flex overflow-hidden relative">
-          {/* Stencil Sidebar */}
-          <BfovSidebar onAddShape={handleAddShape} />
+          {/* Desktop Stencil Sidebar */}
+          <div className="hidden lg:flex h-full shrink-0">
+            <BfovSidebar onAddShape={handleAddShape} />
+          </div>
 
           {/* Canvas Center */}
-          <main className="flex-1 relative overflow-hidden">
+          <main className="flex-1 relative overflow-hidden h-full">
             <BfovCanvas
               nodes={nodes}
               edges={edges}
@@ -671,44 +676,115 @@ export const RdBfovCharts = () => {
             />
           </main>
 
-          {/* Properties Panel */}
-          <BfovProperties
-            selectedNode={activeSelectedNode}
-            selectedEdge={activeSelectedEdge}
-            diagramMeta={diagramMeta}
-            nodeCount={nodes.length}
-            edgeCount={edges.length}
-            onUpdateNodeStyle={(id, stylePatch) => {
-              setNodes((prev) =>
-                prev.map((n) =>
-                  n.id === id ? { ...n, style: { ...n.style, ...stylePatch } } : n
-                )
-              );
-              setHasUnsavedChanges(true);
-            }}
-            onUpdateNodeText={(id, text) => {
-              setNodes((prev) =>
-                prev.map((n) => (n.id === id ? { ...n, label: text } : n))
-              );
-              setHasUnsavedChanges(true);
-            }}
-            onUpdateNodeBounds={(id, boundsPatch) => {
-              setNodes((prev) =>
-                prev.map((n) => (n.id === id ? { ...n, ...boundsPatch } : n))
-              );
-              setHasUnsavedChanges(true);
-            }}
-            onUpdateEdge={(id, edgePatch) => {
-              setEdges((prev) =>
-                prev.map((e) => (e.id === id ? { ...e, ...edgePatch } : e))
-              );
-              setHasUnsavedChanges(true);
-            }}
-            onUpdateMeta={(metaPatch) => {
-              setDiagramMeta((prev) => ({ ...prev, ...metaPatch }));
-              setHasUnsavedChanges(true);
-            }}
-          />
+          {/* Desktop Properties Panel */}
+          <div className="hidden lg:flex h-full shrink-0">
+            <BfovProperties
+              selectedNode={activeSelectedNode}
+              selectedEdge={activeSelectedEdge}
+              diagramMeta={diagramMeta}
+              nodeCount={nodes.length}
+              edgeCount={edges.length}
+              onUpdateNodeStyle={(id, stylePatch) => {
+                setNodes((prev) =>
+                  prev.map((n) =>
+                    n.id === id ? { ...n, style: { ...n.style, ...stylePatch } } : n
+                  )
+                );
+                setHasUnsavedChanges(true);
+              }}
+              onUpdateNodeText={(id, text) => {
+                setNodes((prev) =>
+                  prev.map((n) => (n.id === id ? { ...n, label: text } : n))
+                );
+                setHasUnsavedChanges(true);
+              }}
+              onUpdateNodeBounds={(id, boundsPatch) => {
+                setNodes((prev) =>
+                  prev.map((n) => (n.id === id ? { ...n, ...boundsPatch } : n))
+                );
+                setHasUnsavedChanges(true);
+              }}
+              onUpdateEdge={(id, edgePatch) => {
+                setEdges((prev) =>
+                  prev.map((e) => (e.id === id ? { ...e, ...edgePatch } : e))
+                );
+                setHasUnsavedChanges(true);
+              }}
+              onUpdateMeta={(metaPatch) => {
+                setDiagramMeta((prev) => ({ ...prev, ...metaPatch }));
+                setHasUnsavedChanges(true);
+              }}
+            />
+          </div>
+
+          {/* Mobile / Tablet Slide-over Drawer for Shapes */}
+          {mobilePanel === 'shapes' && (
+            <div className="lg:hidden absolute inset-0 z-40 flex">
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+                onClick={() => setMobilePanel('none')}
+              />
+              <div className="relative z-50 w-72 max-w-[85vw] h-full shadow-2xl bg-slate-900 animate-in slide-in-from-left duration-200">
+                <BfovSidebar
+                  onAddShape={(shape) => {
+                    handleAddShape(shape);
+                    setMobilePanel('none');
+                  }}
+                  onClose={() => setMobilePanel('none')}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Mobile / Tablet Slide-over Drawer for Properties */}
+          {mobilePanel === 'properties' && (
+            <div className="lg:hidden absolute inset-0 z-40 flex justify-end">
+              <div
+                className="fixed inset-0 bg-black/60 backdrop-blur-xs"
+                onClick={() => setMobilePanel('none')}
+              />
+              <div className="relative z-50 w-72 max-w-[85vw] h-full shadow-2xl bg-slate-900 animate-in slide-in-from-right duration-200">
+                <BfovProperties
+                  selectedNode={activeSelectedNode}
+                  selectedEdge={activeSelectedEdge}
+                  diagramMeta={diagramMeta}
+                  nodeCount={nodes.length}
+                  edgeCount={edges.length}
+                  onClose={() => setMobilePanel('none')}
+                  onUpdateNodeStyle={(id, stylePatch) => {
+                    setNodes((prev) =>
+                      prev.map((n) =>
+                        n.id === id ? { ...n, style: { ...n.style, ...stylePatch } } : n
+                      )
+                    );
+                    setHasUnsavedChanges(true);
+                  }}
+                  onUpdateNodeText={(id, text) => {
+                    setNodes((prev) =>
+                      prev.map((n) => (n.id === id ? { ...n, label: text } : n))
+                    );
+                    setHasUnsavedChanges(true);
+                  }}
+                  onUpdateNodeBounds={(id, boundsPatch) => {
+                    setNodes((prev) =>
+                      prev.map((n) => (n.id === id ? { ...n, ...boundsPatch } : n))
+                    );
+                    setHasUnsavedChanges(true);
+                  }}
+                  onUpdateEdge={(id, edgePatch) => {
+                    setEdges((prev) =>
+                      prev.map((e) => (e.id === id ? { ...e, ...edgePatch } : e))
+                    );
+                    setHasUnsavedChanges(true);
+                  }}
+                  onUpdateMeta={(metaPatch) => {
+                    setDiagramMeta((prev) => ({ ...prev, ...metaPatch }));
+                    setHasUnsavedChanges(true);
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Advanced Feature Modals */}
@@ -768,7 +844,7 @@ export const RdBfovCharts = () => {
 
   // Render Gallery / Manager Mode
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
       {/* Hidden JSON file input */}
       <input
         type="file"
@@ -781,7 +857,7 @@ export const RdBfovCharts = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <div className="flex items-center space-x-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Workflow className="w-6 h-6 text-sky-400" />
             <h1 className="text-2xl font-bold text-slate-100">BFOV Charts & Diagramming Studio</h1>
             <span className="text-xs bg-sky-500/10 text-sky-400 border border-sky-500/20 px-2 py-0.5 rounded font-mono">
@@ -793,7 +869,7 @@ export const RdBfovCharts = () => {
           </p>
         </div>
 
-        <div className="flex items-center space-x-2">
+        <div className="flex flex-wrap items-center gap-2">
           {/* Mermaid Quick Import */}
           <button
             type="button"
@@ -847,7 +923,7 @@ export const RdBfovCharts = () => {
       </div>
 
       {/* Telemetry KPI Strip */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
         <div className="bg-slate-900/80 border border-slate-800 p-4 rounded-xl">
           <span className="text-xs text-slate-400 block mb-1">Total Diagrams</span>
           <span className="text-2xl font-bold text-slate-100">{telemetry?.totalDiagrams || diagrams.length}</span>
@@ -1023,7 +1099,7 @@ export const RdBfovCharts = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
           <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-2xl p-6 shadow-2xl space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-              <div className="flex items-center space-x-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Boxes className="w-5 h-5 text-sky-400" />
                 <h3 className="text-base font-semibold text-slate-100">Select Diagram Blueprint Template</h3>
               </div>

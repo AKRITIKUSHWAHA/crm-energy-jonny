@@ -581,7 +581,7 @@ export const RdExperimentStudio = () => {
       </div>
 
       {/* 2. Scientific Telemetry KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <KPICard
           title="Research Objectives"
           value={objectives.length}
@@ -609,7 +609,7 @@ export const RdExperimentStudio = () => {
       </div>
 
       {/* 3. Sub-Navigation Tabs */}
-      <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 8, overflowX: 'auto' }}>
+      <div style={{ display: 'flex', gap: 6, borderBottom: '1px solid var(--border)', paddingBottom: 8, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
         {subTabs.map((t) => {
           const Icon = t.icon;
           const isActive = activeTab === t.id;
