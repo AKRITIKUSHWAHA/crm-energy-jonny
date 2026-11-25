@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Menu,
   Sun,
@@ -50,7 +51,7 @@ import { useLanguage } from '../../context/LanguageContext';
 import { useResponsive } from '../../hooks/useResponsive';
 import iconLogo from '../../assets/crm_nergy_ai_icon.png';
 
-export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
+export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = false }) => {
   const { isMobile, isTablet, windowWidth } = useResponsive();
   const { theme, toggleTheme } = useTheme();
   const { crmUser, oalUser, switchRole, logout } = useAuth();
@@ -272,7 +273,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
     ];
   };
 
-    const dynamicDeals = (deals || []).map((d) => ({
+  const dynamicDeals = (deals || []).map((d) => ({
     id: 'live-deal-' + (d.id || Math.random()),
     title: (d.title || d.name || 'Deal') + ' (' + (d.value || d.amount || '$0') + ')',
     subtitle: (d.stage || 'Pipeline') + ' • ' + (d.contact || d.company || 'Enterprise Opportunity'),
@@ -284,9 +285,9 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
 
   const dynamicLeads = (leads || []).map((l) => ({
     id: 'live-lead-' + (l.id || Math.random()),
-    title: (l.name || 'Lead') + ' - ' + (l.company || 'Inbound Prospect'),
-    subtitle: (l.status || 'Active') + ' • ' + (l.email || l.phone || 'Lead Directory'),
-    category: 'Pages & Modules',
+    title: (l.name || 'Lead') + (l.company ? ' - ' + l.company : ''),
+    subtitle: (l.status || 'Active') + ' • ' + (l.email || l.phone || 'Inbound Lead'),
+    category: 'Leads',
     icon: Target,
     path: '/crm/leads',
     tags: [l.name, l.company, l.email, l.status, 'lead prospect'].filter(Boolean).join(' ').toLowerCase(),
@@ -302,10 +303,20 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
     tags: [c.name, c.company, c.email, c.role, 'contact person account'].filter(Boolean).join(' ').toLowerCase(),
   }));
 
-  const allRecords = [...dynamicDeals, ...dynamicLeads, ...dynamicContacts, ...getSearchDatabase()];
+  // Core system pages & navigation modules come first, followed by live records
+  const allRecords = [...getSearchDatabase(), ...dynamicDeals, ...dynamicLeads, ...dynamicContacts];
 
-  // Extract unique categories
-  const categories = ['All', ...Array.from(new Set(allRecords.map((r) => r.category)))];
+  // Desired category ordering for intuitive scanning
+  const preferredCategoryOrder = product === 'crm'
+    ? ['All', 'Pages & Modules', 'Leads', 'Contacts', 'Deals & ERP', 'Docs', 'Tasks', 'Files', 'Others']
+    : ['All', 'Pages & Modules', 'Loan Term Sheets', 'Lifecycle Stages', 'Desks & Agents', 'Verified Documents', 'Quick Actions'];
+
+  const uniqueCategories = Array.from(new Set(allRecords.map((r) => r.category)));
+  const categories = [
+    'All',
+    ...preferredCategoryOrder.filter((c) => c !== 'All' && uniqueCategories.includes(c)),
+    ...uniqueCategories.filter((c) => !preferredCategoryOrder.includes(c)),
+  ];
 
   // Filter records based on category & search query
   const filteredRecords = allRecords.filter((item) => {
@@ -337,12 +348,21 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
     });
   };
 
-  // Group search results by category
-  const groupedResults = filteredRecords.reduce((acc, item) => {
+  // Group search results by category following preferred order
+  const rawGrouped = filteredRecords.reduce((acc, item) => {
     if (!acc[item.category]) acc[item.category] = [];
     acc[item.category].push(item);
     return acc;
   }, {});
+
+  const groupedResults = {};
+  const orderedKeys = [
+    ...preferredCategoryOrder.filter((k) => rawGrouped[k]),
+    ...Object.keys(rawGrouped).filter((k) => !preferredCategoryOrder.includes(k)),
+  ];
+  orderedKeys.forEach((k) => {
+    groupedResults[k] = rawGrouped[k];
+  });
 
   return (
     <header
@@ -367,7 +387,18 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
       }}
     >
       {/* Left: Navigation Menu Toggle + Brand Logo */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '0.35rem' : '0.5rem', flexShrink: 0, minWidth: 0 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: isMobile ? '0.35rem' : '0.5rem',
+          flexShrink: 0,
+          minWidth: 0,
+          width: !isMobile && !isSidebarCollapsed ? 'calc(var(--sidebar-width) - 1.25rem)' : 'auto',
+          boxSizing: 'border-box',
+          transition: 'width var(--transition-normal)',
+        }}
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -448,6 +479,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
             maxWidth: isTablet ? '320px' : '460px',
             minWidth: '120px',
             margin: '0 0.75rem',
+            marginLeft: !isMobile ? '1.5rem' : '0.75rem',
             overflow: 'hidden',
           }}
         >
@@ -536,7 +568,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
       <div
         className="topbar-actions-group flex items-center"
         style={{
-          gap: isMobile ? (windowWidth < 380 ? '4px' : '6px') : '10px',
+          gap: isMobile ? (windowWidth < 380 ? '6px' : '8px') : '16px',
           marginLeft: 'auto',
           flexShrink: 0,
         }}
@@ -884,18 +916,19 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
       </div>
 
       {/* Massive Global Spotlight Search Modal / Command Palette */}
-      {isSearchOpen && (
+      {isSearchOpen && typeof document !== 'undefined' && createPortal(
         <div
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0, 0, 0, 0.6)',
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
             backdropFilter: 'blur(5px)',
+            WebkitBackdropFilter: 'blur(5px)',
             zIndex: 'var(--z-modal)',
             display: 'flex',
             alignItems: 'flex-start',
             justifyContent: 'center',
-            padding: '3.5rem 1rem 1rem 1rem',
+            padding: 'calc(var(--topbar-height) + 16px) 1rem 1.5rem 1rem',
           }}
           onClick={() => setIsSearchOpen(false)}
         >
@@ -905,12 +938,12 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
               maxWidth: '680px',
               backgroundColor: 'var(--surface)',
               border: '1px solid var(--border)',
-              borderRadius: '16px',
-              boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+              borderRadius: '18px',
+              boxShadow: '0 25px 60px -15px rgba(15, 23, 42, 0.25), 0 8px 24px -4px rgba(0,0,0,0.1)',
               overflow: 'hidden',
               display: 'flex',
               flexDirection: 'column',
-              maxHeight: '82vh',
+              maxHeight: 'calc(85vh - var(--topbar-height))',
             }}
             onClick={(e) => e.stopPropagation()}
           >
@@ -920,7 +953,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                padding: '1.1rem 1.25rem',
+                padding: '1rem 1.25rem',
                 borderBottom: '1px solid var(--border)',
                 backgroundColor: 'var(--surface)',
               }}
@@ -956,7 +989,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
               >
                 AI SEARCH
               </span>
-              {searchQuery && (
+              {searchQuery ? (
                 <button
                   type="button"
                   onClick={() => setSearchQuery('')}
@@ -965,12 +998,40 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                     border: 'none',
                     color: 'var(--text-tertiary)',
                     cursor: 'pointer',
-                    padding: '2px',
+                    padding: '4px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
                   }}
+                  title="Clear query"
                 >
                   <X size={16} />
                 </button>
-              )}
+              ) : null}
+              <button
+                type="button"
+                onClick={() => setIsSearchOpen(false)}
+                style={{
+                  background: 'var(--surface-secondary)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  padding: '3px 8px',
+                  borderRadius: '6px',
+                  fontSize: '11px',
+                  fontWeight: 600,
+                  fontFamily: 'var(--font-mono)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '4px',
+                  marginLeft: '2px',
+                  lineHeight: 1,
+                  flexShrink: 0,
+                }}
+                title="Close (Esc)"
+              >
+                ESC
+              </button>
             </div>
 
             {/* 2. Interactive Category Filter Tabs */}
@@ -979,11 +1040,12 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.5rem',
-                padding: '0.65rem 1rem',
+                padding: '0.65rem 1.25rem',
                 borderBottom: '1px solid var(--border)',
                 backgroundColor: 'var(--surface-secondary)',
                 overflowX: 'auto',
                 whiteSpace: 'nowrap',
+                scrollbarWidth: 'none',
               }}
             >
               {categories.map((cat) => {
@@ -994,15 +1056,16 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
                     type="button"
                     onClick={() => setActiveCategory(cat)}
                     style={{
-                      padding: '4px 10px',
+                      padding: '4px 12px',
                       borderRadius: '20px',
                       fontSize: '12px',
                       fontWeight: isSelected ? 700 : 500,
-                      backgroundColor: isSelected ? 'var(--accent)' : 'var(--surface)',
+                      backgroundColor: isSelected ? 'var(--accent, #6366f1)' : 'var(--surface)',
                       color: isSelected ? '#ffffff' : 'var(--text-secondary)',
-                      border: `1px solid ${isSelected ? 'var(--accent)' : 'var(--border)'}`,
+                      border: `1px solid ${isSelected ? 'var(--accent, #6366f1)' : 'var(--border)'}`,
                       cursor: 'pointer',
                       transition: 'all 0.15s ease',
+                      boxShadow: isSelected ? '0 2px 8px rgba(99, 102, 241, 0.35)' : 'none',
                     }}
                   >
                     {cat}
@@ -1121,7 +1184,8 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
               </Badge>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );

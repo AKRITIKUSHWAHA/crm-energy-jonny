@@ -34,7 +34,7 @@ export const CrmLayout = () => {
       }}
     >
       {/* Fixed Topbar Header */}
-      <Topbar onToggleSidebar={handleToggleSidebar} product="crm" />
+      <Topbar onToggleSidebar={handleToggleSidebar} product="crm" isSidebarCollapsed={isSidebarCollapsed} />
 
       {/* Main Shell: Locked 100vh minus Topbar Height */}
       <div

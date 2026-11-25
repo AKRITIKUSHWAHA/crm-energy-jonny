@@ -203,7 +203,7 @@ export const OmpLayout = () => {
       }}
     >
       {/* Exact Same Topbar as CRM nErgy AI (Same Logo, Same User, Same Search & Controls) */}
-      <Topbar onToggleSidebar={handleToggleSidebar} product="crm" />
+      <Topbar onToggleSidebar={handleToggleSidebar} product="crm" isSidebarCollapsed={isSidebarCollapsed} />
 
       {/* Responsive Sub-Header Bar with Store Switcher & Module Ticker */}
       <div

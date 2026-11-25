@@ -33,7 +33,7 @@ export const OalLayout = () => {
       }}
     >
       {/* Fixed Topbar Header */}
-      <Topbar onToggleSidebar={handleToggleSidebar} product="oal" />
+      <Topbar onToggleSidebar={handleToggleSidebar} product="oal" isSidebarCollapsed={isSidebarCollapsed} />
 
       {/* Main Shell Container */}
       <div
