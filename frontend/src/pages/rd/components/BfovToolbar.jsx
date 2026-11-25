@@ -66,7 +66,10 @@ export const BfovToolbar = ({
   const [isExportMenuOpen, setIsExportMenuOpen] = useState(false);
 
   return (
-    <div className="h-12 border-b border-slate-800 bg-slate-900 px-3 flex items-center justify-between select-none">
+    <div
+      className="h-12 border-b border-slate-800 bg-slate-900 px-3 flex items-center justify-between select-none overflow-x-auto"
+      style={{ WebkitOverflowScrolling: 'touch', minWidth: 0, scrollbarWidth: 'none' }}
+    >
       {/* Left: Back button, Title & Version */}
       <div className="flex items-center space-x-2">
         <button

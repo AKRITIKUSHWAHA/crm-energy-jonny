@@ -408,6 +408,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
 
           <div className="flex flex-col min-w-0" style={{ overflow: 'hidden' }}>
             <span
+              className="topbar-brand-title"
               style={{
                 fontFamily: 'var(--font-display)',
                 fontWeight: 800,
@@ -533,9 +534,9 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
 
       {/* Right Actions: Quick Action, Language Toggle, Notifications, Theme, Profile */}
       <div
-        className="flex items-center"
+        className="topbar-actions-group flex items-center"
         style={{
-          gap: isMobile ? '6px' : '10px',
+          gap: isMobile ? (windowWidth < 380 ? '4px' : '6px') : '10px',
           marginLeft: 'auto',
           flexShrink: 0,
         }}
@@ -545,9 +546,10 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           <button
             type="button"
             onClick={() => setIsSearchOpen(true)}
+            className="topbar-btn"
             style={{
-              width: '36px',
-              height: '36px',
+              width: windowWidth < 380 ? '32px' : '36px',
+              height: windowWidth < 380 ? '32px' : '36px',
               borderRadius: '50%',
               backgroundColor: 'var(--surface-secondary)',
               border: '1px solid var(--border)',
@@ -561,7 +563,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
             title="Search"
             aria-label="Search"
           >
-            <Search size={16} />
+            <Search size={windowWidth < 380 ? 14 : 16} />
           </button>
         )}
 
@@ -633,10 +635,10 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           trigger={
             <button
               type="button"
-              className="flex items-center justify-center rounded-full transition-colors cursor-pointer"
+              className="topbar-btn flex items-center justify-center rounded-full transition-colors cursor-pointer"
               style={{
-                width: '36px',
-                height: '36px',
+                width: windowWidth < 380 ? '32px' : '36px',
+                height: windowWidth < 380 ? '32px' : '36px',
                 position: 'relative',
                 backgroundColor: 'var(--surface-secondary)',
                 border: '1px solid var(--border)',
@@ -645,7 +647,7 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
               }}
               title="Notifications"
             >
-              <Bell size={18} />
+              <Bell size={windowWidth < 380 ? 15 : 18} />
               {unreadNotifications.length > 0 && (
                 <span
                   style={{
@@ -800,10 +802,10 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
         <button
           type="button"
           onClick={toggleTheme}
-          className="flex items-center justify-center rounded-full transition-colors cursor-pointer"
+          className="topbar-btn flex items-center justify-center rounded-full transition-colors cursor-pointer"
           style={{
-            width: '36px',
-            height: '36px',
+            width: windowWidth < 380 ? '32px' : '36px',
+            height: windowWidth < 380 ? '32px' : '36px',
             backgroundColor: 'var(--surface-secondary)',
             border: '1px solid var(--border)',
             color: 'var(--text-primary)',
@@ -813,9 +815,9 @@ export const Topbar = ({ onToggleSidebar, product = 'crm' }) => {
           title={theme === 'light' ? t('Switch to Dark Mode') : t('Switch to Light Mode')}
         >
           {theme === 'light' ? (
-            <Moon size={18} style={{ color: 'var(--text-primary)' }} />
+            <Moon size={windowWidth < 380 ? 15 : 18} style={{ color: 'var(--text-primary)' }} />
           ) : (
-            <Sun size={18} style={{ color: '#f59e0b' }} />
+            <Sun size={windowWidth < 380 ? 15 : 18} style={{ color: '#f59e0b' }} />
           )}
         </button>
 

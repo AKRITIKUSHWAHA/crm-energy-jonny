@@ -8,6 +8,7 @@ export const Table = ({ children, className = '', style = {} }) => (
     style={{
       width: '100%',
       overflowX: 'auto',
+      WebkitOverflowScrolling: 'touch',
       border: '1px solid var(--border)',
       borderRadius: '16px',
       backgroundColor: 'var(--surface)',

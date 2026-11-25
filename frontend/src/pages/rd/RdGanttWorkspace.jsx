@@ -459,7 +459,17 @@ export const RdGanttWorkspace = () => {
           />
           <CardBody className="p-0">
             {/* Split Gantt Container: Left Task Table, Right Timeline Canvas */}
-            <div style={{ display: 'flex', width: '100%', minHeight: '480px', overflow: 'hidden', borderTop: '1px solid var(--border)' }}>
+            <div
+              className="gantt-scroll-canvas"
+              style={{
+                display: 'flex',
+                width: '100%',
+                minHeight: '480px',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
+                borderTop: '1px solid var(--border)',
+              }}
+            >
               {/* Left Panel: Task & Milestone Attributes (Width: 320px) */}
               <div
                 style={{

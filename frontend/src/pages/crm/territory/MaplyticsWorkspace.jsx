@@ -510,8 +510,8 @@ export const MaplyticsWorkspace = () => {
           {/* Main Map Canvas Area */}
           <div className="flex-1 flex flex-col gap-3">
             {/* Top Canvas Controls Bar */}
-            <div className="flex items-center justify-between p-2.5 bg-secondary/80 rounded-lg border border-border text-xs">
-              <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-secondary/80 rounded-lg border border-border text-xs">
+              <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
                 <span className="font-semibold text-muted-foreground">Basemap:</span>
                 {['roadmap', 'satellite', 'dark', 'terrain'].map((b) => (
                   <button
@@ -528,8 +528,8 @@ export const MaplyticsWorkspace = () => {
                 ))}
               </div>
 
-              <div className="flex items-center gap-2">
-                <span className="font-mono text-muted-foreground">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-mono text-muted-foreground text-[10.5px] sm:text-xs">
                   Center: {viewport.centerLat.toFixed(4)}, {viewport.centerLng.toFixed(4)} | Zoom: {viewport.zoom}x
                 </span>
                 <div className="flex items-center gap-1 border-l border-border pl-2">
@@ -548,7 +548,7 @@ export const MaplyticsWorkspace = () => {
 
             {/* Interactive SVG Canvas */}
             <div
-              className={`relative w-full h-[500px] rounded-xl overflow-hidden border border-border select-none ${
+              className={`maplytics-container relative w-full h-[360px] sm:h-[450px] lg:h-[520px] rounded-xl overflow-hidden border border-border select-none ${
                 basemap === 'satellite'
                   ? 'bg-slate-950'
                   : basemap === 'dark'
