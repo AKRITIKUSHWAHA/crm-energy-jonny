@@ -91,7 +91,7 @@ export const Sidebar = ({
       }}
     >
       {/* Navigation Scrollable Body */}
-      <div className="flex flex-col gap-4 p-3" style={{ overflowY: 'auto', flex: 1 }}>
+      <div className="flex flex-col gap-4 p-3" style={{ overflowY: 'auto', overflowX: 'hidden', flex: 1, boxSizing: 'border-box' }}>
         {Object.entries(groupedSections).map(([sectionTitle, items]) => (
           <div key={sectionTitle} className="flex flex-col gap-1">
             {!isCollapsed && (
@@ -129,8 +129,8 @@ export const Sidebar = ({
                     return {
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '0.75rem',
-                      padding: isCollapsed ? '0.65rem 0' : '0.65rem 0.95rem',
+                      gap: '0.65rem',
+                      padding: isCollapsed ? '0.65rem 0' : '0.65rem 0.85rem',
                       justifyContent: isCollapsed ? 'center' : 'flex-start',
                       borderRadius: '14px',
                       fontSize: '13px',
@@ -146,6 +146,8 @@ export const Sidebar = ({
                       whiteSpace: 'nowrap',
                       transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                       marginBottom: '2px',
+                      width: '100%',
+                      boxSizing: 'border-box',
                     };
                   }}
                   onMouseEnter={(e) => {
@@ -173,7 +175,19 @@ export const Sidebar = ({
                       transition: 'color 200ms ease',
                     }}
                   />
-                  {!isCollapsed && <span>{t(item.label)}</span>}
+                  {!isCollapsed && (
+                    <span
+                      style={{
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        lineHeight: '1.2',
+                      }}
+                      title={t(item.label)}
+                    >
+                      {t(item.label)}
+                    </span>
+                  )}
                 </NavLink>
               );
             })}
