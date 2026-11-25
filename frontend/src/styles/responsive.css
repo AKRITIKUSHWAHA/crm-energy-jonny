@@ -1683,10 +1683,206 @@ pre, code {
     padding: 0.65rem 0.55rem !important;
   }
 
+  .kpi-value {
+    font-size: clamp(1.15rem, 5vw, 1.35rem) !important;
+  }
+
   .main-content {
     padding: 0.35rem 0.25rem !important;
   }
 }
+
+/* ==========================================================================
+   UNIVERSAL RESPONSIVE ENHANCEMENTS: CROSS-DEVICE MATRIX (R01–R15)
+   Zero Functional Regression | Strict Visual Adaptability
+   ========================================================================== */
+
+/* 1. Global Safe Containers & Touch Protections */
+.responsive-fluid-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.table-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Card Header Flex Wrap on Mobile/Tablet */
+@media (max-width: 640px) {
+  .card-header,
+  .surface-card > div:first-child:not(.card-body) {
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+    align-items: flex-start !important;
+  }
+
+  .card-header > div:last-child {
+    width: 100% !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 0.5rem !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* 2. iOS Safari Form Zoom Prevention (< 768px: font-size >= 16px) */
+@media (max-width: 767px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* 3. Touch Device Friendly Target Sizes */
+@media (pointer: coarse) {
+  .tab-btn,
+  .tabs-header button {
+    min-height: 42px !important;
+    padding: 8px 14px !important;
+    touch-action: pan-x !important;
+  }
+
+  button:not(.is-inline-btn),
+  .btn:not(.is-inline-btn) {
+    min-height: 38px;
+  }
+}
+
+/* 4. Small Mobile (320px–374px) Guard: R01 (320x568), R02 (360x800) */
+@media (max-width: 374px) {
+  .topbar-brand-title {
+    display: none !important;
+  }
+
+  .topbar-actions-group {
+    gap: 4px !important;
+  }
+
+  .topbar-btn {
+    width: 32px !important;
+    height: 32px !important;
+  }
+
+  .kpi-card {
+    padding: 0.75rem 0.65rem !important;
+  }
+
+  .grid-responsive-kpi {
+    grid-template-columns: 1fr !important;
+    gap: 6px !important;
+  }
+
+  .btn {
+    font-size: 11px !important;
+    padding: 0.35rem 0.5rem !important;
+  }
+
+  .tabs-header button {
+    font-size: 11px !important;
+    padding: 5px 9px !important;
+  }
+}
+
+/* 5. Landscape Mode on Small / Foldable Devices (max-height <= 520px) */
+@media (max-height: 520px) and (orientation: landscape) {
+  .modal-content,
+  div[role="dialog"] > div {
+    max-height: 96vh !important;
+  }
+
+  .modal-body {
+    max-height: calc(96vh - 84px) !important;
+    padding: 0.75rem !important;
+  }
+
+  .modal-header,
+  .modal-footer {
+    padding: 0.5rem 0.75rem !important;
+  }
+
+  .main-content {
+    padding: 0.5rem !important;
+  }
+}
+
+/* 6. Tablet Landscape & Small Laptop (1024px–1279px): R09 (1024x768) */
+@media (min-width: 1024px) and (max-width: 1279px) {
+  .grid-responsive-kpi {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+  }
+
+  .main-content {
+    padding: 1rem 1.25rem !important;
+  }
+}
+
+/* 7. Ultra-Wide Displays (>= 1920px & 2560px): R14, R15 */
+@media (min-width: 1920px) {
+  .grid-responsive-kpi {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 20px !important;
+  }
+
+  .kpi-strip-4col {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 18px !important;
+  }
+}
+
+@media (min-width: 2560px) {
+  .main-content {
+    max-width: 2400px;
+    margin-left: auto;
+    margin-right: auto;
+    padding: 2rem !important;
+  }
+
+  .grid-responsive-kpi {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 24px !important;
+  }
+
+  .kpi-card {
+    padding: 1.5rem !important;
+  }
+}
+
+/* 8. Complex Canvas Responsive Wrappers (Gantt, BFOV, Maplytics) */
+.gantt-scroll-canvas {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+}
+
+.bfov-canvas-wrapper {
+  width: 100% !important;
+  max-width: 100% !important;
+  overflow: auto !important;
+  -webkit-overflow-scrolling: touch !important;
+  box-sizing: border-box !important;
+}
+
+.maplytics-container {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-height: 380px !important;
+  box-sizing: border-box !important;
+}
+
 
 
 

@@ -23,7 +23,7 @@ export const Card = ({ children, className = '', style = {}, ...props }) => (
 
 export const CardHeader = ({ title, subtitle, action, className = '', style = {} }) => (
   <div
-    className={cx('flex items-center justify-between p-4 sm:p-5 border-b border-subtle', className)}
+    className={cx('card-header flex items-center justify-between p-4 sm:p-5 border-b border-subtle', className)}
     style={{
       borderBottom: '1px solid var(--border)',
       padding: '1rem 1.25rem',

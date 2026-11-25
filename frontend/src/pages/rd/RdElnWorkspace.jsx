@@ -600,7 +600,7 @@ export const RdElnWorkspace = () => {
       </div>
 
       {/* Top KPI Metrics Rollup */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 14 }}>
+      <div className="grid-responsive-kpi mb-6">
         <KPICard
           title="Active Notebooks"
           value={String(notebooks.filter(n => n.status === 'ACTIVE').length)}
@@ -712,7 +712,7 @@ export const RdElnWorkspace = () => {
               </Button>
             </Card>
           ) : (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
               {notebooks.map((nb) => (
                 <Card key={nb.id} style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                   <CardHeader
@@ -770,7 +770,7 @@ export const RdElnWorkspace = () => {
       {/* SUB-VIEW 2: RESEARCH ENTRIES & RICH TEXT EDITOR */}
       {/* ========================================================================= */}
       {activeTab === 'entries' && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 360px) 1fr', gap: 16 }}>
+        <div className="grid grid-cols-1 lg:grid-cols-[minmax(280px,340px)_1fr] gap-4">
           {/* Left Column: Entries List */}
           <div className="flex flex-col gap-3">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -1250,7 +1250,7 @@ export const RdElnWorkspace = () => {
             </Button>
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
             {datasets.map((ds) => (
               <Card key={ds.id}>
                 <CardHeader
@@ -1371,7 +1371,7 @@ export const RdElnWorkspace = () => {
             ))}
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(340px, 1fr))', gap: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(min(100%, 280px), 1fr))', gap: 16 }}>
             {knowledgeRecords.map((kr) => (
               <Card key={kr.id}>
                 <CardHeader
