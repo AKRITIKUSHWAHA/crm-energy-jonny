@@ -30,7 +30,11 @@ import {
   Filter,
   CheckSquare,
   MessageSquare,
-  BarChart3
+  BarChart3,
+  BarChart2,
+  TestTube,
+  BookOpen,
+  Scale
 } from 'lucide-react';
 import {
   Breadcrumb,
@@ -66,6 +70,11 @@ import { RdCollaboration } from './RdCollaboration';
 import { RdAnalytics } from './RdAnalytics';
 import { RdBfovCharts } from './RdBfovCharts';
 import { RdEnterpriseGovernance } from './RdEnterpriseGovernance';
+import { RdGanttWorkspace } from './RdGanttWorkspace';
+import { RdExperimentStudio } from './RdExperimentStudio';
+import { RdElnWorkspace } from './RdElnWorkspace';
+import { RdGovernanceOpsWorkspace } from './RdGovernanceOpsWorkspace';
+import { RdResourceWorkspace } from './RdResourceWorkspace';
 
 export const EgolyticsHub = () => {
   const { t } = useLanguage();
@@ -75,10 +84,15 @@ export const EgolyticsHub = () => {
   const navigate = useNavigate();
 
   const getTabFromPath = (pathname) => {
-    if (pathname.includes('/governance') || pathname.includes('/enterprise') || pathname.includes('/compliance') || pathname.includes('/patents')) return 'governance';
+    if (pathname.includes('/enterprise') || pathname.includes('/compliance') || pathname.includes('/patents') || pathname.includes('/ip')) return 'enterprise';
     if (pathname.includes('/bfov') || pathname.includes('/diagrams')) return 'bfov';
     if (pathname.includes('/analytics') || pathname.includes('/reports') || pathname.includes('/dashboard')) return 'analytics';
     if (pathname.includes('/collaboration') || pathname.includes('/messages') || pathname.includes('/calendar')) return 'collaboration';
+    if (pathname.includes('/resources') || pathname.includes('/capacity') || pathname.includes('/timesheets') || pathname.includes('/facilities') || pathname.includes('/equipment') || pathname.includes('/skills')) return 'resources';
+    if (pathname.includes('/governance') || pathname.includes('/decisions') || pathname.includes('/risks') || pathname.includes('/issues') || pathname.includes('/changes') || pathname.includes('/requirements') || pathname.includes('/wbs') || pathname.includes('/deliverables') || pathname.includes('/quality') || pathname.includes('/budgets')) return 'governance';
+    if (pathname.includes('/eln') || pathname.includes('/notebooks') || pathname.includes('/documents') || pathname.includes('/datasets') || pathname.includes('/knowledge')) return 'eln';
+    if (pathname.includes('/experiments') || pathname.includes('/hypotheses') || pathname.includes('/objectives') || pathname.includes('/protocols')) return 'experiments';
+    if (pathname.includes('/gantt') || pathname.includes('/roadmap') || pathname.includes('/timeline') || pathname.includes('/milestones')) return 'gantt';
     if (pathname.includes('/tasks') || pathname.includes('/sprints') || pathname.includes('/backlog') || pathname.includes('/schedule')) return 'tasks';
     if (pathname.includes('/stagegate') || pathname.includes('/gates')) return 'stagegate';
     if (pathname.includes('/ideas')) return 'ideas';
@@ -91,7 +105,7 @@ export const EgolyticsHub = () => {
     if (pathname.includes('/modules')) return 'modules';
     if (pathname.includes('/rbac')) return 'rbac';
     if (pathname.includes('/isolation')) return 'isolation';
-    return 'tasks'; // Default to active Tasks & Sprints for Master Prompt 05
+    return 'resources'; // Default to active Resource, Capacity & Lab Ops for Master Prompt 10
   };
 
   const [activeTab, setActiveTab] = useState(() => getTabFromPath(location.pathname));
@@ -102,10 +116,15 @@ export const EgolyticsHub = () => {
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    if (tabId === 'governance') navigate('/crm/rd/governance');
+    if (tabId === 'enterprise') navigate('/crm/rd/enterprise');
     else if (tabId === 'bfov') navigate('/crm/rd/bfov');
     else if (tabId === 'analytics') navigate('/crm/rd/analytics');
     else if (tabId === 'collaboration') navigate('/crm/rd/collaboration');
+    else if (tabId === 'resources') navigate('/crm/rd/resources');
+    else if (tabId === 'governance') navigate('/crm/rd/governance');
+    else if (tabId === 'eln') navigate('/crm/rd/eln');
+    else if (tabId === 'experiments') navigate('/crm/rd/experiments');
+    else if (tabId === 'gantt') navigate('/crm/rd/gantt');
     else if (tabId === 'tasks') navigate('/crm/rd/tasks');
     else if (tabId === 'stagegate') navigate('/crm/rd/stagegate');
     else if (tabId === 'ideas') navigate('/crm/rd/ideas');
@@ -261,9 +280,9 @@ export const EgolyticsHub = () => {
         />
         <KPICard
           title="Active Master Prompt"
-          value="Master Prompt 05"
-          icon={CheckSquare}
-          trend={{ value: 'Task & Sprint Scheduling Active', isPositive: true }}
+          value="Master Prompt 08"
+          icon={BookOpen}
+          trend={{ value: 'ELN & Documentation Active', isPositive: true }}
         />
         <KPICard
           title="Security & RBAC"
@@ -279,10 +298,15 @@ export const EgolyticsHub = () => {
           <div style={{ borderBottom: '1px solid var(--border)', padding: '0 1rem' }}>
             <Tabs
               tabs={[
-                { id: 'governance', label: 'IP, Compliance & Enterprise QA', icon: ShieldCheck },
+                { id: 'enterprise', label: 'IP, Compliance & Enterprise QA', icon: ShieldCheck },
                 { id: 'bfov', label: 'BFOV Diagramming Studio', icon: Workflow },
                 { id: 'analytics', label: 'Analytics & Dashboards', icon: BarChart3 },
                 { id: 'collaboration', label: 'Collaboration & Integrations', icon: MessageSquare },
+                { id: 'resources', label: 'Resources & Lab Ops (MP10)', icon: Users },
+                { id: 'governance', label: 'Decisions & Risk Ops (MP09)', icon: Scale },
+                { id: 'eln', label: 'Lab Notebook (ELN)', icon: BookOpen },
+                { id: 'experiments', label: 'Experiment Studio', icon: TestTube },
+                { id: 'gantt', label: 'Gantt & Roadmap', icon: BarChart2 },
                 { id: 'tasks', label: 'Tasks & Sprints', icon: CheckSquare },
                 { id: 'stagegate', label: 'Stage-Gate Governance', icon: Workflow },
                 { id: 'ideas', label: 'Idea Management', icon: Lightbulb },
@@ -304,9 +328,9 @@ export const EgolyticsHub = () => {
 
           <div style={{ padding: '1.5rem' }}>
             {/* TAB: ENTERPRISE GOVERNANCE, IP & COMPLIANCE (MASTER PROMPT 16) */}
-            {activeTab === 'governance' && <RdEnterpriseGovernance />}
+            {activeTab === 'enterprise' && <RdEnterpriseGovernance />}
 
-            {/* TAB: BFOV CHARTS & DIAGRAMMING ENGINE (MASTER PROMPT 14) */}
+            {/* TAB: BFOV CHARTS & DIAGRAMMING ENGINE (MASTER PROMPT 14 & 15) */}
             {activeTab === 'bfov' && <RdBfovCharts />}
 
             {/* TAB: R&D DASHBOARDS, ANALYTICS & REPORTING (MASTER PROMPT 12) */}
@@ -314,6 +338,21 @@ export const EgolyticsHub = () => {
 
             {/* TAB: COLLABORATION, COMMUNICATION & INTEGRATIONS (MASTER PROMPT 11) */}
             {activeTab === 'collaboration' && <RdCollaboration />}
+
+            {/* TAB: RESOURCE, CAPACITY, TIME & LAB FACILITY MANAGEMENT (REQ 51-60) */}
+            {activeTab === 'resources' && <RdResourceWorkspace />}
+
+            {/* TAB: DECISION, RISK, ISSUE & FINANCIAL MANAGEMENT (REQ 31-40) */}
+            {activeTab === 'governance' && <RdGovernanceOpsWorkspace />}
+
+            {/* TAB: ELECTRONIC LAB NOTEBOOK (ELN) & RESEARCH DOCUMENTATION (REQ 30, 42, 63, 94) */}
+            {activeTab === 'eln' && <RdElnWorkspace />}
+
+            {/* TAB: RESEARCH HYPOTHESIS & EXPERIMENT STUDIO (REQ 25-30, 63) */}
+            {activeTab === 'experiments' && <RdExperimentStudio />}
+
+            {/* TAB: GANTT, TIMELINE & CPM (REQ 9, 10, 13, 14) */}
+            {activeTab === 'gantt' && <RdGanttWorkspace />}
 
             {/* TAB: TASKS, SPRINTS & SCHEDULING (REQ 11-20) */}
             {activeTab === 'tasks' && <RdTasks />}
