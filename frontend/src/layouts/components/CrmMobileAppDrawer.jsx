@@ -39,6 +39,26 @@ export const CrmMobileAppDrawer = ({ isOpen, onClose, product = 'crm', onOpenSea
   const rawNavItems = product === 'crm' ? crmNavigation : oalNavigation;
   const permittedNavItems = getFilteredNavigation(rawNavItems, product, currentUser);
 
+  // Compute strictly one active nav item (exact match first, then longest matching prefix)
+  const activeItemId = (() => {
+    const exact = permittedNavItems.find((item) => item.path === location.pathname);
+    if (exact) return exact.id;
+
+    let bestMatch = null;
+    let maxLen = 0;
+    for (const item of permittedNavItems) {
+      if (item.path !== '/' && item.path !== '/crm/dashboard' && item.path !== '/oal/borrower/dashboard') {
+        if (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)) {
+          if (item.path.length > maxLen) {
+            maxLen = item.path.length;
+            bestMatch = item;
+          }
+        }
+      }
+    }
+    return bestMatch ? bestMatch.id : null;
+  })();
+
   // Group navigation items by section
   const groupedSections = permittedNavItems.reduce((acc, item) => {
     const sec = item.section || 'General';
@@ -254,11 +274,7 @@ export const CrmMobileAppDrawer = ({ isOpen, onClose, product = 'crm', onOpenSea
 
               {items.map((item) => {
                 const Icon = item.icon;
-                const isActive =
-                  location.pathname === item.path ||
-                  (item.path !== '/crm/dashboard' &&
-                    item.path !== '/oal/borrower/dashboard' &&
-                    location.pathname.startsWith(item.path));
+                const isActive = item.id === activeItemId;
 
                 return (
                   <button

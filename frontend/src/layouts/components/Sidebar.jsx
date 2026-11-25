@@ -33,6 +33,26 @@ export const Sidebar = ({
   // Filter items permitted for the active role
   const permittedNavItems = getFilteredNavigation(rawNavItems, product, currentUser);
 
+  // Compute strictly one active nav item (exact match first, then longest matching prefix)
+  const activeItemId = (() => {
+    const exact = permittedNavItems.find((item) => item.path === location.pathname);
+    if (exact) return exact.id;
+
+    let bestMatch = null;
+    let maxLen = 0;
+    for (const item of permittedNavItems) {
+      if (item.path !== '/' && item.path !== '/crm/dashboard' && item.path !== '/oal/borrower/dashboard') {
+        if (location.pathname === item.path || location.pathname.startsWith(`${item.path}/`)) {
+          if (item.path.length > maxLen) {
+            maxLen = item.path.length;
+            bestMatch = item;
+          }
+        }
+      }
+    }
+    return bestMatch ? bestMatch.id : null;
+  })();
+
   // Group filtered items by section
   const groupedSections = permittedNavItems.reduce((acc, item) => {
     const sec = item.section || 'General';
@@ -91,12 +111,13 @@ export const Sidebar = ({
 
             {items.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path || (item.path !== '/crm/dashboard' && item.path !== '/oal/borrower/dashboard' && location.pathname.startsWith(item.path));
+              const isActive = item.id === activeItemId;
 
               return (
                 <NavLink
                   key={item.id}
                   to={item.path}
+                  end
                   onClick={() => {
                     if (item.id === 'bestie') {
                       window.dispatchEvent(new CustomEvent('open-crm-ai-copilot'));
@@ -104,8 +125,7 @@ export const Sidebar = ({
                     if (onCloseMobile) onCloseMobile();
                   }}
                   title={isCollapsed ? t(item.label) : undefined}
-                  style={({ isActive: isLinkActive }) => {
-                    const currentActive = isLinkActive || isActive;
+                  style={() => {
                     return {
                       display: 'flex',
                       alignItems: 'center',
@@ -114,12 +134,12 @@ export const Sidebar = ({
                       justifyContent: isCollapsed ? 'center' : 'flex-start',
                       borderRadius: '14px',
                       fontSize: '13px',
-                      fontWeight: currentActive ? 700 : 500,
-                      color: currentActive ? '#ffffff' : 'var(--text-secondary, #475569)',
-                      background: currentActive
+                      fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#ffffff' : 'var(--text-secondary, #475569)',
+                      background: isActive
                         ? 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 30%, #ec4899 70%, #f97316 100%)'
                         : 'transparent',
-                      boxShadow: currentActive
+                      boxShadow: isActive
                         ? '0 8px 20px -4px rgba(124, 58, 237, 0.45), 0 4px 12px -2px rgba(249, 115, 22, 0.35)'
                         : 'none',
                       textDecoration: 'none',
@@ -129,7 +149,7 @@ export const Sidebar = ({
                     };
                   }}
                   onMouseEnter={(e) => {
-                    if (!isActive && location.pathname !== item.path) {
+                    if (!isActive) {
                       e.currentTarget.style.color = '#6366f1';
                       e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.08)';
                       const iconEl = e.currentTarget.querySelector('svg');
@@ -137,7 +157,7 @@ export const Sidebar = ({
                     }
                   }}
                   onMouseLeave={(e) => {
-                    if (!isActive && location.pathname !== item.path) {
+                    if (!isActive) {
                       e.currentTarget.style.color = 'var(--text-secondary, #475569)';
                       e.currentTarget.style.backgroundColor = 'transparent';
                       const iconEl = e.currentTarget.querySelector('svg');
@@ -149,7 +169,7 @@ export const Sidebar = ({
                     size={18}
                     className="flex-shrink-0"
                     style={{
-                      color: (isActive || location.pathname === item.path) ? '#ffffff' : '#64748b',
+                      color: isActive ? '#ffffff' : '#64748b',
                       transition: 'color 200ms ease',
                     }}
                   />
