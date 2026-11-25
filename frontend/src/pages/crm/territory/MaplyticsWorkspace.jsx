@@ -697,33 +697,33 @@ export const MaplyticsWorkspace = () => {
 
               {/* Drawing Toolbar Overlay */}
               <div
-                className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap items-center gap-1.5 sm:gap-2 bg-slate-900/90 p-1.5 rounded-lg border border-border shadow-md z-30 max-w-[calc(100%-20px)]"
+                className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 flex flex-wrap items-center gap-1.5 sm:gap-2 p-1.5 rounded-lg border shadow-md z-30 max-w-[calc(100%-20px)]"
                 style={{
                   position: 'absolute',
                   top: '12px',
                   left: '12px',
                   zIndex: 30,
                   backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                  borderColor: 'rgba(255, 255, 255, 0.15)',
                   maxWidth: 'calc(100% - 24px)',
                 }}
               >
-                <Button
-                  variant={isDrawingActive ? 'primary' : 'outline'}
-                  size="sm"
-                  className="h-7 text-xs shrink-0"
+                <button
+                  type="button"
+                  className={`gis-canvas-btn shrink-0 ${isDrawingActive ? 'active' : ''}`}
                   onClick={() => setIsDrawingActive(!isDrawingActive)}
                 >
-                  <Edit2 className="w-3 h-3 mr-1" />
-                  {isDrawingActive ? 'Cancel Drawing' : 'Draw Polygon'}
-                </Button>
+                  <Edit2 size={13} style={{ width: 13, height: 13, flexShrink: 0 }} />
+                  <span>{isDrawingActive ? 'Cancel Drawing' : 'Draw Polygon'}</span>
+                </button>
                 {isDrawingActive && drawnVertices.length >= 3 && (
                   <Button variant="success" size="sm" className="h-7 text-xs shrink-0" onClick={handleSaveDrawnPolygon}>
-                    <Check className="w-3 h-3 mr-1" />
+                    <Check size={13} style={{ width: 13, height: 13, flexShrink: 0 }} className="mr-1" />
                     Save ({drawnVertices.length} pts)
                   </Button>
                 )}
                 {isDrawingActive && (
-                  <span className="text-[10.5px] text-muted-foreground px-1 hidden sm:inline">
+                  <span className="text-[10.5px] px-1 hidden sm:inline" style={{ color: '#94a3b8' }}>
                     Click canvas to add vertices
                   </span>
                 )}
