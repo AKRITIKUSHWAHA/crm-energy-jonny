@@ -229,7 +229,7 @@ async function runTestSuite() {
       headers: headersA,
       body: JSON.stringify({
         name: 'Enterprise Slack',
-        webhookUrl: 'https://hooks.slack.com/services/T00000000/B00000000/XXXXXXXXXXXXXXXXXXXXXXXX',
+        webhookUrl: 'https://hooks.example-slack.com/services/mock-webhook',
         channelMapping: { general: '#rd-announcements' },
         eventsConfig: { PROJECT_CREATED: true, STAGE_GATE_SUBMITTED: true },
       }),
