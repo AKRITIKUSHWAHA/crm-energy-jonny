@@ -164,7 +164,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'AI Media & Video Creator',
     roleName: 'Content Creators',
     badge: 'Creative AI SuperHouse',
-    defaultRoute: '/crm/ai-studio',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'bestie',
@@ -195,7 +195,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Campaign & Content Builder',
     roleName: 'Content Builders',
     badge: 'Marketing Asset Engine',
-    defaultRoute: '/crm/marketing',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'marketing',
@@ -226,7 +226,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Brand Ambassador & Influencer',
     roleName: 'Influencers',
     badge: 'Referral & Audience Hub',
-    defaultRoute: '/crm/leads',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'leads',
@@ -255,7 +255,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Affiliate Deal Partner',
     roleName: 'Affiliate Partners',
     badge: 'Partner Network & Commissions',
-    defaultRoute: '/crm/leads',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'leads',
@@ -286,7 +286,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'AI Marketing Specialist',
     roleName: 'AI Marketing Pros',
     badge: 'AI Growth & Ad Engine',
-    defaultRoute: '/crm/marketing',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'marketing',
@@ -322,7 +322,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Human Resources Director',
     roleName: 'HR',
     badge: 'Talent & Employee Lifecycle',
-    defaultRoute: '/crm/hr',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'hr',
@@ -354,7 +354,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Operations & Sales Administrator',
     roleName: 'Admin I',
     badge: 'Operations Desk Control',
-    defaultRoute: '/crm/leads',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'contacts',
@@ -435,7 +435,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Finance & Compliance Administrator',
     roleName: 'Admin II',
     badge: 'ERP & Financial Controller',
-    defaultRoute: '/crm/erp/finance',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'contacts',
@@ -476,7 +476,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'CRM & Pipeline Specialist',
     roleName: 'CRM Pros',
     badge: 'Customer Relations Lead',
-    defaultRoute: '/crm/pipeline',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'contacts',
@@ -515,7 +515,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Master Super Administrator',
     roleName: 'Super Admin',
     badge: 'Root System & Vault Access',
-    defaultRoute: '/crm/admin',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: [
       'dashboard',
       'contacts',
@@ -658,7 +658,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Operations & Sales Administrator',
     roleName: 'Admin I',
     badge: 'Operations Desk Control',
-    defaultRoute: '/crm/leads',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: ['dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'erp', 'reports', 'settings'],
     allowedRoutes: ['/crm/dashboard', '/crm/contacts', '/crm/leads', '/crm/pipeline', '/crm/tasks', '/crm/communication', '/crm/erp', '/omp/executive/central-office', '/omp', '/crm/analytics', '/crm/reports', '/crm/settings', '/crm/profile', '/showcase'],
   },
@@ -667,7 +667,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'Finance & Compliance Administrator',
     roleName: 'Admin II',
     badge: 'ERP & Financial Controller',
-    defaultRoute: '/crm/erp/finance',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: ['dashboard', 'contacts', 'pipeline', 'tasks', 'erp', 'reports', 'settings'],
     allowedRoutes: ['/crm/dashboard', '/crm/contacts', '/crm/pipeline', '/crm/tasks', '/crm/erp', '/omp/executive/central-office', '/omp', '/crm/erp/finance', '/crm/erp/reports', '/crm/analytics', '/crm/reports', '/crm/settings', '/crm/profile', '/showcase'],
   },
@@ -676,7 +676,7 @@ export const CRM_ROLE_CONFIG = {
     title: 'CRM & Pipeline Specialist',
     roleName: 'CRM Pros',
     badge: 'Customer Relations Lead',
-    defaultRoute: '/crm/pipeline',
+    defaultRoute: '/crm/dashboard',
     allowedNavIds: ['dashboard', 'contacts', 'leads', 'pipeline', 'tasks', 'communication', 'support', 'knowledge-base', 'reports', 'settings'],
     allowedRoutes: ['/crm/dashboard', '/crm/contacts', '/crm/leads', '/crm/pipeline', '/crm/tasks', '/crm/communication', '/crm/support', '/crm/knowledge-base', '/crm/analytics', '/crm/reports', '/crm/settings', '/crm/profile', '/showcase'],
   },
