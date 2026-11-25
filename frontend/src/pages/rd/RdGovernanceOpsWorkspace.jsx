@@ -223,11 +223,12 @@ export const RdGovernanceOpsWorkspace = () => {
   // Fetch Projects List
   const fetchProjects = useCallback(async () => {
     try {
-      const res = await apiClient.get('/api/rd/portfolio/projects');
-      if (res.data?.success && Array.isArray(res.data.data)) {
-        setProjects(res.data.data);
-        if (res.data.data.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(res.data.data[0].id);
+      const res = await apiClient.get('/rd/portfolio/projects');
+      const list = Array.isArray(res.data?.data) ? res.data.data : (res.data?.data?.projects || []);
+      if (list.length > 0) {
+        setProjects(list);
+        if (!selectedProjectId) {
+          setSelectedProjectId(list[0].id);
         }
       }
     } catch (err) {
@@ -240,8 +241,8 @@ export const RdGovernanceOpsWorkspace = () => {
     try {
       setLoading(true);
       const url = selectedProjectId
-        ? `/api/rd/governance-ops/overview?projectId=${selectedProjectId}`
-        : '/api/rd/governance-ops/overview';
+        ? `/rd/governance-ops/overview?projectId=${selectedProjectId}`
+        : '/rd/governance-ops/overview';
       const res = await apiClient.get(url);
       if (res.data?.success) {
         setOverviewKpis(res.data.data?.kpis);
@@ -257,7 +258,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchDecisions = useCallback(async () => {
     try {
       setLoading(true);
-      let url = '/api/rd/governance-ops/decisions';
+      let url = '/rd/governance-ops/decisions';
       const params = [];
       if (selectedProjectId) params.push(`projectId=${selectedProjectId}`);
       if (decisionCategoryFilter !== 'ALL') params.push(`category=${decisionCategoryFilter}`);
@@ -280,8 +281,8 @@ export const RdGovernanceOpsWorkspace = () => {
     try {
       setLoading(true);
       const [risksRes, matrixRes] = await Promise.all([
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/risks?projectId=${selectedProjectId}` : '/api/rd/governance-ops/risks'),
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/risks/matrix?projectId=${selectedProjectId}` : '/api/rd/governance-ops/risks/matrix'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/risks?projectId=${selectedProjectId}` : '/rd/governance-ops/risks'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/risks/matrix?projectId=${selectedProjectId}` : '/rd/governance-ops/risks/matrix'),
       ]);
       if (risksRes.data?.success) setRisks(risksRes.data.data || []);
       if (matrixRes.data?.success) setRiskMatrix(matrixRes.data.data || null);
@@ -296,7 +297,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchIssues = useCallback(async () => {
     try {
       setLoading(true);
-      const url = selectedProjectId ? `/api/rd/governance-ops/issues?projectId=${selectedProjectId}` : '/api/rd/governance-ops/issues';
+      const url = selectedProjectId ? `/rd/governance-ops/issues?projectId=${selectedProjectId}` : '/rd/governance-ops/issues';
       const res = await apiClient.get(url);
       if (res.data?.success) setIssues(res.data.data || []);
     } catch (err) {
@@ -310,7 +311,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchChangeRequests = useCallback(async () => {
     try {
       setLoading(true);
-      const url = selectedProjectId ? `/api/rd/governance-ops/change-requests?projectId=${selectedProjectId}` : '/api/rd/governance-ops/change-requests';
+      const url = selectedProjectId ? `/rd/governance-ops/change-requests?projectId=${selectedProjectId}` : '/rd/governance-ops/change-requests';
       const res = await apiClient.get(url);
       if (res.data?.success) setChangeRequests(res.data.data || []);
     } catch (err) {
@@ -325,8 +326,8 @@ export const RdGovernanceOpsWorkspace = () => {
     try {
       setLoading(true);
       const [reqRes, traceRes] = await Promise.all([
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/requirements?projectId=${selectedProjectId}` : '/api/rd/governance-ops/requirements'),
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/requirements/traceability?projectId=${selectedProjectId}` : '/api/rd/governance-ops/requirements/traceability'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/requirements?projectId=${selectedProjectId}` : '/rd/governance-ops/requirements'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/requirements/traceability?projectId=${selectedProjectId}` : '/rd/governance-ops/requirements/traceability'),
       ]);
       if (reqRes.data?.success) setRequirements(reqRes.data.data || []);
       if (traceRes.data?.success) setTraceabilityMatrix(traceRes.data.data || []);
@@ -342,8 +343,8 @@ export const RdGovernanceOpsWorkspace = () => {
     try {
       setLoading(true);
       const [baseRes, wbsRes] = await Promise.all([
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/scope/baselines?projectId=${selectedProjectId}` : '/api/rd/governance-ops/scope/baselines'),
-        apiClient.get(selectedProjectId ? `/api/rd/governance-ops/scope/wbs?projectId=${selectedProjectId}` : '/api/rd/governance-ops/scope/wbs'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/scope/baselines?projectId=${selectedProjectId}` : '/rd/governance-ops/scope/baselines'),
+        apiClient.get(selectedProjectId ? `/rd/governance-ops/scope/wbs?projectId=${selectedProjectId}` : '/rd/governance-ops/scope/wbs'),
       ]);
       if (baseRes.data?.success) setScopeBaselines(baseRes.data.data || []);
       if (wbsRes.data?.success) setWbsTree(wbsRes.data.data?.tree || []);
@@ -358,7 +359,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchDeliverables = useCallback(async () => {
     try {
       setLoading(true);
-      const url = selectedProjectId ? `/api/rd/governance-ops/deliverables?projectId=${selectedProjectId}` : '/api/rd/governance-ops/deliverables';
+      const url = selectedProjectId ? `/rd/governance-ops/deliverables?projectId=${selectedProjectId}` : '/rd/governance-ops/deliverables';
       const res = await apiClient.get(url);
       if (res.data?.success) setDeliverables(res.data.data || []);
     } catch (err) {
@@ -372,7 +373,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchQuality = useCallback(async () => {
     try {
       setLoading(true);
-      const url = selectedProjectId ? `/api/rd/governance-ops/quality-checkpoints?projectId=${selectedProjectId}` : '/api/rd/governance-ops/quality-checkpoints';
+      const url = selectedProjectId ? `/rd/governance-ops/quality-checkpoints?projectId=${selectedProjectId}` : '/rd/governance-ops/quality-checkpoints';
       const res = await apiClient.get(url);
       if (res.data?.success) setQualityCheckpoints(res.data.data || []);
     } catch (err) {
@@ -386,7 +387,7 @@ export const RdGovernanceOpsWorkspace = () => {
   const fetchBudgets = useCallback(async () => {
     try {
       setLoading(true);
-      const url = selectedProjectId ? `/api/rd/governance-ops/budgets?projectId=${selectedProjectId}` : '/api/rd/governance-ops/budgets';
+      const url = selectedProjectId ? `/rd/governance-ops/budgets?projectId=${selectedProjectId}` : '/rd/governance-ops/budgets';
       const res = await apiClient.get(url);
       if (res.data?.success) {
         const list = res.data.data || [];
@@ -405,7 +406,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const fetchBudgetSummary = async (budgetId) => {
     try {
-      const res = await apiClient.get(`/api/rd/governance-ops/budgets/${budgetId}/summary`);
+      const res = await apiClient.get(`/rd/governance-ops/budgets/${budgetId}/summary`);
       if (res.data?.success) {
         setBudgetSummary(res.data.data);
       }
@@ -454,7 +455,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/decisions', {
+      const res = await apiClient.post('/rd/governance-ops/decisions', {
         ...decisionForm,
         projectId: selectedProjectId,
       });
@@ -479,7 +480,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleUpdateDecisionStatus = async (decisionId, status) => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/decisions/${decisionId}/status`, {
+      const res = await apiClient.post(`/rd/governance-ops/decisions/${decisionId}/status`, {
         status,
         comment: `Decision transitioned to ${status}`,
       });
@@ -500,7 +501,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/risks', {
+      const res = await apiClient.post('/rd/governance-ops/risks', {
         ...riskForm,
         projectId: selectedProjectId,
       });
@@ -518,7 +519,7 @@ export const RdGovernanceOpsWorkspace = () => {
     e.preventDefault();
     try {
       if (!selectedRisk) return;
-      const res = await apiClient.post(`/api/rd/governance-ops/risks/${selectedRisk.id}/mitigations`, mitigationForm);
+      const res = await apiClient.post(`/rd/governance-ops/risks/${selectedRisk.id}/mitigations`, mitigationForm);
       if (res.data?.success) {
         addToast({ title: 'Mitigation Added', message: 'Risk action plan recorded.', type: 'success' });
         setShowMitigationModal(false);
@@ -537,7 +538,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/issues', {
+      const res = await apiClient.post('/rd/governance-ops/issues', {
         ...issueForm,
         projectId: selectedProjectId,
       });
@@ -553,7 +554,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleUpdateIssueStatus = async (issueId, status, resolution = '') => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/issues/${issueId}/status`, {
+      const res = await apiClient.post(`/rd/governance-ops/issues/${issueId}/status`, {
         status,
         resolution,
       });
@@ -574,7 +575,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/change-requests', {
+      const res = await apiClient.post('/rd/governance-ops/change-requests', {
         ...changeForm,
         projectId: selectedProjectId,
       });
@@ -590,7 +591,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleReviewChange = async (crId, decision) => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/change-requests/${crId}/review`, {
+      const res = await apiClient.post(`/rd/governance-ops/change-requests/${crId}/review`, {
         decision,
         comments: `Formal review decision: ${decision}`,
       });
@@ -611,7 +612,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/requirements', {
+      const res = await apiClient.post('/rd/governance-ops/requirements', {
         ...reqForm,
         projectId: selectedProjectId,
       });
@@ -627,7 +628,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleVerifyCriterion = async (criterionId, isMet) => {
     try {
-      const res = await apiClient.put(`/api/rd/governance-ops/criteria/${criterionId}/verify`, {
+      const res = await apiClient.put(`/rd/governance-ops/criteria/${criterionId}/verify`, {
         isMet,
       });
       if (res.data?.success) {
@@ -647,7 +648,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/scope/wbs', {
+      const res = await apiClient.post('/rd/governance-ops/scope/wbs', {
         ...wbsForm,
         projectId: selectedProjectId,
       });
@@ -669,7 +670,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/deliverables', {
+      const res = await apiClient.post('/rd/governance-ops/deliverables', {
         ...deliverableForm,
         projectId: selectedProjectId,
       });
@@ -685,7 +686,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleReviewDeliverable = async (delId, decision) => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/deliverables/${delId}/review`, {
+      const res = await apiClient.post(`/rd/governance-ops/deliverables/${delId}/review`, {
         decision,
         notes: `Review acceptance: ${decision}`,
       });
@@ -706,7 +707,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/quality-checkpoints', {
+      const res = await apiClient.post('/rd/governance-ops/quality-checkpoints', {
         ...qcForm,
         projectId: selectedProjectId,
       });
@@ -722,7 +723,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleConductQc = async (qcId, overallResult) => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/quality-checkpoints/${qcId}/conduct`, {
+      const res = await apiClient.post(`/rd/governance-ops/quality-checkpoints/${qcId}/conduct`, {
         overallResult,
         summaryFindings: `Inspection result evaluated as ${overallResult}.`,
         spawnIssueIfFail: true,
@@ -748,7 +749,7 @@ export const RdGovernanceOpsWorkspace = () => {
         addToast({ title: 'Validation Error', message: 'Please select a project first.', type: 'warning' });
         return;
       }
-      const res = await apiClient.post('/api/rd/governance-ops/budgets', {
+      const res = await apiClient.post('/rd/governance-ops/budgets', {
         ...budgetForm,
         projectId: selectedProjectId,
       });
@@ -764,7 +765,7 @@ export const RdGovernanceOpsWorkspace = () => {
 
   const handleApproveBudget = async (budgetId) => {
     try {
-      const res = await apiClient.post(`/api/rd/governance-ops/budgets/${budgetId}/approve`, {
+      const res = await apiClient.post(`/rd/governance-ops/budgets/${budgetId}/approve`, {
         approvalNotes: 'Formally approved project budget',
       });
       if (res.data?.success) {
@@ -780,7 +781,7 @@ export const RdGovernanceOpsWorkspace = () => {
     e.preventDefault();
     try {
       if (!selectedBudget) return;
-      const res = await apiClient.post(`/api/rd/governance-ops/budgets/${selectedBudget.id}/allocations`, allocationForm);
+      const res = await apiClient.post(`/rd/governance-ops/budgets/${selectedBudget.id}/allocations`, allocationForm);
       if (res.data?.success) {
         addToast({ title: 'Allocation Added', message: `Category ${allocationForm.category} allocated.`, type: 'success' });
         setShowAllocationModal(false);
@@ -796,7 +797,7 @@ export const RdGovernanceOpsWorkspace = () => {
     e.preventDefault();
     try {
       if (!selectedBudget) return;
-      const res = await apiClient.post(`/api/rd/governance-ops/budgets/${selectedBudget.id}/revisions`, revisionForm);
+      const res = await apiClient.post(`/rd/governance-ops/budgets/${selectedBudget.id}/revisions`, revisionForm);
       if (res.data?.success) {
         addToast({ title: 'Revision Requested', message: 'Budget revision submitted for executive sign-off.', type: 'success' });
         setShowRevisionModal(false);

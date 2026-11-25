@@ -115,10 +115,13 @@ export const RdTasks = () => {
   const fetchMetadata = useCallback(async () => {
     try {
       const projRes = await apiClient.get('/rd/portfolio').catch(() => ({ success: false, data: [] }));
-      if (projRes.success && projRes.data) {
-        setProjects(projRes.data);
-        if (projRes.data.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(projRes.data[0].id);
+      const projectList = Array.isArray(projRes.data)
+        ? projRes.data
+        : (Array.isArray(projRes.data?.projects) ? projRes.data.projects : []);
+      if (projectList.length > 0) {
+        setProjects(projectList);
+        if (!selectedProjectId) {
+          setSelectedProjectId(projectList[0].id);
         }
       }
     } catch (err) {
@@ -551,7 +554,7 @@ export const RdTasks = () => {
               }}
             >
               <option value="">All Projects</option>
-              {projects.map((p) => (
+              {(Array.isArray(projects) ? projects : []).map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
@@ -1347,7 +1350,7 @@ export const RdTasks = () => {
                     style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontSize: '12px' }}
                   >
                     <option value="">None / Standalone</option>
-                    {projects.map((p) => (
+                    {(Array.isArray(projects) ? projects : []).map((p) => (
                       <option key={p.id} value={p.id}>
                         {p.name}
                       </option>
@@ -1515,7 +1518,7 @@ export const RdTasks = () => {
                   style={{ width: '100%', padding: '8px 12px', borderRadius: '6px', border: '1px solid var(--border)', backgroundColor: 'var(--surface)', color: 'var(--text-primary)', fontSize: '12px' }}
                 >
                   <option value="">Global / Unassigned</option>
-                  {projects.map((p) => (
+                  {(Array.isArray(projects) ? projects : []).map((p) => (
                     <option key={p.id} value={p.id}>
                       {p.name}
                     </option>

@@ -154,8 +154,9 @@ export const RdCollaboration = () => {
       if (usersRes.success && Array.isArray(usersRes.data)) {
         setDirectoryUsers(usersRes.data);
       }
-      if (projRes.success && Array.isArray(projRes.data)) {
-        setProjects(projRes.data);
+      const projList = Array.isArray(projRes.data) ? projRes.data : (Array.isArray(projRes.data?.projects) ? projRes.data.projects : []);
+      if (projList.length > 0) {
+        setProjects(projList);
       }
       if (notifRes.success) {
         setNotifications(notifRes.items || notifRes.data || []);

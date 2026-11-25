@@ -177,7 +177,7 @@ export function CallProvider({ children }) {
     const socketUrl = getSocketBaseUrl();
     const socket = io(socketUrl, {
       auth: (cb) => cb({ token: getAuthToken() }),
-      transports: ['websocket', 'polling'],
+      transports: ['polling', 'websocket'],
       reconnectionAttempts: 15,
       reconnectionDelay: 2000
     });

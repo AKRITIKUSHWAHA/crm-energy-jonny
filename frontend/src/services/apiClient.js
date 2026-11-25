@@ -85,6 +85,15 @@ class ApiClient {
   async request(endpoint, options = {}) {
     let cleanEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
 
+    // Prevent double '/api' if endpoint already begins with '/api/' or equals '/api'
+    if (this.baseUrl.endsWith('/api')) {
+      if (cleanEndpoint.startsWith('/api/')) {
+        cleanEndpoint = cleanEndpoint.substring(4);
+      } else if (cleanEndpoint === '/api') {
+        cleanEndpoint = '';
+      }
+    }
+
     if (options.params) {
       const queryString = new URLSearchParams(
         Object.entries(options.params).filter(([_, v]) => v !== undefined && v !== null && v !== '')

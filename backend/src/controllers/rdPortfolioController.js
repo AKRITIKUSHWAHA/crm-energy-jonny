@@ -13,6 +13,18 @@ class RdPortfolioController {
     }
   }
 
+  async getProjectsList(req, res, next) {
+    try {
+      const data = await rdPortfolioService.getPortfolio(req.user.tenantId, req.query);
+      return res.status(200).json({
+        success: true,
+        data: data.projects,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
   async getProjectById(req, res, next) {
     try {
       const project = await rdPortfolioService.getProjectById(req.user.tenantId, req.params.id);

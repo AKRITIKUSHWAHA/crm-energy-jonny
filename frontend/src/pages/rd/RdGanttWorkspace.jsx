@@ -88,9 +88,10 @@ export const RdGanttWorkspace = () => {
     const fetchProjects = async () => {
       try {
         const res = await apiClient.get('/rd/portfolio');
-        if (res.success && res.data && res.data.length > 0) {
-          setProjects(res.data);
-          setSelectedProjectId(res.data[0].id);
+        const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.projects) ? res.data.projects : []);
+        if (list.length > 0) {
+          setProjects(list);
+          setSelectedProjectId(list[0].id);
         }
       } catch (err) {
         console.error('Error fetching projects:', err);

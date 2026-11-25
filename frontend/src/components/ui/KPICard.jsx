@@ -9,6 +9,7 @@ export const KPICard = ({
   value,
   change,
   changeType = 'positive', // 'positive' | 'negative' | 'neutral'
+  trend,
   changePeriod = '',
   icon: Icon,
   iconBg = 'rgba(99, 102, 241, 0.12)',
@@ -38,7 +39,8 @@ export const KPICard = ({
     );
   }
 
-  const TrendIcon = changeType === 'positive' ? ArrowUpRight : changeType === 'negative' ? ArrowDownRight : Minus;
+  const effectiveChangeType = trend || changeType;
+  const TrendIcon = effectiveChangeType === 'positive' ? ArrowUpRight : effectiveChangeType === 'negative' ? ArrowDownRight : Minus;
 
   return (
     <div
@@ -118,7 +120,11 @@ export const KPICard = ({
               boxShadow: `0 2px 8px -2px ${iconBg}`,
             }}
           >
-            <Icon size={16} />
+            {React.isValidElement(Icon) ? (
+              Icon
+            ) : typeof Icon === 'function' || (typeof Icon === 'object' && Icon !== null) ? (
+              <Icon size={16} />
+            ) : null}
           </div>
         )}
       </div>
@@ -152,24 +158,24 @@ export const KPICard = ({
                 padding: '2.5px 8px',
                 borderRadius: '9999px',
                 backgroundColor:
-                  changeType === 'negative'
+                  effectiveChangeType === 'negative'
                     ? 'rgba(239, 68, 68, 0.12)'
-                    : changeType === 'positive'
+                    : effectiveChangeType === 'positive'
                     ? 'rgba(16, 185, 129, 0.12)'
                     : 'rgba(100, 116, 139, 0.12)',
                 color:
-                  changeType === 'negative'
+                  effectiveChangeType === 'negative'
                     ? 'var(--error)'
-                    : changeType === 'positive'
+                    : effectiveChangeType === 'positive'
                     ? 'var(--success)'
                     : 'var(--text-secondary)',
                 fontSize: '11px',
                 fontWeight: 700,
                 whiteSpace: 'nowrap',
                 border: `1px solid ${
-                  changeType === 'negative'
+                  effectiveChangeType === 'negative'
                     ? 'rgba(239, 68, 68, 0.2)'
-                    : changeType === 'positive'
+                    : effectiveChangeType === 'positive'
                     ? 'rgba(16, 185, 129, 0.2)'
                     : 'rgba(100, 116, 139, 0.2)'
                 }`,

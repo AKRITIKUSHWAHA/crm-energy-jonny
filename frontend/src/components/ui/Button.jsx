@@ -12,6 +12,8 @@ export const Button = React.forwardRef(
       isDisabled = false,
       icon: Icon,
       iconPosition = 'left',
+      leftIcon,
+      rightIcon,
       isIconOnly = false,
       className = '',
       type = 'button',
@@ -20,6 +22,20 @@ export const Button = React.forwardRef(
     ref
   ) => {
     const disabled = isDisabled || isLoading;
+    const iconSize = size === 'xs' ? 12 : size === 'sm' ? 14 : size === 'lg' ? 20 : 16;
+
+    const renderIcon = (iconInput) => {
+      if (!iconInput) return null;
+      if (React.isValidElement(iconInput)) return iconInput;
+      if (typeof iconInput === 'function' || (typeof iconInput === 'object' && iconInput !== null)) {
+        const IconComponent = iconInput;
+        return <IconComponent size={iconSize} />;
+      }
+      return null;
+    };
+
+    const effectiveLeftIcon = leftIcon || (iconPosition === 'left' ? Icon : null);
+    const effectiveRightIcon = rightIcon || (iconPosition === 'right' ? Icon : null);
 
     return (
       <button
@@ -35,10 +51,10 @@ export const Button = React.forwardRef(
         )}
         {...props}
       >
-        {isLoading && <Loader2 className="animate-spin" size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
-        {!isLoading && Icon && iconPosition === 'left' && <Icon size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
+        {isLoading && <Loader2 className="animate-spin" size={iconSize} />}
+        {!isLoading && effectiveLeftIcon && renderIcon(effectiveLeftIcon)}
         {!isIconOnly && children && <span>{children}</span>}
-        {!isLoading && Icon && iconPosition === 'right' && <Icon size={size === 'sm' ? 14 : size === 'lg' ? 20 : 16} />}
+        {!isLoading && effectiveRightIcon && renderIcon(effectiveRightIcon)}
       </button>
     );
   }

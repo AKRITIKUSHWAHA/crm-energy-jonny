@@ -33,20 +33,34 @@ export const CardHeader = ({ title, subtitle, action, className = '', style = {}
   >
     <div className="flex flex-col gap-0.5 min-w-0">
       {title && (
-        <h4
-          style={{
-            fontSize: 'var(--text-base)',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            letterSpacing: '-0.015em',
-            margin: 0,
-          }}
-        >
-          {title}
-        </h4>
+        typeof title === 'string' ? (
+          <h4
+            style={{
+              fontSize: 'var(--text-base)',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.015em',
+              margin: 0,
+            }}
+          >
+            {title}
+          </h4>
+        ) : (
+          <div
+            style={{
+              fontSize: 'var(--text-base)',
+              fontWeight: 700,
+              color: 'var(--text-primary)',
+              letterSpacing: '-0.015em',
+              margin: 0,
+            }}
+          >
+            {title}
+          </div>
+        )
       )}
       {subtitle && (
-        <p
+        <div
           style={{
             fontSize: 'var(--text-xs)',
             color: 'var(--text-secondary)',
@@ -55,7 +69,7 @@ export const CardHeader = ({ title, subtitle, action, className = '', style = {}
           }}
         >
           {subtitle}
-        </p>
+        </div>
       )}
     </div>
     {action && <div className="flex items-center gap-2 flex-shrink-0">{action}</div>}

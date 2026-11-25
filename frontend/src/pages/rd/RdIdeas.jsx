@@ -382,29 +382,29 @@ export const RdIdeas = () => {
             title="Total Innovation Ideas"
             value={metrics.totalIdeas}
             change={`${metrics.activePipelineCount} active in screening`}
-            trend="neutral"
-            icon={<Lightbulb size={20} />}
+            changeType="neutral"
+            icon={Lightbulb}
           />
           <KPICard
             title="Community Upvotes"
             value={metrics.totalVotes}
             change="Peer interest signals"
-            trend="positive"
-            icon={<ThumbsUp size={20} />}
+            changeType="positive"
+            icon={ThumbsUp}
           />
           <KPICard
             title="Avg Evaluation Score"
             value={metrics.avgEvaluationScore ? `${metrics.avgEvaluationScore} / 100` : 'Not Evaluated'}
             change={`${metrics.evaluatedIdeasCount} evaluated initiatives`}
-            trend="positive"
-            icon={<Award size={20} />}
+            changeType="positive"
+            icon={Award}
           />
           <KPICard
             title="Incubation Selected"
             value={metrics.statusCounts?.ACCEPTED_FOR_INCUBATION || 0}
             change={`${metrics.acceptanceRate}% acceptance rate`}
-            trend="positive"
-            icon={<CheckCircle2 size={20} />}
+            changeType="positive"
+            icon={CheckCircle2}
           />
         </div>
       )}

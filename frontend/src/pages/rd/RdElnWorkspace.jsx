@@ -156,10 +156,11 @@ export const RdElnWorkspace = () => {
   const fetchProjects = useCallback(async () => {
     try {
       const res = await apiClient.get('/rd/portfolio');
-      if (res.success && Array.isArray(res.data)) {
-        setProjects(res.data);
-        if (res.data.length > 0 && !selectedProjectId) {
-          setSelectedProjectId(res.data[0].id);
+      const list = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.projects) ? res.data.projects : []);
+      if (list.length > 0) {
+        setProjects(list);
+        if (!selectedProjectId) {
+          setSelectedProjectId(list[0].id);
         }
       }
     } catch (err) {

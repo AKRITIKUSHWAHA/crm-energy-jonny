@@ -39,6 +39,7 @@ router.post('/verify-tenant', (req, res, next) => rdController.verifyTenantBound
 // MASTER PROMPT 02: R&D PROJECT PORTFOLIO MANAGEMENT (REQUIREMENT 1)
 // ==============================================================================
 router.get('/portfolio', (req, res, next) => rdPortfolioController.getPortfolio(req, res, next));
+router.get('/portfolio/projects', (req, res, next) => rdPortfolioController.getProjectsList(req, res, next));
 router.post('/portfolio', (req, res, next) => rdPortfolioController.createProject(req, res, next));
 router.get('/portfolio/:id', (req, res, next) => rdPortfolioController.getProjectById(req, res, next));
 router.put('/portfolio/:id', (req, res, next) => rdPortfolioController.updateProject(req, res, next));

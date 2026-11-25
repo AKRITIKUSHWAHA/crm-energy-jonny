@@ -8,8 +8,11 @@ export const Input = React.forwardRef(
       label,
       helperText,
       errorMessage,
-      startIcon: StartIcon,
-      endIcon: EndIcon,
+      startIcon,
+      endIcon,
+      icon,
+      leftIcon,
+      rightIcon,
       isClearable = false,
       onClear,
       value,
@@ -25,6 +28,19 @@ export const Input = React.forwardRef(
   ) => {
     const inputId = id || (label ? label.toLowerCase().replace(/\s+/g, '-') : undefined);
 
+    const effectiveStartIcon = startIcon || leftIcon || icon;
+    const effectiveEndIcon = endIcon || rightIcon;
+
+    const renderIcon = (iconInput, defaultSize = 18) => {
+      if (!iconInput) return null;
+      if (React.isValidElement(iconInput)) return iconInput;
+      if (typeof iconInput === 'function' || (typeof iconInput === 'object' && iconInput !== null)) {
+        const IconComponent = iconInput;
+        return <IconComponent size={defaultSize} />;
+      }
+      return null;
+    };
+
     return (
       <div className="form-group">
         {label && (
@@ -36,9 +52,9 @@ export const Input = React.forwardRef(
         )}
 
         <div className="form-control-wrapper">
-          {StartIcon && (
+          {effectiveStartIcon && (
             <span className="input-icon-start">
-              <StartIcon size={18} />
+              {renderIcon(effectiveStartIcon, 18)}
             </span>
           )}
 
@@ -51,8 +67,8 @@ export const Input = React.forwardRef(
             disabled={disabled}
             className={cx(
               'form-control',
-              StartIcon && 'form-control-has-icon-start',
-              (EndIcon || isClearable) && 'form-control-has-icon-end',
+              effectiveStartIcon && 'form-control-has-icon-start',
+              (effectiveEndIcon || isClearable) && 'form-control-has-icon-end',
               errorMessage && 'form-control-error',
               className
             )}
@@ -70,9 +86,9 @@ export const Input = React.forwardRef(
             </button>
           )}
 
-          {!isClearable && EndIcon && (
+          {!isClearable && effectiveEndIcon && (
             <span className="input-icon-end">
-              <EndIcon size={18} />
+              {renderIcon(effectiveEndIcon, 18)}
             </span>
           )}
         </div>

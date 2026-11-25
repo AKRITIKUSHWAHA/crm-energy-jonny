@@ -115,6 +115,14 @@ app.use(express.json({
 }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
+// Normalize accidentally double-prefixed /api/api requests
+app.use((req, res, next) => {
+  if (req.url.startsWith('/api/api/')) {
+    req.url = req.url.substring(4);
+  }
+  next();
+});
+
 // Health Check Endpoint
 app.get('/health', (req, res) => res.status(200).json({ success: true, message: 'CRM nErgy API is running' }));
 app.get('/api/health', (req, res) => {

@@ -184,17 +184,17 @@ export const RdResourceWorkspace = () => {
     try {
       const [ovRes, profRes, skRes, matRes, alRes, capRes, tmRes, facRes, eqpRes, bkRes, prjRes] =
         await Promise.all([
-          apiClient.get('/api/rd/resources/overview'),
-          apiClient.get('/api/rd/resources/profiles'),
-          apiClient.get('/api/rd/resources/skills'),
-          apiClient.get('/api/rd/resources/skills/matrix'),
-          apiClient.get('/api/rd/resources/allocations'),
-          apiClient.get('/api/rd/resources/capacity'),
-          apiClient.get('/api/rd/resources/timesheets'),
-          apiClient.get('/api/rd/resources/facilities'),
-          apiClient.get('/api/rd/resources/equipment'),
-          apiClient.get('/api/rd/resources/bookings'),
-          apiClient.get('/api/rd/portfolio'),
+          apiClient.get('/rd/resources/overview'),
+          apiClient.get('/rd/resources/profiles'),
+          apiClient.get('/rd/resources/skills'),
+          apiClient.get('/rd/resources/skills/matrix'),
+          apiClient.get('/rd/resources/allocations'),
+          apiClient.get('/rd/resources/capacity'),
+          apiClient.get('/rd/resources/timesheets'),
+          apiClient.get('/rd/resources/facilities'),
+          apiClient.get('/rd/resources/equipment'),
+          apiClient.get('/rd/resources/bookings'),
+          apiClient.get('/rd/portfolio'),
         ]);
 
       if (ovRes?.data?.success) setOverview(ovRes.data.data);
@@ -226,7 +226,7 @@ export const RdResourceWorkspace = () => {
   useEffect(() => {
     if (selectedProjectId) {
       apiClient
-        .get(`/api/rd/resources/projects/${selectedProjectId}/labor-costs`)
+        .get(`/rd/resources/projects/${selectedProjectId}/labor-costs`)
         .then((res) => {
           if (res?.data?.success) setLaborCosts(res.data.data);
         })
@@ -238,7 +238,7 @@ export const RdResourceWorkspace = () => {
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.put(`/api/rd/resources/profiles/${selectedProfile.id}`, profileForm);
+      await apiClient.put(`/rd/resources/profiles/${selectedProfile.id}`, profileForm);
       addToast({ type: 'success', message: 'Resource profile updated successfully' });
       setShowProfileModal(false);
       loadData();
@@ -251,7 +251,7 @@ export const RdResourceWorkspace = () => {
   const handleCreateAllocation = async (e) => {
     e.preventDefault();
     try {
-      const res = await apiClient.post('/api/rd/resources/allocations', allocForm);
+      const res = await apiClient.post('/rd/resources/allocations', allocForm);
       if (res?.data?.data?.warning) {
         addToast({ type: 'warning', message: res.data.data.warning });
       } else {
@@ -268,7 +268,7 @@ export const RdResourceWorkspace = () => {
   const handleDeleteAllocation = async (id) => {
     if (!window.confirm('Are you sure you want to delete this resource allocation?')) return;
     try {
-      await apiClient.delete(`/api/rd/resources/allocations/${id}`);
+      await apiClient.delete(`/rd/resources/allocations/${id}`);
       addToast({ type: 'success', message: 'Allocation removed successfully' });
       loadData();
     } catch (err) {
@@ -280,7 +280,7 @@ export const RdResourceWorkspace = () => {
   const handleCreateSkill = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/skills', skillForm);
+      await apiClient.post('/rd/resources/skills', skillForm);
       addToast({ type: 'success', message: 'Skill registered successfully' });
       setShowSkillModal(false);
       loadData();
@@ -293,7 +293,7 @@ export const RdResourceWorkspace = () => {
   const handleAssignSkill = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/employee-skills', assignSkillForm);
+      await apiClient.post('/rd/resources/employee-skills', assignSkillForm);
       addToast({ type: 'success', message: 'Skill assigned to employee successfully' });
       setShowAssignSkillModal(false);
       loadData();
@@ -305,7 +305,7 @@ export const RdResourceWorkspace = () => {
   // Handle Verify Skill
   const handleVerifySkill = async (empSkillId) => {
     try {
-      await apiClient.put(`/api/rd/resources/employee-skills/${empSkillId}/verify`);
+      await apiClient.put(`/rd/resources/employee-skills/${empSkillId}/verify`);
       addToast({ type: 'success', message: 'Skill expertise verified and endorsed!' });
       loadData();
     } catch (err) {
@@ -323,7 +323,7 @@ export const RdResourceWorkspace = () => {
       const monday = new Date(now.setDate(diff)).toISOString().substring(0, 10);
 
       const res = await apiClient.get(
-        `/api/rd/resources/timesheets/weekly?userId=${userId}&weekStartDate=${monday}`
+        `/rd/resources/timesheets/weekly?userId=${userId}&weekStartDate=${monday}`
       );
       if (res?.data?.success) {
         setCurrentTimesheet(res.data.data);
@@ -339,10 +339,10 @@ export const RdResourceWorkspace = () => {
     e.preventDefault();
     if (!currentTimesheet) return;
     try {
-      await apiClient.post(`/api/rd/resources/timesheets/${currentTimesheet.id}/entries`, timeEntryForm);
+      await apiClient.post(`/rd/resources/timesheets/${currentTimesheet.id}/entries`, timeEntryForm);
       addToast({ type: 'success', message: 'Time entry logged successfully' });
       setShowTimeEntryModal(false);
-      const res = await apiClient.get(`/api/rd/resources/timesheets/${currentTimesheet.id}`);
+      const res = await apiClient.get(`/rd/resources/timesheets/${currentTimesheet.id}`);
       if (res?.data?.success) setCurrentTimesheet(res.data.data);
       loadData();
     } catch (err) {
@@ -353,10 +353,10 @@ export const RdResourceWorkspace = () => {
   // Handle Delete Time Entry
   const handleDeleteTimeEntry = async (entryId) => {
     try {
-      await apiClient.delete(`/api/rd/resources/time-entries/${entryId}`);
+      await apiClient.delete(`/rd/resources/time-entries/${entryId}`);
       addToast({ type: 'success', message: 'Time entry deleted' });
       if (currentTimesheet) {
-        const res = await apiClient.get(`/api/rd/resources/timesheets/${currentTimesheet.id}`);
+        const res = await apiClient.get(`/rd/resources/timesheets/${currentTimesheet.id}`);
         if (res?.data?.success) setCurrentTimesheet(res.data.data);
       }
       loadData();
@@ -368,11 +368,11 @@ export const RdResourceWorkspace = () => {
   // Handle Submit Timesheet
   const handleSubmitTimesheet = async (timesheetId) => {
     try {
-      await apiClient.post(`/api/rd/resources/timesheets/${timesheetId}/submit`);
+      await apiClient.post(`/rd/resources/timesheets/${timesheetId}/submit`);
       addToast({ type: 'success', message: 'Timesheet submitted for manager approval' });
       loadData();
       if (currentTimesheet && currentTimesheet.id === timesheetId) {
-        const res = await apiClient.get(`/api/rd/resources/timesheets/${timesheetId}`);
+        const res = await apiClient.get(`/rd/resources/timesheets/${timesheetId}`);
         if (res?.data?.success) setCurrentTimesheet(res.data.data);
       }
     } catch (err) {
@@ -385,12 +385,12 @@ export const RdResourceWorkspace = () => {
     e.preventDefault();
     try {
       if (reviewAction === 'APPROVE') {
-        await apiClient.post(`/api/rd/resources/timesheets/${selectedTimesheetId}/approve`, {
+        await apiClient.post(`/rd/resources/timesheets/${selectedTimesheetId}/approve`, {
           notes: reviewNotes,
         });
         addToast({ type: 'success', message: 'Timesheet approved successfully' });
       } else {
-        await apiClient.post(`/api/rd/resources/timesheets/${selectedTimesheetId}/reject`, {
+        await apiClient.post(`/rd/resources/timesheets/${selectedTimesheetId}/reject`, {
           reason: reviewNotes,
         });
         addToast({ type: 'warning', message: 'Timesheet rejected and sent back for revision' });
@@ -398,7 +398,7 @@ export const RdResourceWorkspace = () => {
       setShowReviewModal(false);
       loadData();
       if (currentTimesheet && currentTimesheet.id === selectedTimesheetId) {
-        const res = await apiClient.get(`/api/rd/resources/timesheets/${selectedTimesheetId}`);
+        const res = await apiClient.get(`/rd/resources/timesheets/${selectedTimesheetId}`);
         if (res?.data?.success) setCurrentTimesheet(res.data.data);
       }
     } catch (err) {
@@ -410,7 +410,7 @@ export const RdResourceWorkspace = () => {
   const handleCreateFacility = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/facilities', facilityForm);
+      await apiClient.post('/rd/resources/facilities', facilityForm);
       addToast({ type: 'success', message: 'Lab facility registered successfully' });
       setShowFacilityModal(false);
       loadData();
@@ -423,7 +423,7 @@ export const RdResourceWorkspace = () => {
   const handleCreateEquipment = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/equipment', equipmentForm);
+      await apiClient.post('/rd/resources/equipment', equipmentForm);
       addToast({ type: 'success', message: 'Lab equipment registered successfully' });
       setShowEquipmentModal(false);
       loadData();
@@ -436,7 +436,7 @@ export const RdResourceWorkspace = () => {
   const handleScheduleMaintenance = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/equipment/maintenance', maintForm);
+      await apiClient.post('/rd/resources/equipment/maintenance', maintForm);
       addToast({ type: 'success', message: 'Maintenance / calibration scheduled successfully' });
       setShowMaintenanceModal(false);
       loadData();
@@ -450,7 +450,7 @@ export const RdResourceWorkspace = () => {
     const certNum = window.prompt('Enter Calibration Certificate / Service Number:', 'CAL-CERT-' + Date.now().toString(36).toUpperCase());
     if (certNum === null) return;
     try {
-      await apiClient.put(`/api/rd/resources/equipment/maintenance/${maintId}/complete`, {
+      await apiClient.put(`/rd/resources/equipment/maintenance/${maintId}/complete`, {
         calibrationCertificateNumber: certNum,
         notes: 'Preventative calibration certified and verified.',
       });
@@ -465,7 +465,7 @@ export const RdResourceWorkspace = () => {
   const handleCreateBooking = async (e) => {
     e.preventDefault();
     try {
-      await apiClient.post('/api/rd/resources/bookings', bookingForm);
+      await apiClient.post('/rd/resources/bookings', bookingForm);
       addToast({ type: 'success', message: 'Lab resource booked successfully!' });
       setShowBookingModal(false);
       loadData();
@@ -480,7 +480,7 @@ export const RdResourceWorkspace = () => {
     const reason = window.prompt('Enter reason for cancellation:', 'Schedule change');
     if (reason === null) return;
     try {
-      await apiClient.post(`/api/rd/resources/bookings/${id}/cancel`, { reason });
+      await apiClient.post(`/rd/resources/bookings/${id}/cancel`, { reason });
       addToast({ type: 'info', message: 'Booking cancelled successfully' });
       loadData();
     } catch (err) {
@@ -1420,7 +1420,7 @@ export const RdResourceWorkspace = () => {
                             variant="outline"
                             size="xs"
                             onClick={() => {
-                              apiClient.get(`/api/rd/resources/timesheets/${t.id}`).then((res) => {
+                              apiClient.get(`/rd/resources/timesheets/${t.id}`).then((res) => {
                                 if (res?.data?.success) setCurrentTimesheet(res.data.data);
                               });
                             }}
