@@ -234,7 +234,7 @@ export const EgolyticsHub = () => {
         <div>
           <Breadcrumb items={[{ label: 'EgoLytics' }, { label: 'R&D Management Platform' }, { label: 'Architecture & Foundation' }]} />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: '0.25rem' }}>
-            <h1 style={{ fontSize: 'var(--text-2xl)', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
+            <h1 style={{ fontSize: 'clamp(1.15rem, 2.5vw, var(--text-2xl))', fontWeight: 800, margin: 0, color: 'var(--text-primary)' }}>
               EgoLytics – R&D Management Platform
             </h1>
             <Badge variant="primary" style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -265,7 +265,7 @@ export const EgolyticsHub = () => {
       </div>
 
       {/* 2. Key Architectural Telemetry Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <KPICard
           title="Platform Division"
           value="EgoLytics R&D"
@@ -326,7 +326,7 @@ export const EgolyticsHub = () => {
             />
           </div>
 
-          <div style={{ padding: '1.5rem' }}>
+          <div style={{ padding: 'clamp(0.75rem, 2vw, 1.5rem)' }}>
             {/* TAB: ENTERPRISE GOVERNANCE, IP & COMPLIANCE (MASTER PROMPT 16) */}
             {activeTab === 'enterprise' && <RdEnterpriseGovernance />}
 

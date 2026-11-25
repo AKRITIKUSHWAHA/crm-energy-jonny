@@ -137,7 +137,7 @@ export const ErpManufacturing = () => {
           title="Active Assembly Line Work Orders"
           subtitle="Real-time shop floor execution queue synced with ERP logistics"
         />
-        <CardBody className="p-0 overflow-x-auto">
+        <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {isLoading ? (
             <div className="p-12 text-center text-xs text-secondary">Loading work orders from database...</div>
           ) : orders.length === 0 ? (

@@ -152,7 +152,7 @@ export const ErpInventory = () => {
           title="Consolidated SKU Stock Positions"
           subtitle="Showing items matching selected warehouse and criteria"
         />
-        <CardBody className="p-0 overflow-x-auto">
+        <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {inventory.length === 0 ? (
             <div className="py-12 text-center text-xs text-tertiary">
               <p>No inventory items registered.</p>

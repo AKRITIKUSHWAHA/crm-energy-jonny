@@ -202,7 +202,7 @@ export const ErpFinance = () => {
           title="Live Commercial Invoices"
           subtitle="Real-time commercial invoices synced with customer accounts"
         />
-        <CardBody className="p-0 overflow-x-auto">
+        <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
           {isLoading ? (
             <div className="p-12 text-center text-sm text-secondary">Loading financial invoices from database...</div>
           ) : invoices.length === 0 ? (

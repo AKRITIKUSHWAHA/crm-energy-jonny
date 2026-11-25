@@ -165,7 +165,7 @@ export const CrmSignup = () => {
         style={{
           width: '100%',
           boxSizing: 'border-box',
-          padding: '1.25rem 1.65rem',
+          padding: '1rem clamp(1rem, 3.5vw, 1.65rem)',
         }}
       >
         <div className="flex flex-col items-center text-center" style={{ marginBottom: '0.65rem' }}>

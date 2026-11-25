@@ -139,7 +139,7 @@ export const ErpProcurement = () => {
       {activeTab === 'orders' ? (
         <Card className="border shadow-sm">
           <CardHeader title="Purchase Order Requisitions" subtitle="Live tracking from requisition to warehouse receipt" />
-          <CardBody className="p-0 overflow-x-auto">
+          <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             {purchaseOrders.length === 0 ? (
               <div className="py-12 text-center text-xs text-tertiary">
                 <p>No purchase orders found.</p>
@@ -182,7 +182,7 @@ export const ErpProcurement = () => {
       ) : (
         <Card className="border shadow-sm">
           <CardHeader title="Enterprise Vendor Directory" subtitle="Evaluated suppliers and annual spend tracking" />
-          <CardBody className="p-0 overflow-x-auto">
+          <CardBody className="p-0 overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
             <Table>
               <TableHeader>
                 <TableRow>
