@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   ChevronDown,
@@ -78,13 +79,14 @@ export const WebsiteNavbar = ({
   // Prevent background page from scrolling while mobile drawer is open
   useEffect(() => {
     if (mobileDrawerOpen) {
-      const originalOverflow = document.body.style.overflow;
+      const originalBodyOverflow = document.body.style.overflow;
+      const originalHtmlOverflow = document.documentElement.style.overflow;
       document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
       return () => {
-        document.body.style.overflow = originalOverflow;
+        document.body.style.overflow = originalBodyOverflow;
+        document.documentElement.style.overflow = originalHtmlOverflow;
       };
-    } else {
-      document.body.style.overflow = '';
     }
   }, [mobileDrawerOpen]);
 
@@ -460,7 +462,7 @@ export const WebsiteNavbar = ({
       {/* ======================================================== */}
       {/* MOBILE / TABLET SLIDE-OUT DRAWER                        */}
       {/* ======================================================== */}
-      {mobileDrawerOpen && (
+      {mobileDrawerOpen && typeof document !== 'undefined' && createPortal(
         <div className="website-mobile-drawer">
           <div className="website-drawer-backdrop" onClick={() => setMobileDrawerOpen(false)} />
           <div className="website-drawer-content">
@@ -748,7 +750,8 @@ export const WebsiteNavbar = ({
               </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </header>
   );
