@@ -5,8 +5,6 @@ import {
   Lock,
   Bell,
   Moon,
-  Sun,
-  Monitor,
   Settings as SettingsIcon,
   Save,
   ShieldCheck,
@@ -42,7 +40,7 @@ import apiClient from '../../services/apiClient';
 
 export const CrmSettings = () => {
   const { user, setUser, companyData, updateCompanyData } = useAuth();
-  const { theme, setTheme, toggleTheme } = useTheme();
+  const { theme } = useTheme();
   const { addToast } = useToast();
   const { currency, setCurrency } = useCurrency();
   const { language, setLanguage } = useLanguage();
@@ -990,67 +988,44 @@ export const CrmSettings = () => {
           </div>
 
           <div className="flex flex-col gap-6">
-            {/* Theme Selectors */}
-            <div className="grid-responsive-3col">
-              {/* Light Mode */}
-              <div
-                onClick={() => { if (setTheme) setTheme('light'); else if (theme === 'dark') toggleTheme(); }}
-                className="p-4 rounded-md border-subtle cursor-pointer transition-all"
-                style={{
-                  backgroundColor: '#ffffff',
-                  border: theme === 'light' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  boxShadow: theme === 'light' ? '0 0 0 1px var(--primary)' : 'none',
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Sun size={20} className="text-warning" />
-                  {theme === 'light' && <CheckCircle2 size={18} className="text-primary" />}
+            {/* Standardized Enterprise Dark Navy Theme */}
+            <div
+              className="p-4 rounded-md transition-all"
+              style={{
+                backgroundColor: '#0f172a',
+                border: '2px solid rgba(56, 189, 248, 0.45)',
+                boxShadow: '0 0 20px rgba(14, 165, 233, 0.14)',
+              }}
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Moon size={20} style={{ color: '#38bdf8' }} />
+                  <span className="font-bold text-sm" style={{ color: '#f8fafc' }}>
+                    {isEs ? 'Azul Marino Empresarial (Estándar)' : 'Enterprise Dark Navy (Standard)'}
+                  </span>
                 </div>
-                <div className="font-bold text-xs text-primary" style={{ color: '#0f172a' }}>{isEs ? 'Modo Claro' : 'Light Mode'}</div>
-                <span className="text-xs text-secondary" style={{ color: '#64748b', fontSize: '11px' }}>{isEs ? 'Fondo nítido y claro' : 'Clean crisp background'}</span>
+                <CheckCircle2 size={18} style={{ color: '#38bdf8' }} />
               </div>
-
-              {/* Dark Mode */}
-              <div
-                onClick={() => { if (setTheme) setTheme('dark'); else if (theme === 'light') toggleTheme(); }}
-                className="p-4 rounded-md border-subtle cursor-pointer transition-all"
-                style={{
-                  backgroundColor: '#0f172a',
-                  border: theme === 'dark' ? '2px solid var(--primary)' : '1px solid var(--border)',
-                  boxShadow: theme === 'dark' ? '0 0 0 1px var(--primary)' : 'none',
-                }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Moon size={20} className="text-primary" />
-                  {theme === 'dark' && <CheckCircle2 size={18} className="text-primary" />}
-                </div>
-                <div className="font-bold text-xs" style={{ color: '#f8fafc' }}>{isEs ? 'Modo Oscuro' : 'Dark Mode'}</div>
-                <span className="text-xs" style={{ color: '#94a3b8', fontSize: '11px' }}>{isEs ? 'Contraste obsidiana profundo' : 'Deep obsidian contrast'}</span>
-              </div>
-
-              {/* System Theme */}
-              <div
-                onClick={() => toggleTheme()}
-                className="p-4 rounded-md border-subtle cursor-pointer transition-all surface-secondary"
-                style={{ border: '1px solid var(--border)' }}
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <Monitor size={20} className="text-tertiary" />
-                </div>
-                <div className="font-bold text-xs text-primary">{isEs ? 'Sincronizar con Sistema' : 'System Match'}</div>
-                <span className="text-xs text-secondary" style={{ fontSize: '11px' }}>{isEs ? 'Sincronizar con el sistema operativo' : 'Synchronize with OS'}</span>
-              </div>
+              <span className="text-xs" style={{ color: '#94a3b8' }}>
+                {isEs
+                  ? 'Identidad visual unificada del portal y sitio web con acentos azul eléctrico y cian.'
+                  : 'Unified website and portal visual identity with deep navy surfaces and electric blue/cyan accents.'}
+              </span>
             </div>
 
-            {/* Quick Toggle Bar */}
+            {/* Active Theme Status Bar */}
             <div className="p-4 surface-secondary rounded-md border-subtle flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
-                <div className="font-bold text-xs text-primary">{isEs ? 'Modo Activo Actual:' : 'Current Active Mode:'} {theme?.toUpperCase() || 'LIGHT'}</div>
-                <span className="text-xs text-secondary">{isEs ? 'Clic para alternar el modo de color instantáneamente' : 'Click to switch color mode instantaneously'}</span>
+                <div className="font-bold text-xs text-primary">{isEs ? 'Modo Activo Actual:' : 'Current Active Mode:'} {theme?.toUpperCase() || 'DARK'}</div>
+                <span className="text-xs text-secondary">
+                  {isEs
+                    ? 'Tema oscuro empresarial aplicado de forma consistente en todo el portal.'
+                    : 'Standardized dark enterprise theme enforced across the entire workspace.'}
+                </span>
               </div>
-              <Button variant="outline" size="sm" icon={theme === 'dark' ? Sun : Moon} onClick={toggleTheme}>
-                {isEs ? `Cambiar a Modo ${theme === 'dark' ? 'Claro' : 'Oscuro'}` : `Switch to ${theme === 'dark' ? 'Light' : 'Dark'} Mode`}
-              </Button>
+              <Badge variant="primary" icon={ShieldCheck}>
+                {isEs ? 'Tema Unificado Activo' : 'Unified Theme Locked'}
+              </Badge>
             </div>
           </div>
         </Card>

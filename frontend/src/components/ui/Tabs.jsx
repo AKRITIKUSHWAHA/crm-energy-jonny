@@ -56,7 +56,7 @@ export const Tabs = ({ tabs = [], activeTab, onChange, className = '' }) => {
                 <Icon
                   size={16}
                   className="flex-shrink-0"
-                  style={{ color: isActive ? '#1d4ed8' : 'var(--text-secondary)' }}
+                  style={{ color: isActive ? '#38bdf8' : 'var(--text-secondary)' }}
                 />
               )}
               <span style={{ fontSize: '13px' }}>{tab.label}</span>
@@ -67,8 +67,8 @@ export const Tabs = ({ tabs = [], activeTab, onChange, className = '' }) => {
                     fontWeight: 700,
                     padding: '2px 7px',
                     borderRadius: '9999px',
-                    backgroundColor: isActive ? 'rgba(29, 78, 216, 0.1)' : 'var(--surface-secondary)',
-                    color: isActive ? '#1d4ed8' : 'var(--text-secondary)',
+                    backgroundColor: isActive ? 'rgba(56, 189, 248, 0.14)' : 'var(--surface-secondary)',
+                    color: isActive ? '#38bdf8' : 'var(--text-secondary)',
                     marginLeft: '2px',
                     lineHeight: 1,
                   }}

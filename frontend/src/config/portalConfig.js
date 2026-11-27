@@ -13,13 +13,7 @@ export function getPortalBaseUrl() {
 }
 
 function getThemeQuery() {
-  if (typeof window !== 'undefined') {
-    const curTheme = localStorage.getItem('app_theme');
-    if (curTheme === 'light' || curTheme === 'dark') {
-      return `theme=${curTheme}`;
-    }
-  }
-  return '';
+  return 'theme=dark';
 }
 
 export function getLoginUrl() {

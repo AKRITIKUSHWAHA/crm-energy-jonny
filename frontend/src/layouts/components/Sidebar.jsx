@@ -137,10 +137,10 @@ export const Sidebar = ({
                       fontWeight: isActive ? 700 : 500,
                       color: isActive ? '#ffffff' : 'var(--text-secondary, #475569)',
                       background: isActive
-                        ? 'linear-gradient(90deg, #6366f1 0%, #8b5cf6 30%, #ec4899 70%, #f97316 100%)'
+                        ? 'linear-gradient(90deg, #4f46e5 0%, #0284c7 65%, #06b6d4 100%)'
                         : 'transparent',
                       boxShadow: isActive
-                        ? '0 8px 20px -4px rgba(124, 58, 237, 0.45), 0 4px 12px -2px rgba(249, 115, 22, 0.35)'
+                        ? '0 8px 20px -4px rgba(2, 132, 199, 0.45), 0 4px 12px -2px rgba(56, 189, 248, 0.25)'
                         : 'none',
                       textDecoration: 'none',
                       whiteSpace: 'nowrap',
@@ -152,10 +152,10 @@ export const Sidebar = ({
                   }}
                   onMouseEnter={(e) => {
                     if (!isActive) {
-                      e.currentTarget.style.color = '#6366f1';
-                      e.currentTarget.style.backgroundColor = 'rgba(99, 102, 241, 0.08)';
+                      e.currentTarget.style.color = '#38bdf8';
+                      e.currentTarget.style.backgroundColor = 'rgba(56, 189, 248, 0.1)';
                       const iconEl = e.currentTarget.querySelector('svg');
-                      if (iconEl) iconEl.style.color = '#6366f1';
+                      if (iconEl) iconEl.style.color = '#38bdf8';
                     }
                   }}
                   onMouseLeave={(e) => {

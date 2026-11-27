@@ -5,6 +5,7 @@ import { ToastContainer } from '../components/ui/Toast';
 export const AuthLayout = () => {
   return (
     <div
+      className="auth-layout-shell"
       style={{
         minHeight: '100vh',
         height: '100vh',

@@ -3,40 +3,34 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 const ThemeContext = createContext();
 
 export const ThemeProvider = ({ children }) => {
-  const [theme, setTheme] = useState(() => {
-    // 1. Check URL query parameters (e.g. from marketing website redirect: ?theme=light or ?theme=dark)
+  const [theme, setThemeState] = useState(() => {
+    // Enterprise dark navy is the approved and enforced portal theme.
     if (typeof window !== 'undefined') {
       try {
-        const urlParams = new URLSearchParams(window.location.search);
-        const queryTheme = urlParams.get('theme');
-        if (queryTheme === 'light' || queryTheme === 'dark') {
-          localStorage.setItem('app_theme', queryTheme);
-          return queryTheme;
-        }
+        localStorage.setItem('app_theme', 'dark');
       } catch (e) {
-        // Ignore URL parsing errors
+        // Ignore storage access errors
       }
+      document.documentElement.setAttribute('data-theme', 'dark');
     }
-
-    // 2. Check saved theme in localStorage
-    const savedTheme = localStorage.getItem('app_theme');
-    if (savedTheme === 'light' || savedTheme === 'dark') {
-      return savedTheme;
-    }
-
-    // 3. Fallback to system preference
-    return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches
-      ? 'dark'
-      : 'light';
+    return 'dark';
   });
 
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
-    localStorage.setItem('app_theme', theme);
+    document.documentElement.setAttribute('data-theme', 'dark');
+    try {
+      localStorage.setItem('app_theme', 'dark');
+    } catch (e) {
+      // Ignore storage access errors
+    }
   }, [theme]);
 
+  const setTheme = () => {
+    setThemeState('dark');
+  };
+
   const toggleTheme = () => {
-    setTheme((prev) => (prev === 'light' ? 'dark' : 'light'));
+    setThemeState('dark');
   };
 
   return (

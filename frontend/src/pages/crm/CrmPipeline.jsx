@@ -207,8 +207,8 @@ export const CrmPipeline = () => {
           changeType="neutral"
           changePeriod={t('prob. adj.')}
           icon={DollarSign}
-          iconBg="rgba(29, 78, 216, 0.1)"
-          iconColor="#1d4ed8"
+          iconBg="rgba(56, 189, 248, 0.12)"
+          iconColor="#38bdf8"
         />
         <KPICard
           title={t('TOTAL ACTIVE DEALS')}

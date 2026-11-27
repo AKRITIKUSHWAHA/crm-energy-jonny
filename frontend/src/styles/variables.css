@@ -147,12 +147,12 @@
   --deck-border: rgba(99, 102, 241, 0.2);
 }
 
-/* Dark Theme Variables — Deep Cosmic Obsidian & Electric Neon Accents */
+/* Dark Theme Variables — Unified Deep Navy, Electric Blue & Cyan Identity */
 [data-theme="dark"] {
-  --primary: #6366f1;
-  --primary-hover: #818cf8;
-  --primary-light: rgba(99, 102, 241, 0.16);
-  --primary-border: #4338ca;
+  --primary: #0284c7;
+  --primary-hover: #2563eb;
+  --primary-light: rgba(56, 189, 248, 0.14);
+  --primary-border: rgba(56, 189, 248, 0.32);
   
   --secondary: #94a3b8;
   --secondary-hover: #cbd5e1;
@@ -161,18 +161,18 @@
   --accent-hover: #2dd4bf;
   --accent-light: rgba(20, 184, 166, 0.15);
 
-  --background: #090d16;
-  --bg-radial-mesh: radial-gradient(at 15% 10%, rgba(99, 102, 241, 0.09) 0px, transparent 55%),
-                    radial-gradient(at 85% 15%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-                    radial-gradient(at 50% 90%, rgba(249, 115, 22, 0.06) 0px, transparent 55%);
+  --background: #070b19;
+  --bg-radial-mesh: radial-gradient(at 15% 10%, rgba(14, 165, 233, 0.11) 0px, transparent 55%),
+                    radial-gradient(at 85% 15%, rgba(99, 102, 241, 0.09) 0px, transparent 50%),
+                    radial-gradient(at 50% 90%, rgba(34, 211, 238, 0.06) 0px, transparent 55%);
 
-  --surface: #0f1523;
+  --surface: #0f172a;
   --surface-secondary: #161e31;
-  --surface-hover: #1e2840;
+  --surface-hover: #1e293b;
   --surface-elevated: #141c2e;
   
-  --glass-surface: rgba(15, 21, 35, 0.82);
-  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-surface: rgba(11, 17, 32, 0.88);
+  --glass-border: rgba(56, 189, 248, 0.18);
   --glass-highlight: rgba(255, 255, 255, 0.05);
 
   --border: #1e293b;
@@ -184,9 +184,9 @@
   --text-tertiary: #64748b;
   --text-on-primary: #ffffff;
 
-  --success: #22c55e;
-  --success-light: rgba(34, 197, 94, 0.15);
-  --success-border: #14532d;
+  --success: #10b981;
+  --success-light: rgba(16, 185, 129, 0.15);
+  --success-border: rgba(16, 185, 129, 0.35);
   
   --warning: #f59e0b;
   --warning-light: rgba(245, 158, 11, 0.15);
@@ -198,7 +198,7 @@
   
   --info: #38bdf8;
   --info-light: rgba(56, 189, 248, 0.15);
-  --info-border: #075985;
+  --info-border: rgba(56, 189, 248, 0.35);
 
   --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.4);
   --shadow-md: 0 4px 8px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.3);
@@ -207,13 +207,13 @@
 
   /* Distinctive Card Elevation */
   --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.45), 0 12px 28px -4px rgba(0, 0, 0, 0.55);
-  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.55), 0 20px 42px -4px rgba(0, 0, 0, 0.75);
-  --shadow-glow: 0 0 30px -4px rgba(99, 102, 241, 0.35);
+  --shadow-card-hover: 0 4px 16px rgba(0, 0, 0, 0.55), 0 20px 42px -4px rgba(14, 165, 233, 0.16);
+  --shadow-glow: 0 0 30px -4px rgba(56, 189, 248, 0.28);
 
   --scroll-thumb: #334155;
-  --scroll-track: #0f1523;
+  --scroll-track: #0f172a;
 
   /* Executive Command Deck Gradient */
-  --deck-bg: linear-gradient(135deg, rgba(22, 30, 49, 0.95) 0%, rgba(15, 21, 35, 0.95) 100%);
-  --deck-border: rgba(99, 102, 241, 0.35);
+  --deck-bg: linear-gradient(135deg, rgba(22, 30, 49, 0.95) 0%, rgba(15, 23, 42, 0.95) 100%);
+  --deck-border: rgba(56, 189, 248, 0.25);
 }

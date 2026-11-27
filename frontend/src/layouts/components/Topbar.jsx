@@ -2,8 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Menu,
-  Sun,
-  Moon,
   Bell,
   Search,
   User,
@@ -53,7 +51,7 @@ import iconLogo from '../../assets/crm_nergy_ai_icon.png';
 
 export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = false }) => {
   const { isMobile, isTablet, windowWidth } = useResponsive();
-  const { theme, toggleTheme } = useTheme();
+  useTheme();
   const { crmUser, oalUser, switchRole, logout } = useAuth();
   const { activities = [], contacts = [], deals = [], leads = [] } = useCrm() || {};
   const { addToast } = useToast();
@@ -212,7 +210,6 @@ export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = 
         // Others Category
         { id: 'oth-search', title: 'Internal AI Search Cognitive Engine', subtitle: 'Deep semantic neural RAG search bar across all workspaces', category: 'Others', icon: Search, path: '/crm/search', tags: 'others search rag cognitive neural engine' },
         { id: 'oth-voice', title: 'AI Voice Agent Streaming Terminal', subtitle: 'Real-time STT ➔ LLM ➔ TTS speech streaming pipeline', category: 'Others', icon: Zap, path: '/crm/ai-voice', tags: 'others voice agent mic audio stream pipeline' },
-        { id: 'act-theme', title: 'Switch Color Theme (Dark / Light)', subtitle: `Currently set to ${theme} mode`, category: 'Others', icon: Sun, action: toggleTheme, tags: 'theme dark light mode color' },
         { id: 'act-photo', title: 'Upload / Change Profile Picture', subtitle: 'Set custom avatar photo and update profile credentials', category: 'Others', icon: User, path: '/crm/profile', tags: 'pic photo avatar upload' },
       ];
     }
@@ -265,7 +262,6 @@ export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = 
       { id: 'doc-appraisal', title: 'Clinical Equipment & Lab Machinery Appraisal', subtitle: '$4.2M Independent Certified Physical Asset Valuation', category: 'Verified Documents', icon: FileText, path: '/oal/borrower/application', tags: 'machinery lab equipment appraisal 4.2m valuation' },
 
       // 6. Quick System Actions
-      { id: 'act-theme', title: 'Toggle Theme (Switch to ' + (theme === 'light' ? 'Dark' : 'Light') + ' Mode)', subtitle: 'Switch system appearance and contrast', category: 'Quick Actions', icon: Sun, action: toggleTheme, tags: 'theme dark light mode color sun moon' },
       { id: 'act-photo', title: 'Upload / Change My Profile Picture', subtitle: 'Upload new avatar photo and edit signatory credentials', category: 'Quick Actions', icon: User, path: '/oal/borrower/profile', tags: 'pic photo avatar upload picture profile' },
       { id: 'act-chat', title: 'Start Real-time Chat with Sarah Jenkins', subtitle: 'Open direct encrypted underwriting messaging channel', category: 'Quick Actions', icon: MessageSquare, path: '/oal/borrower/messages', tags: 'chat message talk sarah underwriter' },
       { id: 'act-offers', title: 'Compare Competitive Institutional Term Sheets', subtitle: 'Inspect Vanguard, Apex & Hyperion interest rates & APRs', category: 'Quick Actions', icon: CreditCard, path: '/oal/borrower/offers', tags: 'compare offers rate terms debt' },
@@ -614,24 +610,24 @@ export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = 
               height: '36px',
               padding: '0 12px',
               borderRadius: '10px',
-              background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #ec4899 100%)',
-              border: 'none',
+              background: 'linear-gradient(135deg, #4f46e5 0%, #0284c7 60%, #06b6d4 100%)',
+              border: '1px solid rgba(56, 189, 248, 0.3)',
               color: '#ffffff',
               fontSize: '12px',
               fontWeight: 700,
               cursor: 'pointer',
               whiteSpace: 'nowrap',
               flexShrink: 0,
-              boxShadow: '0 2px 8px -1px rgba(99, 102, 241, 0.45), 0 1px 3px rgba(236, 72, 153, 0.3)',
+              boxShadow: '0 2px 10px -1px rgba(2, 132, 199, 0.45), 0 1px 4px rgba(56, 189, 248, 0.25)',
               transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
             }}
             onMouseEnter={(e) => {
               e.currentTarget.style.transform = 'translateY(-1px)';
-              e.currentTarget.style.boxShadow = '0 4px 16px 0 rgba(99, 102, 241, 0.6), 0 2px 8px rgba(236, 72, 153, 0.4)';
+              e.currentTarget.style.boxShadow = '0 4px 16px 0 rgba(14, 165, 233, 0.55), 0 2px 8px rgba(99, 102, 241, 0.35)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 2px 8px -1px rgba(99, 102, 241, 0.45), 0 1px 3px rgba(236, 72, 153, 0.3)';
+              e.currentTarget.style.boxShadow = '0 2px 10px -1px rgba(2, 132, 199, 0.45), 0 1px 4px rgba(56, 189, 248, 0.25)';
             }}
             title="Ask Zunme AI Agent"
           >
@@ -829,29 +825,6 @@ export const Topbar = ({ onToggleSidebar, product = 'crm', isSidebarCollapsed = 
             </>
           )}
         </Dropdown>
-
-        {/* Theme Toggle Button */}
-        <button
-          type="button"
-          onClick={toggleTheme}
-          className="topbar-btn flex items-center justify-center rounded-full transition-colors cursor-pointer"
-          style={{
-            width: windowWidth < 380 ? '32px' : '36px',
-            height: windowWidth < 380 ? '32px' : '36px',
-            backgroundColor: 'var(--surface-secondary)',
-            border: '1px solid var(--border)',
-            color: 'var(--text-primary)',
-            padding: 0,
-            flexShrink: 0,
-          }}
-          title={theme === 'light' ? t('Switch to Dark Mode') : t('Switch to Light Mode')}
-        >
-          {theme === 'light' ? (
-            <Moon size={windowWidth < 380 ? 15 : 18} style={{ color: 'var(--text-primary)' }} />
-          ) : (
-            <Sun size={windowWidth < 380 ? 15 : 18} style={{ color: '#f59e0b' }} />
-          )}
-        </button>
 
         {/* User Profile Dropdown with Responsive Role Switcher */}
         <Dropdown

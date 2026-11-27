@@ -79,7 +79,7 @@ ELEVENLABS_VOICE_ID=21m00Tcm4TlvDq8ikWAM
 Frontend ko direct key ki zaroorat nahi hai. Frontend sirf backend ka URL point karega:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5002/api
+VITE_API_BASE_URL=https://crm-energy-production.up.railway.app/api
 ```
 
 ---
@@ -245,7 +245,7 @@ Aapke frontend me [frontend/src/services/geminiService.js](file:///d:/Kiaan/crm-
 Bas uska `callGeminiApi` function seedhe apne backend API endpoint ko call karega:
 
 ```javascript
-const BACKEND_AI_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:5002/api') + '/ai/generate';
+const BACKEND_AI_URL = (import.meta.env.VITE_API_BASE_URL || 'https://crm-energy-production.up.railway.app/api') + '/ai/generate';
 
 export async function callGeminiApi(prompt, systemInstruction = '') {
   try {
@@ -373,7 +373,7 @@ Node.js backend is internal URL (`http://127.0.0.1:8000/custom-predict`) ko call
 2. **Step 2:** Backend me `aiService.js`, `aiController.js`, aur `aiRoutes.js` create karke [backend/src/app.js](file:///d:/Kiaan/crm-enrgy-jonny/backend/src/app.js) me connect karein.
 3. **Step 3:** Backend ko test karein terminal me:
    ```bash
-   curl -X POST http://localhost:5002/api/ai/generate -H "Content-Type: application/json" -d "{\"prompt\":\"Hello AI\"}"
+   curl -X POST https://crm-energy-production.up.railway.app/api/ai/generate -H "Content-Type: application/json" -d "{\"prompt\":\"Hello AI\"}"
    ```
 4. **Step 4:** Frontend ke [geminiService.js](file:///d:/Kiaan/crm-enrgy-jonny/frontend/src/services/geminiService.js) ko backend endpoint se link karein.
 5. **Step 5:** Browser me [CrmAiStudio.jsx](file:///d:/Kiaan/crm-enrgy-jonny/frontend/src/pages/crm/CrmAiStudio.jsx) aur [BestieAi.jsx](file:///d:/Kiaan/crm-enrgy-jonny/frontend/src/pages/crm/ai/BestieAi.jsx) open karke live prompts test karein!

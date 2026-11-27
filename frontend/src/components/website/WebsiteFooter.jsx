@@ -48,11 +48,11 @@ export const WebsiteFooter = ({ onOpenZunme, onOpenSales, onOpenSignup }) => {
               <span style={{
                 fontSize: '10.5px',
                 fontWeight: 700,
-                color: '#4f46e5',
-                background: 'rgba(79, 70, 229, 0.08)',
+                color: '#38bdf8',
+                background: 'rgba(56, 189, 248, 0.1)',
                 padding: '2px 8px',
                 borderRadius: '12px',
-                border: '1px solid rgba(79, 70, 229, 0.2)'
+                border: '1px solid rgba(56, 189, 248, 0.25)'
               }}>
                 {t('Enterprise Platform')}
               </span>
@@ -97,14 +97,15 @@ export const WebsiteFooter = ({ onOpenZunme, onOpenSales, onOpenSignup }) => {
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '6px',
-                background: '#0f2b5c',
+                background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
                 color: '#ffffff',
-                border: 'none',
+                border: '1px solid rgba(56, 189, 248, 0.35)',
                 borderRadius: '8px',
                 padding: '9px 18px',
                 fontSize: '13px',
                 fontWeight: 700,
-                cursor: 'pointer'
+                cursor: 'pointer',
+                boxShadow: '0 4px 14px rgba(2, 132, 199, 0.35)'
               }}
             >
               <LogIn size={14} />
@@ -174,7 +175,7 @@ export const WebsiteFooter = ({ onOpenZunme, onOpenSales, onOpenSignup }) => {
             <span style={{
               fontSize: '14px',
               fontWeight: 800,
-              color: '#dc2626',
+              color: '#22d3ee',
               letterSpacing: '-0.01em',
               marginBottom: '6px'
             }}>

@@ -305,8 +305,9 @@ export const UnifiedLogin = ({ mode }) => {
   const { login } = useAuth();
   const { addToast } = useToast();
   const { t } = useLanguage();
-  const { theme } = useTheme();
-  const isDark = theme !== 'light';
+  useTheme();
+  // Approved dark navy / deep blue enterprise portal appearance
+  const isDark = true;
 
   const currentPlatform = !SHOW_OAL ? 'crm' : (mode || (location.pathname.includes('/oal') ? 'oal' : 'crm'));
   const roleList = currentPlatform === 'crm' ? crmRoles : oalRoles;

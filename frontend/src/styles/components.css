@@ -52,15 +52,16 @@
 
 /* Button Variants */
 .btn-primary {
-  background-color: var(--primary, #0f2b5c);
+  background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
   color: var(--text-on-primary);
-  border-color: var(--primary, #0f2b5c);
+  border-color: rgba(56, 189, 248, 0.35);
+  box-shadow: 0 2px 10px rgba(2, 132, 199, 0.28);
   transition: all 200ms ease;
 }
 .btn-primary:hover:not(:disabled) {
-  background-color: var(--primary-hover, #0284c7);
-  border-color: var(--primary-hover, #0284c7);
-  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+  background: linear-gradient(135deg, #0ea5e9 0%, #3b82f6 100%);
+  border-color: #38bdf8;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.42);
 }
 .btn-primary:active:not(:disabled) {
   transform: translateY(1px);
@@ -174,7 +175,7 @@ select::-ms-expand {
 }
 
 .form-control:focus {
-  border-color: var(--primary);
+  border-color: #38bdf8;
   box-shadow: 0 0 0 3px var(--primary-light);
 }
 
@@ -446,7 +447,7 @@ select::-ms-expand {
 }
 
 .badge-default { background-color: var(--surface-secondary); color: var(--text-primary); border: 1px solid var(--border); }
-.badge-primary { background-color: var(--primary-light); color: var(--primary); border: 1px solid var(--primary-border); }
+.badge-primary { background-color: rgba(56, 189, 248, 0.14); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
 .badge-success { background-color: var(--success-light); color: var(--success); border: 1px solid var(--success-border); }
 .badge-warning { background-color: var(--warning-light); color: var(--warning); border: 1px solid var(--warning-border); }
 .badge-error { background-color: var(--error-light); color: var(--error); border: 1px solid var(--error-border); }
@@ -619,8 +620,8 @@ select::-ms-expand {
 .tab-btn:hover { color: var(--text-primary); }
 
 .tab-btn-active {
-  color: var(--primary);
-  border-bottom-color: var(--primary);
+  color: #38bdf8;
+  border-bottom-color: #38bdf8;
   font-weight: 600;
 }
 
@@ -825,21 +826,21 @@ select::-ms-expand {
 }
 
 .calendar-task-pill.priority-High {
-  background-color: rgba(239, 68, 68, 0.1);
-  border-color: rgba(239, 68, 68, 0.25);
-  color: #b91c1c;
+  background-color: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+  color: #f87171;
 }
 
 .calendar-task-pill.priority-Medium {
-  background-color: rgba(245, 158, 11, 0.1);
-  border-color: rgba(245, 158, 11, 0.25);
-  color: #b45309;
+  background-color: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+  color: #fbbf24;
 }
 
 .calendar-task-pill.priority-Low {
-  background-color: rgba(59, 130, 246, 0.1);
-  border-color: rgba(59, 130, 246, 0.25);
-  color: #1d4ed8;
+  background-color: rgba(56, 189, 248, 0.15);
+  border-color: rgba(56, 189, 248, 0.3);
+  color: #38bdf8;
 }
 
 .calendar-task-pill:hover {
@@ -920,4 +921,31 @@ select::-ms-expand {
 .space-x-2 > * + * { margin-left: 0.5rem; }
 .space-x-3 > * + * { margin-left: 0.75rem; }
 .space-x-4 > * + * { margin-left: 1rem; }
+
+/* ====================================================
+   10. AUTHENTICATION & ONBOARDING GLASS SHELL
+   ==================================================== */
+.auth-layout-shell .surface-card {
+  background-color: rgba(15, 23, 42, 0.88) !important;
+  border: 1px solid rgba(56, 189, 248, 0.24) !important;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.8), 0 0 28px rgba(14, 165, 233, 0.12) !important;
+  color: #f8fafc;
+}
+
+.auth-layout-shell .form-control {
+  background-color: rgba(7, 11, 22, 0.78);
+  border-color: rgba(56, 189, 248, 0.24);
+  color: #f8fafc;
+}
+
+.auth-layout-shell .form-control:focus {
+  border-color: #38bdf8;
+  box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.18), 0 0 14px rgba(56, 189, 248, 0.2);
+}
+
+.auth-layout-shell .input-icon-start {
+  color: #38bdf8;
+}
 

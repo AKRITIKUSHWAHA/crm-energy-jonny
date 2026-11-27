@@ -232,7 +232,7 @@ export const CrmDashboard = () => {
       winRate: `72% ${t('Win Rate')}`,
       pct: totalPipelineValue > 0 ? Math.round((getStageTotal(negotiationDeals) / totalPipelineValue) * 100) : 0,
       variant: 'primary',
-      badgeColor: '#1d4ed8',
+      badgeColor: '#38bdf8',
       description: t('Terms and SLA agreements in active negotiation review'),
     },
     {
@@ -279,7 +279,7 @@ export const CrmDashboard = () => {
       volume: `${leads.length} ${t('leads')}`,
       conversion: '100% Sync',
       badgeVariant: 'primary',
-      color: '#1d4ed8',
+      color: '#38bdf8',
       cac: t('Active'),
       roi: 'Live DB',
       trend: t('Synchronized'),
@@ -305,7 +305,7 @@ export const CrmDashboard = () => {
     title: a.title || 'System Activity Recorded',
     description: a.description || 'Action recorded in CRM database',
     time: a.createdAt ? new Date(a.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : 'Recently',
-    color: a.dealId ? '#1d4ed8' : a.contactId ? '#16a34a' : '#0284c7',
+    color: a.dealId ? '#38bdf8' : a.contactId ? '#10b981' : '#0284c7',
     badge: (a.type || 'Activity').replace(/_/g, ' '),
     user: a.userName || a.user?.name || 'Alexander Wright',
     meta: a.dealTitle ? `Deal: ${a.dealTitle}` : a.contactName ? `Contact: ${a.contactName}` : a.leadName ? `Lead: ${a.leadName}` : '',
@@ -601,21 +601,21 @@ export const CrmDashboard = () => {
                     height: '32px',
                     padding: '0 14px',
                     borderRadius: '10px',
-                    background: 'linear-gradient(135deg, #f97316 0%, #ec4899 50%, #8b5cf6 100%)',
+                    background: 'linear-gradient(135deg, #0284c7 0%, #2563eb 100%)',
                     color: '#ffffff',
                     fontSize: '12px',
                     fontWeight: 700,
-                    border: 'none',
-                    boxShadow: '0 4px 14px -2px rgba(249, 115, 22, 0.45)',
+                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                    boxShadow: '0 4px 14px -2px rgba(2, 132, 199, 0.45)',
                     transition: 'all 0.2s ease',
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = 'translateY(-1px)';
-                    e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(249, 115, 22, 0.55)';
+                    e.currentTarget.style.boxShadow = '0 6px 18px 0 rgba(14, 165, 233, 0.55)';
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 14px -2px rgba(249, 115, 22, 0.45)';
+                    e.currentTarget.style.boxShadow = '0 4px 14px -2px rgba(2, 132, 199, 0.45)';
                   }}
                 >
                   <Plus size={14} style={{ color: '#ffffff' }} />
@@ -1000,7 +1000,7 @@ export const CrmDashboard = () => {
                 type="button"
                 onClick={() => navigate('/crm/pipeline')}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                style={{ background: 'none', border: 'none', color: '#1d4ed8' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8' }}
               >
                 <span>{t('View Kanban')}</span>
                 <ArrowRight size={14} />
@@ -1075,7 +1075,7 @@ export const CrmDashboard = () => {
                 type="button"
                 onClick={() => navigate('/crm/leads')}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                style={{ background: 'none', border: 'none', color: '#1d4ed8' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8' }}
               >
                 <span>{t('All Leads')}</span>
                 <ArrowRight size={14} />
@@ -1151,7 +1151,7 @@ export const CrmDashboard = () => {
                 type="button"
                 onClick={() => navigate('/crm/admin')}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                style={{ background: 'none', border: 'none', color: '#1d4ed8' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8' }}
               >
                 <span>{t('View All')}</span>
                 <ArrowRight size={14} />
@@ -1281,7 +1281,7 @@ export const CrmDashboard = () => {
                 type="button"
                 onClick={() => navigate('/crm/tasks')}
                 className="flex items-center gap-1 text-xs font-semibold text-primary hover:underline cursor-pointer"
-                style={{ background: 'none', border: 'none', color: '#1d4ed8' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8' }}
               >
                 <span>{t('View All Tasks')}</span>
                 <ArrowRight size={14} />
@@ -1314,7 +1314,7 @@ export const CrmDashboard = () => {
                 type="button"
                 onClick={() => setIsTaskModalOpen(true)}
                 className="text-xs font-semibold text-primary hover:underline cursor-pointer"
-                style={{ background: 'none', border: 'none', color: '#1d4ed8' }}
+                style={{ background: 'none', border: 'none', color: '#38bdf8' }}
               >
                 {t('+ Quick Add')}
               </button>

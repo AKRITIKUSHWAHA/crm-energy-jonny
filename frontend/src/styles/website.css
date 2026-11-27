@@ -405,21 +405,7 @@
   opacity: 0.98;
 }
 
-/* Highlight Button: SALES - chat eBox */
-.website-btn-sales {
-  background-color: rgba(34, 211, 238, 0.1) !important;
-  border: 1px solid rgba(34, 211, 238, 0.35) !important;
-  color: #22d3ee !important;
-  font-weight: 700 !important;
-  box-shadow: 0 0 10px rgba(34, 211, 238, 0.15);
-}
-
-.website-btn-sales:hover {
-  background-color: #06b6d4 !important;
-  color: #ffffff !important;
-  border-color: #06b6d4 !important;
-  box-shadow: 0 4px 16px rgba(34, 211, 238, 0.4) !important;
-}
+/* Highlight Button: SALES - chat eBox (canonical styling defined in section 8 below) */
 
 /* ====================================================
    ADVANCED HERO, BUTTON & CARD MOTION SYSTEM

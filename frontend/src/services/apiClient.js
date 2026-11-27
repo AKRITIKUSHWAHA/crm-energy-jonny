@@ -13,7 +13,7 @@ export function resolveApiBaseUrl() {
   // If running locally in browser on localhost/127.0.0.1, prioritize local backend if envUrl is missing or points to railway
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     if (!envUrl || envUrl.includes('railway.app')) {
-      envUrl = 'http://localhost:5002/api';
+      envUrl = 'https://crm-energy-production.up.railway.app/api';
     }
   }
 
@@ -36,7 +36,7 @@ export function getSocketBaseUrl() {
 
   if (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')) {
     if (!envSocketUrl || envSocketUrl.includes('railway.app')) {
-      envSocketUrl = 'http://localhost:5002';
+      envSocketUrl = 'https://crm-energy-production.up.railway.app';
     }
   }
 

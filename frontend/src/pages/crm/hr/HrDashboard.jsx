@@ -119,8 +119,8 @@ export const HrDashboard = () => {
             changeType="positive"
             changePeriod={t('Interview Stage')}
             icon={UserCheck}
-            iconBg="rgba(29, 78, 216, 0.1)"
-            iconColor="#1d4ed8"
+            iconBg="rgba(56, 189, 248, 0.12)"
+            iconColor="#38bdf8"
           />
         </div>
         <div onClick={() => setActiveTab('jobs')} className="cursor-pointer">
@@ -294,7 +294,7 @@ export const HrDashboard = () => {
                             <Link
                               to={`/crm/hr/employees/${emp.id}`}
                               className="font-bold text-xs text-primary hover:underline"
-                              style={{ color: '#1d4ed8' }}
+                              style={{ color: '#38bdf8' }}
                             >
                               {emp.name}
                             </Link>
